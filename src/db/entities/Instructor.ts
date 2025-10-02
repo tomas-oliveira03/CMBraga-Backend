@@ -1,11 +1,11 @@
-import { Column, Entity, OneToMany, PrimaryColumn } from "typeorm"
+import { Column, Entity, OneToMany, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm"
 import { InstructorActivitySession } from "./InstructorActivitySession"
 import { Issue } from "./Issue";
 import { ChildStation } from "./ChildStation";
 
 @Entity()
 export class Instructor {
-    @PrimaryColumn({ type: 'varchar' })
+    @PrimaryGeneratedColumn("uuid")
     id!: string;
 
     @Column({ type: 'varchar' })

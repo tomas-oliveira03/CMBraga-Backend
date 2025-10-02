@@ -1,10 +1,10 @@
-import { Column, Entity, OneToMany, PrimaryColumn } from "typeorm"
+import { Column, Entity, OneToMany, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm"
 import { Child } from "./Child";
 import { ParentChild } from "./ParentChild";
 
 @Entity()
 export class Parent {
-    @PrimaryColumn({ type: 'varchar' })
+    @PrimaryGeneratedColumn("uuid")
     id!: string;
     
     @Column({ type: 'varchar' })

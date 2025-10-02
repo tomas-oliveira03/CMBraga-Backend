@@ -1,10 +1,10 @@
-import { Column, Entity, ManyToOne, PrimaryColumn } from "typeorm"
+import { Column, Entity, ManyToOne, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm"
 import { Child } from "./Child"
 import { HealthProfessional } from "./HealthProfessional"
 
 @Entity()
 export class MedicalReport {
-    @PrimaryColumn({ type: 'varchar' })
+    @PrimaryGeneratedColumn("uuid")
     id!: string;
 
     @Column({ type: 'varchar' })

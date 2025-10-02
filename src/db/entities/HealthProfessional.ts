@@ -1,4 +1,4 @@
-import { Check, Column, Entity, OneToMany, PrimaryColumn } from "typeorm"
+import { Check, Column, Entity, OneToMany, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm"
 import { MedicalReport } from "./MedicalReport"
 
 export enum Specialty {
@@ -10,7 +10,7 @@ export enum Specialty {
 @Entity()
 @Check(`"specialty" IN ('pediatrician', 'nutritionist', 'general_practitioner')`)
 export class HealthProfessional {
-    @PrimaryColumn({ type: 'varchar' })
+    @PrimaryGeneratedColumn("uuid")
     id!: string;
 
     @Column({ type: 'varchar' })

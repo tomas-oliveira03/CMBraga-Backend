@@ -1,4 +1,4 @@
-import { Check, Column, Entity, OneToMany, PrimaryColumn } from "typeorm"
+import { Check, Column, Entity, OneToMany, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm"
 import { StationActivitySession } from "./StationActivitySession"
 import { ChildStation } from "./ChildStation"
 
@@ -10,7 +10,7 @@ export enum StationType {
 @Entity()
 @Check(`"type" IN ('regular', 'school')`)
 export class Station {
-    @PrimaryColumn({ type: 'varchar' })
+    @PrimaryGeneratedColumn("uuid")
     id!: string;
     
     @Column({ type: 'varchar' })

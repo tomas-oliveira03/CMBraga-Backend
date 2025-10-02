@@ -1,4 +1,4 @@
-import { Check, Column, Entity, OneToMany, PrimaryColumn } from "typeorm"
+import { Check, Column, Entity, OneToMany, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm"
 import { ChildActivitySession } from "./ChildActivitySession";
 import { ChildStation } from "./ChildStation";
 import { MedicalReport } from "./MedicalReport";
@@ -19,7 +19,7 @@ export type HealthProblems = {
 @Entity()
 @Check(`"gender" IN ('male', 'female')`)
 export class Child {
-	@PrimaryColumn({ type: 'varchar' })
+	@PrimaryGeneratedColumn("uuid")
 	id!: string;
 
 	@Column({ type: 'varchar' })

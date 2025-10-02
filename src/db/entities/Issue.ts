@@ -1,10 +1,10 @@
-import { Column, Entity, ManyToOne, PrimaryColumn } from "typeorm"
+import { Column, Entity, ManyToOne, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm"
 import { Instructor } from "./Instructor";
 import { ActivitySession } from "./ActivitySession";
 
 @Entity()
 export class Issue {
-    @PrimaryColumn({ type: 'varchar' })
+    @PrimaryGeneratedColumn("uuid")
     id!: string;
 
     @Column({ type: 'text' })
