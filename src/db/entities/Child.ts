@@ -1,45 +1,49 @@
-import { Check, Column, Entity, ManyToOne, PrimaryColumn } from "typeorm"
+import { Check, Column, Entity, ManyToOne, OneToMany, PrimaryColumn } from "typeorm"
 import { Parent } from "./Parent";
+import { ChildActivitySession } from "./ChildActivitySession";
 
 export enum Gender {
-    MALE = 'male',
-    FEMALE = 'female'
+	MALE = 'male',
+	FEMALE = 'female'
 }
 
 // MOCKED DATA
 export type HealthProblems = {
-  allergies?: string[];           
-  chronicDiseases?: string[];     
-  surgeries?: { type: string; year: number }[]; 
+	allergies?: string[];
+	chronicDiseases?: string[];
+	surgeries?: { type: string; year: number }[];
 };
 
 @Entity()
 @Check(`"gender" IN ('male', 'female')`)
 export class Child {
-    @PrimaryColumn({ type: 'varchar' })
-    id!: string;
-    
-    @Column({ type: 'varchar' })
-    name!: string;
+	@PrimaryColumn({ type: 'varchar' })
+	id!: string;
 
-    @Column({ type: 'varchar' })
-    gender!: Gender;
-    
-    @Column({ type: 'varchar' })
-    school!: string;
+	@Column({ type: 'varchar' })
+	name!: string;
 
-    @Column({ type: 'date' })
-    dateOfBirth!: Date;
+	@Column({ type: 'varchar' })
+	gender!: Gender;
 
-    @Column({ type: 'jsonb', nullable: true })
-    healthProblems!: HealthProblems;
+	@Column({ type: 'varchar' })
+	school!: string;
 
-    @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
-    createdAt!: Date;
+	@Column({ type: 'date' })
+	dateOfBirth!: Date;
 
-    @Column({ type: 'timestamptz', nullable: true })
-    updatedAt!: Date | null;
+	@Column({ type: 'jsonb', nullable: true })
+	healthProblems!: HealthProblems;
 
-    @ManyToOne(() => Parent)
-    parent!: Parent;
+	@Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
+	createdAt!: Date;
+
+	@Column({ type: 'timestamptz', nullable: true })
+	updatedAt!: Date | null;
+
+	@ManyToOne(() => Parent)
+	parent!: Parent;
+
+	@OneToMany(() => ChildActivitySession, childActivitySession => childActivitySession.child)
+	childActivitySessions!: ChildActivitySession[];
 }
