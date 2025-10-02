@@ -4,6 +4,8 @@ import { envs } from "./config";
 import { logger } from "./lib/logger";
 import apiRouter from "./server/routers";
 import { appInitialization } from "./helpers/initialize";
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './lib/swagger';
 
 const app = express();
 
@@ -20,10 +22,15 @@ const startServer = async () => {
 
         // Middleware to parse JSON
         app.use(express.json());
+        
+        // Swagger documentation
+        app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+        
         app.use("/api", apiRouter);
 
         server = app.listen(envs.PORT, () => {
             logger.info(`Server is running at http://localhost:${envs.PORT}`);
+            logger.info(`Swagger documentation available at http://localhost:${envs.PORT}/api-docs`);
         });
 
         /*
