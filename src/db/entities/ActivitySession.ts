@@ -3,6 +3,7 @@ import { ChildActivitySession } from "./ChildActivitySession"
 import { InstructorActivitySession } from "./InstructorActivitySession"
 import { StationActivitySession } from "./StationActivitySession"
 import { Issue } from "./Issue";
+import { ChildStation } from "./ChildStation"
 
 export enum ActivityType {
 	PEDIBUS = 'pedibus',
@@ -41,4 +42,7 @@ export class ActivitySession {
 
     @OneToMany(() => Issue, (issue) => issue.instructor)
     issues!: Issue[];
+
+    @OneToMany(() => ChildStation, childStation => childStation.activitySession)
+    childStations!: ChildStation[];
 }

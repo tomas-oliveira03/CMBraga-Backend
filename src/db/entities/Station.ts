@@ -1,5 +1,6 @@
 import { Check, Column, Entity, OneToMany, PrimaryColumn } from "typeorm"
 import { StationActivitySession } from "./StationActivitySession"
+import { ChildStation } from "./ChildStation"
 
 export enum StationType {
     REGULAR = 'regular',
@@ -26,4 +27,7 @@ export class Station {
 
     @OneToMany(() => StationActivitySession, stationActivitySession => stationActivitySession.station)
     stationActivitySessions!: StationActivitySession[];
+
+    @OneToMany(() => ChildStation, childStation => childStation.station)
+    childStations!: ChildStation[];
 }

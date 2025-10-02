@@ -1,6 +1,7 @@
 import { Check, Column, Entity, ManyToOne, OneToMany, PrimaryColumn } from "typeorm"
 import { Parent } from "./Parent";
 import { ChildActivitySession } from "./ChildActivitySession";
+import { ChildStation } from "./ChildStation";
 
 export enum Gender {
 	MALE = 'male',
@@ -41,9 +42,15 @@ export class Child {
 	@Column({ type: 'timestamptz', nullable: true })
 	updatedAt!: Date | null;
 
+	@Column({ type: 'varchar'})
+	parentId!: string;
+
 	@ManyToOne(() => Parent)
 	parent!: Parent;
 
 	@OneToMany(() => ChildActivitySession, childActivitySession => childActivitySession.child)
 	childActivitySessions!: ChildActivitySession[];
+
+	@OneToMany(() => ChildStation, childStation => childStation.child)
+	childStations!: ChildStation[];
 }

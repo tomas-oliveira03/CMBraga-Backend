@@ -1,6 +1,7 @@
 import { Column, Entity, OneToMany, PrimaryColumn } from "typeorm"
 import { InstructorActivitySession } from "./InstructorActivitySession"
 import { Issue } from "./Issue";
+import { ChildStation } from "./ChildStation";
 
 @Entity()
 export class Instructor {
@@ -30,4 +31,7 @@ export class Instructor {
 
     @OneToMany(() => Issue, (issue) => issue.instructor)
     issues!: Issue[];
+
+    @OneToMany(() => ChildStation, childStation => childStation.instructor)
+    childStations!: ChildStation[];
 }
