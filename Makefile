@@ -6,7 +6,6 @@ dd:
 	@echo "Running docker-compose down..."
 	@docker-compose down --remove-orphans
 
-
 mig-gen:
 	@read -p "Enter migration name: " name; \
 	echo "Creating migration $$name..."; \

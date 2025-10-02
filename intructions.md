@@ -1,8 +1,32 @@
-# Build Docker
-> make du
+# Project Setup Instructions
 
-# Destroy Docker
-> make dd
+## Docker Setup
 
-# Run Server 
-> npm run dev:server
+### Build Docker
+`make du` 
+
+### Destroy Docker
+`make dd`
+
+## Server Setup
+
+### Run Server 
+`npm run dev:server`
+
+## Database Setup
+
+### Add Table
+`make create-entity`
+
+### Add Migration
+`make mig-gen`
+
+### Commit changes
+`make mig-run`
+
+### Revert commited changes
+`make mig-revert`
+
+### Check if there are any changes left to commit
+`make schema-log`
+
