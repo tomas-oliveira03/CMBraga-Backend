@@ -1,0 +1,46 @@
+{
+  "name": "cmbraga",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "watch": "tsc -w",
+    "build": "tsc && tsc-alias",
+    "start": "ts-node src/index.ts",
+    "start:worker": "node dist/src/worker.js",
+    "dev": "node -r @swc-node/register src/server.ts",
+    "dev:server": "NODE_NO_WARNINGS=1 nodemon -w src --exec ts-node -r tsconfig-paths/register src/server.ts",
+    "dev:worker": "NODE_NO_WARNINGS=1 nodemon -w src --exec ts-node -r tsconfig-paths/register src/worker.ts",
+    "lint": "eslint src --ext .ts",
+    "entity:create": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli entity:create ./src/db/entities/$npm_config_name",
+    "mig:create": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli migration:create ./src/db/migrations/$npm_config_name",
+    "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli -d ./src/db/data-source.ts",
+    "schema:log": "npm run typeorm -- schema:log",
+    "mig:run": "npm run typeorm -- migration:run",
+    "docker:migration:run": "cross-env DOCKER_BUILD=true npm run typeorm -- migration:run",
+    "mig:revert": "npm run typeorm -- migration:revert",
+    "mig:generate": "npm run typeorm -- migration:generate ./src/db/migrations/$npm_config_name",
+    "mig:show": "npm run typeorm -- migration:show",
+    "ts": "tsx -r tsconfig-paths/register src/services/inspect/inspect.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^22.9.1",
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@logdna/logger": "^2.6.11",
+    "express": "^5.1.0",
+    "pg": "^8.13.1",
+    "typeorm": "^0.3.20",
+    "typeorm-naming-strategies": "^4.1.0",
+    "zod": "^4.0.5",
+    "zod-validation-error": "^3.5.3"
+  }
+}
