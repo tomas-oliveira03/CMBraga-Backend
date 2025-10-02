@@ -1,5 +1,6 @@
 import { AppDataSource } from "@/db";
 import { Parent } from "@/db/entities/Parent";
+import { Child } from "@/db/entities/Child";
 import express, { Request, Response } from "express";
 import { CreateParentSchema, UpdateParentSchema } from "../schemas/parent";
 import { z } from "zod";
@@ -205,7 +206,7 @@ router.post('/', async (req: Request, res: Response) => {
             });
         }
         
-        return res.status(500).json({ message: "Internal server error" });
+        return res.status(500).json({ message: error });
     }
 });
 
@@ -300,7 +301,7 @@ router.put('/:id', async (req: Request, res: Response) => {
             });
         }
         
-        return res.status(500).json({ message: "Internal server error" });
+        return res.status(500).json({ message: error });
     }
 });
 

@@ -295,13 +295,12 @@ router.post('/', async (req: Request, res: Response) => {
         throw new Error("Error inserting child");
     }
 
-    for(const parent of parents){
-        await AppDataSource.getRepository(ParentChild).insert({
-            parentId: parent.id,
-            childId: childId,
-        });
+    const parentChildConnector = parents.map(parent => ({
+        parentId: parent.id,
+        childId: childId
+    }));
 
-    }
+    await AppDataSource.getRepository(ParentChild).insert(parentChildConnector);
 
     return res.status(201).json({message: "Child created successfully"});
 
