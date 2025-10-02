@@ -2,6 +2,7 @@ import { Check, Column, Entity, ManyToOne, OneToMany, PrimaryColumn } from "type
 import { Parent } from "./Parent";
 import { ChildActivitySession } from "./ChildActivitySession";
 import { ChildStation } from "./ChildStation";
+import { MedicalReport } from "./MedicalReport";
 
 export enum Gender {
 	MALE = 'male',
@@ -53,4 +54,7 @@ export class Child {
 
 	@OneToMany(() => ChildStation, childStation => childStation.child)
 	childStations!: ChildStation[];
+
+	@OneToMany(() => MedicalReport, medicalReport => medicalReport.child)
+	medicalReports!: MedicalReport[];
 }
