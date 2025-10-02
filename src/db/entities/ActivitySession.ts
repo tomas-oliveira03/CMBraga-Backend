@@ -1,5 +1,8 @@
 import { Check, Column, Entity, OneToMany, PrimaryColumn } from "typeorm"
 import { ChildActivitySession } from "./ChildActivitySession"
+import { InstructorActivitySession } from "./InstructorActivitySession"
+import { StationActivitySession } from "./StationActivitySession"
+import { Issue } from "./Issue";
 
 export enum ActivityType {
 	PEDIBUS = 'pedibus',
@@ -21,7 +24,7 @@ export class ActivitySession {
     @Column({ type: 'timestamptz' })
     startedAt!: Date;
 
-    @Column({ type: 'timestamptz' })
+    @Column({ type: 'timestamptz', nullable: true })
     finishedAt!: Date;
 
     @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
@@ -29,4 +32,13 @@ export class ActivitySession {
 
     @OneToMany(() => ChildActivitySession, childActivitySession => childActivitySession.activitySession)
     childActivitySessions!: ChildActivitySession[];
+
+    @OneToMany(() => InstructorActivitySession, instructorActivitySession => instructorActivitySession.activitySession)
+    instructorActivitySessions!: InstructorActivitySession[];
+
+    @OneToMany(() => StationActivitySession, stationActivitySession => stationActivitySession.activitySession)
+    stationActivitySessions!: StationActivitySession[];
+
+    @OneToMany(() => Issue, (issue) => issue.instructor)
+    issues!: Issue[];
 }

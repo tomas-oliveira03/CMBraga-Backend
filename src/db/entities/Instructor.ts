@@ -1,14 +1,15 @@
-import { Column, Entity, ManyToOne, OneToMany, PrimaryColumn } from "typeorm"
-import { Child } from "./Child";
+import { Column, Entity, OneToMany, PrimaryColumn } from "typeorm"
+import { InstructorActivitySession } from "./InstructorActivitySession"
+import { Issue } from "./Issue";
 
 @Entity()
-export class Parent {
+export class Instructor {
     @PrimaryColumn({ type: 'varchar' })
     id!: string;
-    
+
     @Column({ type: 'varchar' })
     name!: string;
-    
+
     @Column({ type: 'varchar' })
     email!: string;
 
@@ -18,15 +19,15 @@ export class Parent {
     @Column({ type: 'varchar' })
     phone!: string;
 
-    @Column({ type: 'varchar' })
-    address!: string;
-
     @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
     createdAt!: Date;
 
     @Column({ type: 'timestamptz', nullable: true })
     updatedAt!: Date | null;
 
-    @OneToMany(() => Child, (child) => child.parent)
-    children!: Child[];
+    @OneToMany(() => InstructorActivitySession, instructorActivitySession => instructorActivitySession.instructor)
+    instructorActivitySessions!: InstructorActivitySession[];
+
+    @OneToMany(() => Issue, (issue) => issue.instructor)
+    issues!: Issue[];
 }
