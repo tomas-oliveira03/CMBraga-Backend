@@ -4,3 +4,5 @@
 # Destroy Docker
 > make dd
 
+# Run Server 
+> npm run dev:server

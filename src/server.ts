@@ -3,6 +3,7 @@ import { initializeDatabase } from "./db";
 import { envs } from "./config";
 import { logger } from "./lib/logger";
 import apiRouter from "./server/routers";
+import { appInitialization } from "./helpers/initialize";
 
 const app = express();
 
@@ -10,8 +11,7 @@ let server: ReturnType<typeof app.listen>;
 
 const startServer = async () => {
     try {
-        logger.info("Initializing resources...");
-        await initializeDatabase();
+        await appInitialization()
         // create logger middleware
         app.use((req, _, next) => {
             logger.info(`${req.method} ${req.url}`);
