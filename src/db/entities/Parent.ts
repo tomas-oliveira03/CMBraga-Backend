@@ -1,5 +1,6 @@
-import { Column, Entity, ManyToOne, OneToMany, PrimaryColumn } from "typeorm"
+import { Column, Entity, OneToMany, PrimaryColumn } from "typeorm"
 import { Child } from "./Child";
+import { ParentChild } from "./ParentChild";
 
 @Entity()
 export class Parent {
@@ -27,6 +28,7 @@ export class Parent {
     @Column({ type: 'timestamptz', nullable: true })
     updatedAt!: Date | null;
 
-    @OneToMany(() => Child, (child) => child.parent)
-    children!: Child[];
+    @OneToMany(() => ParentChild, parentChild => parentChild.parent)
+    parentChildren!: ParentChild[];
+
 }

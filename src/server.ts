@@ -1,5 +1,4 @@
 import express from "express";
-import { initializeDatabase } from "./db";
 import { envs } from "./config";
 import { logger } from "./lib/logger";
 import apiRouter from "./server/routers";

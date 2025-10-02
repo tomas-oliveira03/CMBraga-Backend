@@ -1,8 +1,8 @@
-import { Check, Column, Entity, ManyToOne, OneToMany, PrimaryColumn } from "typeorm"
-import { Parent } from "./Parent";
+import { Check, Column, Entity, OneToMany, PrimaryColumn } from "typeorm"
 import { ChildActivitySession } from "./ChildActivitySession";
 import { ChildStation } from "./ChildStation";
 import { MedicalReport } from "./MedicalReport";
+import { ParentChild } from "./ParentChild";
 
 export enum Gender {
 	MALE = 'male',
@@ -43,12 +43,6 @@ export class Child {
 	@Column({ type: 'timestamptz', nullable: true })
 	updatedAt!: Date | null;
 
-	@Column({ type: 'varchar'})
-	parentId!: string;
-
-	@ManyToOne(() => Parent)
-	parent!: Parent;
-
 	@OneToMany(() => ChildActivitySession, childActivitySession => childActivitySession.child)
 	childActivitySessions!: ChildActivitySession[];
 
@@ -57,4 +51,8 @@ export class Child {
 
 	@OneToMany(() => MedicalReport, medicalReport => medicalReport.child)
 	medicalReports!: MedicalReport[];
+
+	@OneToMany(() => ParentChild, parentChild => parentChild.child)
+	parentChildren!: ParentChild[];
 }
+
