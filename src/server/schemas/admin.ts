@@ -15,7 +15,11 @@ export const CreateAdminSchema = AdminSchema.omit({
     updatedAt: true
 });
 
-export const UpdateAdminSchema = CreateAdminSchema.partial();
+export const UpdateAdminSchema = AdminSchema.omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true
+}).partial();
 
 export type Admin = z.infer<typeof AdminSchema>;
 export type CreateAdminInput = z.infer<typeof CreateAdminSchema>;

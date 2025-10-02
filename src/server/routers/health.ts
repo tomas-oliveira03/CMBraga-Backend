@@ -20,7 +20,6 @@ const router = express.Router();
  *               timestamp: "2024-01-15T10:30:00.000Z"
  *               uptime: 3600.5
  */
-// Check the health of the service
 router.get("/", (req: Request, res: Response) => {
     res.status(200).json({
         status: "OK",
