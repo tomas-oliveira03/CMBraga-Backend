@@ -4,11 +4,7 @@ import { InstructorActivitySession } from "./InstructorActivitySession"
 import { StationActivitySession } from "./StationActivitySession"
 import { Issue } from "./Issue";
 import { ChildStation } from "./ChildStation"
-
-export enum ActivityType {
-	PEDIBUS = 'pedibus',
-	CICLO_EXPRESSO = 'ciclo_expresso'
-}
+import { ActivityType } from "@/helpers/types";
 
 @Entity()
 @Check(`"type" IN ('pedibus', 'ciclo_expresso')`)
@@ -23,13 +19,16 @@ export class ActivitySession {
     scheduledAt!: Date;
 
     @Column({ type: 'timestamptz', nullable: true })
-    startedAt!: Date;
+    startedAt!: Date | null;
 
     @Column({ type: 'timestamptz', nullable: true })
-    finishedAt!: Date;
+    finishedAt!: Date | null;
 
     @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
     createdAt!: Date;
+
+    @Column({ type: 'timestamptz', nullable: true })
+	updatedAt!: Date | null;
 
     @OneToMany(() => ChildActivitySession, childActivitySession => childActivitySession.activitySession)
     childActivitySessions!: ChildActivitySession[];

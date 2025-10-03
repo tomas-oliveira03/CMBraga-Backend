@@ -1,7 +1,5 @@
 import { z } from "zod";
-import { Gender } from "@/db/entities/Child"
-
-export const GenderEnum = z.enum([Gender.MALE, Gender.FEMALE]);
+import { ChildGender } from "@/helpers/types";
 
 const HealthProblemsSchema = z.object({
   allergies: z.string().array().optional(),
@@ -19,7 +17,7 @@ export const ChildSchema = z.object({
   id: z.string(),
   parentId: z.array(z.string()),
   name: z.string(),
-  gender: GenderEnum,
+  gender: z.nativeEnum(ChildGender),
   school: z.string(),
   dateOfBirth: z.coerce.date(),
   healthProblems: HealthProblemsSchema.optional(),

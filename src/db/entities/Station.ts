@@ -1,11 +1,7 @@
 import { Check, Column, Entity, OneToMany, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm"
 import { StationActivitySession } from "./StationActivitySession"
 import { ChildStation } from "./ChildStation"
-
-export enum StationType {
-    REGULAR = 'regular',
-    SCHOOL = 'school'
-}
+import { StationType } from "@/helpers/types";
 
 @Entity()
 @Check(`"type" IN ('regular', 'school')`)
@@ -17,7 +13,7 @@ export class Station {
     name!: string;
 
     @Column({ type: 'varchar' })
-    type!: string;
+    type!: StationType;
 
     @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
 	createdAt!: Date;

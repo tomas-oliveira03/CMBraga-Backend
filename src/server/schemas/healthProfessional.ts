@@ -1,12 +1,12 @@
+import { HealthProfessionalSpecialty } from "@/helpers/types";
 import { z } from "zod";
-import { Specialty } from "@/db/entities/HealthProfessional";
 
 export const HealthProfessionalSchema = z.object({
     id: z.string(),
     name: z.string(),
     email: z.string(),
     password: z.string(),
-    specialty: z.nativeEnum(Specialty),
+    specialty: z.nativeEnum(HealthProfessionalSpecialty),
     createdAt: z.date(),
     updatedAt: z.date().nullable()
 });

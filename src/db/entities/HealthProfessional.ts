@@ -1,11 +1,6 @@
 import { Check, Column, Entity, OneToMany, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm"
 import { MedicalReport } from "./MedicalReport"
-
-export enum Specialty {
-    PEDIATRICHIAN = 'pediatrician',
-    NUTRITIONIST = 'nutritionist',
-    GENERAL_PRACTITIONER = 'general_practitioner'
-}
+import { HealthProfessionalSpecialty } from "@/helpers/types";
 
 @Entity()
 @Check(`"specialty" IN ('pediatrician', 'nutritionist', 'general_practitioner')`)
@@ -23,7 +18,7 @@ export class HealthProfessional {
     password!: string;
 
     @Column({ type: 'varchar' })
-    specialty!: Specialty;
+    specialty!: HealthProfessionalSpecialty;
 
     @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
     createdAt!: Date;

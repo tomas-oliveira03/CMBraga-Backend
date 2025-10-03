@@ -39,6 +39,14 @@ class Envs {
         EnvName.LOCAL,
     );
     public readonly LOGDNA_KEY: string = this.getString("LOGDNA_KEY", "");
+    public readonly JWT_SECRET: string = this.getString(
+        "JWT_SECRET", 
+        "your_secret"
+    );
+    public readonly JWT_EXPIRES_IN: string = this.getString(
+        "JWT_EXPIRES_IN", 
+        "24h"
+    );
 
     private constructor() {
         if (this.NODE_ENV === EnvName.LOCAL) {

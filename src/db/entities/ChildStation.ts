@@ -3,11 +3,7 @@ import { Child } from "./Child"
 import { Station } from "./Station"
 import { Instructor } from "./Instructor"
 import { ActivitySession } from "./ActivitySession"
-
-export enum Gender {
-	IN = 'in',  // Child checked in at the station
-	OUT = 'out' // Child checked out at the school
-}
+import { ChildStationType } from "@/helpers/types"
 
 @Entity()
 @Check(`"type" IN ('in', 'out')`)
@@ -25,7 +21,7 @@ export class ChildStation {
     activitySessionId!: string;
 
     @Column({ type: 'varchar' })
-    type!: string;
+    type!: ChildStationType;
 
     @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
     registeredAt!: Date;

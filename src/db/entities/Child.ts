@@ -3,18 +3,7 @@ import { ChildActivitySession } from "./ChildActivitySession";
 import { ChildStation } from "./ChildStation";
 import { MedicalReport } from "./MedicalReport";
 import { ParentChild } from "./ParentChild";
-
-export enum Gender {
-	MALE = 'male',
-	FEMALE = 'female'
-}
-
-// MOCKED DATA
-export type HealthProblems = {
-	allergies?: string[];
-	chronicDiseases?: string[];
-	surgeries?: { type: string; year: number }[];
-};
+import { ChildGender, ChildHealthProblems } from "@/helpers/types";
 
 @Entity()
 @Check(`"gender" IN ('male', 'female')`)
@@ -26,7 +15,7 @@ export class Child {
 	name!: string;
 
 	@Column({ type: 'varchar' })
-	gender!: Gender;
+	gender!: ChildGender;
 
 	@Column({ type: 'varchar' })
 	school!: string;
@@ -35,7 +24,7 @@ export class Child {
 	dateOfBirth!: Date;
 
 	@Column({ type: 'jsonb', nullable: true })
-	healthProblems!: HealthProblems;
+	healthProblems!: ChildHealthProblems;
 
 	@Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
 	createdAt!: Date;
