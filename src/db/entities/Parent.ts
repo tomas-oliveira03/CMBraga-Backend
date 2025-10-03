@@ -1,4 +1,4 @@
-import { Column, Entity, OneToMany, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm"
+import { Column, Entity, Index, OneToMany, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm"
 import { Child } from "./Child";
 import { ParentChild } from "./ParentChild";
 
@@ -10,7 +10,8 @@ export class Parent {
     @Column({ type: 'varchar' })
     name!: string;
     
-    @Column({ type: 'varchar' })
+    @Index()
+    @Column({ type: 'varchar', unique: true })
     email!: string;
 
     @Column({ type: 'varchar', select: false })

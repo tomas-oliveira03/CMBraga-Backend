@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm"
+import { Column, Entity, Index, PrimaryGeneratedColumn } from "typeorm"
 
 @Entity()
 export class Admin {
@@ -8,7 +8,8 @@ export class Admin {
     @Column({ type: 'varchar' })
     name!: string;
     
-    @Column({ type: 'varchar' })
+    @Index()
+    @Column({ type: 'varchar', unique: true })
     email!: string;
 
     @Column({ type: 'varchar', select: false })

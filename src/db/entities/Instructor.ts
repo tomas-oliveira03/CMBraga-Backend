@@ -1,4 +1,4 @@
-import { Column, Entity, OneToMany, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm"
+import { Column, Entity, Index, OneToMany, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm"
 import { InstructorActivitySession } from "./InstructorActivitySession"
 import { Issue } from "./Issue";
 import { ChildStation } from "./ChildStation";
@@ -11,7 +11,8 @@ export class Instructor {
     @Column({ type: 'varchar' })
     name!: string;
 
-    @Column({ type: 'varchar' })
+    @Index()
+    @Column({ type: 'varchar', unique: true })
     email!: string;
 
     @Column({ type: 'varchar', select: false })

@@ -1,4 +1,4 @@
-import { Check, Column, Entity, OneToMany, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm"
+import { Check, Column, Entity, Index, OneToMany, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm"
 import { MedicalReport } from "./MedicalReport"
 import { HealthProfessionalSpecialty } from "@/helpers/types";
 
@@ -11,7 +11,8 @@ export class HealthProfessional {
     @Column({ type: 'varchar' })
     name!: string;
 
-    @Column({ type: 'varchar' })
+    @Index()
+    @Column({ type: 'varchar', unique: true })
     email!: string;
 
     @Column({ type: 'varchar', select: false })
