@@ -11,7 +11,7 @@ export class Admin {
     @Column({ type: 'varchar' })
     email!: string;
 
-    @Column({ type: 'varchar' })
+    @Column({ type: 'varchar', select: false })
     password!: string;
 
     @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
