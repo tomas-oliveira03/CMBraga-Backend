@@ -17,6 +17,7 @@ export const CreateAdminSchema = AdminSchema.omit({
 
 export const UpdateAdminSchema = AdminSchema.omit({
     id: true,
+    email: true,
     createdAt: true,
     updatedAt: true
 }).partial();

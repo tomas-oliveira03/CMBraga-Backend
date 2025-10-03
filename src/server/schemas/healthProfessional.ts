@@ -19,6 +19,7 @@ export const CreateHealthProfessionalSchema = HealthProfessionalSchema.omit({
 
 export const UpdateHealthProfessionalSchema = HealthProfessionalSchema.omit({
     id: true,
+    email: true,
     createdAt: true,
     updatedAt: true
 }).partial();

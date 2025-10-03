@@ -2,18 +2,20 @@ import { AppDataSource } from "@/db";
 import { Instructor } from "@/db/entities/Instructor";
 import express, { Request, Response } from "express";
 import { CreateInstructorSchema, UpdateInstructorSchema } from "@/server/schemas/instructor";
-import informationHash from "@/lib/information-hash"; // <-- import encryption utility
+import informationHash from "@/lib/information-hash";
+import { checkIfEmailExists } from "../services/validator";
+import z from "zod";
 
 const router = express.Router();
 
 /**
  * @swagger
- * /monitor:
+ * /instructor:
  *   get:
  *     summary: Get all instructors
  *     description: Returns a list of all instructors
  *     tags:
- *       - Monitor
+ *       - Instructor
  *     responses:
  *       200:
  *         description: List of instructors
@@ -22,7 +24,29 @@ const router = express.Router();
  *             schema:
  *               type: array
  *               items:
- *                 $ref: '#/components/schemas/Instructor'
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *                   name:
+ *                     type: string
+ *                     example: "Maria Silva"
+ *                   email:
+ *                     type: string
+ *                     example: "maria.silva@cmbraga.pt"
+ *                   phone:
+ *                     type: string
+ *                     example: "+351 912 345 678"
+ *                   createdAt:
+ *                     type: string
+ *                     format: date-time
+ *                     example: "2024-01-15T10:30:00.000Z"
+ *                   updatedAt:
+ *                     type: string
+ *                     format: date-time
+ *                     nullable: true
+ *                     example: "2024-01-20T14:45:30.000Z"
  */
 router.get('/', async (req: Request, res: Response) => {
     const allInstructors = await AppDataSource.getRepository(Instructor).find();
@@ -31,28 +55,59 @@ router.get('/', async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /monitor/{id}:
+ * /instructor/{id}:
  *   get:
  *     summary: Get instructor by ID
  *     description: Returns a single instructor by their ID
  *     tags:
- *       - Monitor
+ *       - Instructor
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: string
- *         description: Instructor ID
+ *           example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *         description: Instructor ID (UUID)
  *     responses:
  *       200:
  *         description: Instructor found
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Instructor'
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                   example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *                 name:
+ *                   type: string
+ *                   example: "João Santos"
+ *                 email:
+ *                   type: string
+ *                   example: "joao.santos@cmbraga.pt"
+ *                 phone:
+ *                   type: string
+ *                   example: "+351 925 678 901"
+ *                 createdAt:
+ *                   type: string
+ *                   format: date-time
+ *                   example: "2024-01-10T09:15:22.000Z"
+ *                 updatedAt:
+ *                   type: string
+ *                   format: date-time
+ *                   nullable: true
+ *                   example: null
  *       404:
  *         description: Instructor not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Instructor not found"
  */
 router.get('/:id', async (req: Request, res: Response) => {
     const instructorId = req.params.id;
@@ -69,73 +124,12 @@ router.get('/:id', async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /monitor/{id}:
- *   put:
- *     summary: Update instructor by ID
- *     description: Updates an instructor's information
- *     tags:
- *       - Monitor
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Instructor ID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *               email:
- *                 type: string
- *               phone:
- *                 type: string
- *     responses:
- *       200:
- *         description: Instructor updated
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Instructor'
- *       404:
- *         description: Instructor not found
- */
-router.put('/:id', async (req: Request, res: Response) => {
-    const instructorId = req.params.id;
-    const parseResult = UpdateInstructorSchema.safeParse(req.body);
-    if (!parseResult.success) {
-        return res.status(400).json({ error: "Invalid data", details: parseResult.error.issues });
-    }
-    const { name, email, phone } = parseResult.data;
-    const instructorRepository = AppDataSource.getRepository(Instructor);
-    const instructor = await instructorRepository.findOne({
-        where: {
-            id: instructorId
-        }
-    });
-    if (!instructor){
-        return res.status(404).json({ message: "Instructor not found" })
-    }
-    instructor.name = name || instructor.name;
-    instructor.email = email || instructor.email;
-    instructor.phone = phone || instructor.phone;
-    await instructorRepository.save(instructor);
-    return res.status(200).json(instructor);
-});
-
-/**
- * @swagger
- * /monitor:
+ * /instructor:
  *   post:
  *     summary: Create a new instructor
- *     description: Adds a new instructor to the system
+ *     description: Creates a new instructor
  *     tags:
- *       - Monitor
+ *       - Instructor
  *     requestBody:
  *       required: true
  *       content:
@@ -145,34 +139,169 @@ router.put('/:id', async (req: Request, res: Response) => {
  *             required:
  *               - name
  *               - email
- *               - phone
  *               - password
+ *               - phone
  *             properties:
  *               name:
  *                 type: string
+ *                 minLength: 1
+ *                 example: "Carlos Pereira"
  *               email:
  *                 type: string
- *               phone:
- *                 type: string
+ *                 format: email
+ *                 example: "carlos.pereira@cmbraga.pt"
  *               password:
  *                 type: string
+ *                 minLength: 6
+ *                 example: "MySecurePassword123!"
+ *               phone:
+ *                 type: string
+ *                 example: "+351 913 456 789"
+ *           example:
+ *             name: "Ana Costa"
+ *             email: "ana.costa@cmbraga.pt"
+ *             password: "InstructorPass2024!"
+ *             phone: "+351 924 567 890"
  *     responses:
  *       201:
- *         description: Instructor created
+ *         description: Instructor created successfully
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Instructor'
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Instructor created successfully"
+ *       400:
+ *         description: Validation error
+ *       409:
+ *         description: Email already exists
+ *       500:
+ *         description: Internal server error
  */
 router.post('/', async (req: Request, res: Response) => {
-    const parseResult = CreateInstructorSchema.safeParse(req.body);
-    if (!parseResult.success) {
-        return res.status(400).json({ error: "Invalid data", details: parseResult.error.issues });
+    try {
+        const validatedData = CreateInstructorSchema.parse(req.body);
+
+        const emailExists = await checkIfEmailExists(validatedData.email)
+        if (emailExists){
+            return res.status(409).json({message: "Email already exists"});
+        }
+
+        validatedData.password = informationHash.encrypt(validatedData.password);
+
+        await AppDataSource.getRepository(Instructor).insert(validatedData)
+        
+        return res.status(201).json({message: "Instructor created successfully"});
+
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({ 
+                message: "Validation error", 
+                errors: error.issues 
+            });
+        }
+        
+        return res.status(500).json({ message: error });
     }
-    const { name, email, phone, password } = parseResult.data;
-    const instructorRepository = AppDataSource.getRepository(Instructor);
-    const encryptedPassword = informationHash.encrypt(password); // <-- encrypt password
-    const newInstructor = instructorRepository.create({ name, email, phone, password: encryptedPassword });
-    await instructorRepository.save(newInstructor);
-    return res.status(201).json(newInstructor);
 });
+
+/**
+ * @swagger
+ * /instructor/{id}:
+ *   put:
+ *     summary: Update an instructor
+ *     description: Updates an existing instructor
+ *     tags:
+ *       - Instructor
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *         description: Instructor ID (UUID)
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 minLength: 1
+ *                 example: "Pedro Oliveira"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "pedro.oliveira@cmbraga.pt"
+ *               password:
+ *                 type: string
+ *                 minLength: 6
+ *                 example: "NewPassword456!"
+ *               phone:
+ *                 type: string
+ *                 example: "+351 937 890 123"
+ *           example:
+ *             name: "Sofia Mendes"
+ *             email: "sofia.mendes@cmbraga.pt"
+ *             phone: "+351 968 123 456"
+ *     responses:
+ *       200:
+ *         description: Instructor updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Instructor updated successfully"
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: Instructor not found
+ *       500:
+ *         description: Internal server error
+ */
+router.put('/:id', async (req: Request, res: Response) => {
+    try {
+        const instructorId = req.params.id;
+        const validatedData = UpdateInstructorSchema.parse(req.body);
+
+        if (validatedData.password) {
+            validatedData.password = informationHash.encrypt(validatedData.password);
+        }
+        
+        const instructor = await AppDataSource.getRepository(Instructor).findOne({
+            where: { id: instructorId }
+        })
+
+        if (!instructor) {
+            return res.status(404).json({ message: "Instructor not found" });
+        }
+
+        // Update intructor with updatedAt timestamp
+        await AppDataSource.getRepository(Instructor).update(instructor.id, {
+            ...validatedData,
+            updatedAt: new Date()
+        })
+        
+        return res.status(200).json({ message: "Instructor updated successfully" });
+
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({ 
+                message: "Validation error", 
+                errors: error.issues 
+            });
+        }
+        
+        return res.status(500).json({ message: error });
+    }
+});
+
+export default router;

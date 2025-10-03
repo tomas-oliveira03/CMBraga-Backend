@@ -19,6 +19,7 @@ export const CreateParentSchema = ParentSchema.omit({
 
 export const UpdateParentSchema = ParentSchema.omit({
     id: true,
+    email: true,
     createdAt: true,
     updatedAt: true
 }).partial();

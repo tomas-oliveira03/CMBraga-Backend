@@ -4,6 +4,7 @@ import express, { Request, Response } from "express";
 import { CreateAdminSchema, UpdateAdminSchema } from "../schemas/admin";
 import { z } from "zod";
 import informationHash from "@/lib/information-hash";
+import { checkIfEmailExists } from "../services/validator";
 
 const router = express.Router();
 
@@ -166,12 +167,20 @@ router.get('/:id', async (req: Request, res: Response) => {
  *                   example: "Admin created successfully"
  *       400:
  *         description: Validation error
+ *       409:
+ *         description: Email already exists
  *       500:
  *         description: Internal server error
  */
 router.post('/', async (req: Request, res: Response) => {
     try {
         const validatedData = CreateAdminSchema.parse(req.body);
+
+        const emailExists = await checkIfEmailExists(validatedData.email)
+        if (emailExists){
+            return res.status(409).json({message: "Email already exists"});
+        }
+
         validatedData.password = informationHash.encrypt(validatedData.password);
 
         await AppDataSource.getRepository(Admin).insert(validatedData)

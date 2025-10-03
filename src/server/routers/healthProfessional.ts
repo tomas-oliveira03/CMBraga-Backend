@@ -4,6 +4,7 @@ import { HealthProfessional } from "@/db/entities/HealthProfessional";
 import { z } from "zod";
 import { CreateHealthProfessionalSchema, UpdateHealthProfessionalSchema } from "../schemas/healthProfessional";
 import informationHash from "@/lib/information-hash";
+import { checkIfEmailExists } from "../services/validator";
 
 const router = express.Router();
 
@@ -180,14 +181,22 @@ router.get('/:id', async (req: Request, res: Response) => {
  *                   example: "Health Professional created successfully"
  *       400:
  *         description: Validation error
+ *       409:
+ *         description: Email already exists
  *       500:
  *         description: Internal server error
  */
 router.post('/', async (req: Request, res: Response) => {
     try {
         const validatedData = CreateHealthProfessionalSchema.parse(req.body);
+        
+        const emailExists = await checkIfEmailExists(validatedData.email)
+        if (emailExists){
+            return res.status(409).json({message: "Email already exists"});
+        }
+        
         validatedData.password = informationHash.encrypt(validatedData.password);
-
+        
         await AppDataSource.getRepository(HealthProfessional).insert(validatedData)
         
         return res.status(201).json({message: "Health Professional created successfully"});

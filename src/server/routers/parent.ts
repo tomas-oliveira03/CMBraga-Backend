@@ -5,6 +5,7 @@ import express, { Request, Response } from "express";
 import { CreateParentSchema, UpdateParentSchema } from "../schemas/parent";
 import { z } from "zod";
 import informationHash from "@/lib/information-hash";
+import { checkIfEmailExists } from "../services/validator";
 
 const router = express.Router();
 
@@ -189,12 +190,20 @@ router.get('/:id', async (req: Request, res: Response) => {
  *                   example: "Parent created successfully"
  *       400:
  *         description: Validation error
+ *       409:
+ *         description: Email already exists
  *       500:
  *         description: Internal server error
  */
 router.post('/', async (req: Request, res: Response) => {
     try {
         const validatedData = CreateParentSchema.parse(req.body);
+        
+        const emailExists = await checkIfEmailExists(validatedData.email)
+        if (emailExists){
+            return res.status(409).json({message: "Email already exists"});
+        }
+
         validatedData.password = informationHash.encrypt(validatedData.password);
 
         await AppDataSource.getRepository(Parent).insert(validatedData);

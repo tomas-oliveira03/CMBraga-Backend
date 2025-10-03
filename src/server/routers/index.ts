@@ -12,7 +12,7 @@ const router = express.Router();
 
 // Mount sub-routers
 router.use("/health", healthRouter);
-router.use("/instructors", instructorRouter);
+router.use("/instructor", instructorRouter);
 router.use("/admin", adminRouter);
 router.use("/parent", parentRouter);
 router.use("/child", childRouter);

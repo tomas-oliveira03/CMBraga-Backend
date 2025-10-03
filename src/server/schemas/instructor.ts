@@ -18,6 +18,7 @@ export const CreateInstructorSchema = InstructorSchema.omit({
 
 export const UpdateInstructorSchema = InstructorSchema.omit({
     id: true,
+    email: true,
     createdAt: true,
     updatedAt: true
 }).partial();
