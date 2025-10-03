@@ -18,5 +18,14 @@ services:
       - '6420:6379'
     restart: always
 
+  cmbraga-service-mongodb:
+    container_name: cmbraga-service-conversation-mongodb
+    image: mongo:7.0
+    ports:
+      - '27017:27017'
+    restart: always
+    volumes:
+      - cmbraga-service-mongodb-data:/data/db
+
 volumes:
   cmbraga-service-db-data:
