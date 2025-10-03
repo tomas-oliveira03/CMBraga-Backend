@@ -16,9 +16,6 @@ export class Station {
     @Column({ type: 'varchar' })
     name!: string;
 
-    @Column({ type: 'int' })
-    stopNumber!: number;
-
     @Column({ type: 'varchar' })
     type!: string;
 

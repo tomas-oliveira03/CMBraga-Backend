@@ -10,6 +10,9 @@ export class StationActivitySession {
     @PrimaryColumn({ type: 'varchar' })
     activitySessionId!: string;
 
+    @Column({ type: 'int' })
+    stopNumber!: number;
+
     @Column({ type: 'timestamptz' })
     scheduledAt!: Date;
 
