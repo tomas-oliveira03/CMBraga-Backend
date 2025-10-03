@@ -1,4 +1,5 @@
 import { initializeDatabase } from "@/db";
+import { initializeMongo } from "@/db/mongo";
 import { logger } from "@/lib/logger";
 import redisClient from "@/lib/redis";
 
@@ -7,5 +8,6 @@ export const appInitialization = async () => {
 
 	await initializeDatabase()
 	await redisClient.initialize()
+	await initializeMongo()
 
 }

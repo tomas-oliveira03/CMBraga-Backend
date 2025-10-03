@@ -29,3 +29,4 @@ services:
 
 volumes:
   cmbraga-service-db-data:
+  cmbraga-service-mongodb-data:

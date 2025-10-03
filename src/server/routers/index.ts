@@ -6,6 +6,7 @@ import parentRouter from "./parent";
 import childRouter from "./child";
 import healthProfessionalRouter from "./healthProfessional";
 import medicalReportRouter from "./medicalReport";
+import communicationRouter from "./communication";
 
 
 const router = express.Router();
@@ -18,5 +19,6 @@ router.use("/parent", parentRouter);
 router.use("/child", childRouter);
 router.use("/health-professional", healthProfessionalRouter);
 router.use("/medical-report", medicalReportRouter);
+router.use("/communication", communicationRouter);
 
 export default router;

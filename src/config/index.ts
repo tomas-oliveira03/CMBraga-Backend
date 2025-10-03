@@ -52,6 +52,16 @@ class Envs {
         "mongodb://localhost:27017/cmbraga-service",
     );
 
+    public readonly MONGODB_DB_NAME: string = this.getString(
+        "MONGODB_DB_NAME",
+        "cmbraga-service",
+    );
+
+    public readonly MONGODB_COLLECTION_NAME: string = this.getString(
+        "MONGODB_COLLECTION_NAME",
+        "communications",
+    );
+
     private constructor() {
         if (this.NODE_ENV === EnvName.LOCAL) {
             return;
