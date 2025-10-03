@@ -236,6 +236,7 @@ router.post('/', async (req: Request, res: Response) => {
  *                 message:
  *                   type: string
  *                   example: "Instructor not found"
+ * 
  */
 router.post('/password-reset/:id', async (req: Request, res: Response) => {
     const instructorId = req.params.id;
