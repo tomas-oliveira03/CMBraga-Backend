@@ -7,6 +7,7 @@ import childRouter from "./child";
 import healthProfessionalRouter from "./healthProfessional";
 import medicalReportRouter from "./medicalReport";
 import communicationRouter from "./communication";
+import authRouter from "./auth";
 
 
 const router = express.Router();
@@ -15,6 +16,7 @@ const router = express.Router();
 router.use("/health", healthRouter);
 router.use("/instructor", instructorRouter);
 router.use("/admin", adminRouter);
+router.use("/auth", authRouter);
 router.use("/parent", parentRouter);
 router.use("/child", childRouter);
 router.use("/health-professional", healthProfessionalRouter);

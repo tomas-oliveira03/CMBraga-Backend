@@ -43,10 +43,6 @@ class Envs {
         "JWT_SECRET", 
         "your_secret"
     );
-    public readonly JWT_EXPIRES_IN: string = this.getString(
-        "JWT_EXPIRES_IN", 
-        "24h"
-    );
     public readonly MONGODB_URL: string = this.getString(
         "MONGODB_URL",
         "mongodb://localhost:27017/cmbraga-service",

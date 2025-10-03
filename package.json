@@ -28,6 +28,7 @@
   "license": "ISC",
   "devDependencies": {
     "@types/express": "^5.0.3",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/mongodb": "^4.0.6",
     "@types/node": "^22.9.1",
     "@types/swagger-jsdoc": "^6.0.4",
@@ -42,6 +43,7 @@
     "@logdna/logger": "^2.6.11",
     "express": "^5.1.0",
     "ioredis": "^5.8.0",
+    "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.20.0",
     "pg": "^8.13.1",
     "swagger-jsdoc": "^6.2.8",

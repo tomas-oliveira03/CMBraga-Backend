@@ -15,9 +15,23 @@ const options = {
                 description: 'Development server',
             },
         ],
-        
+        components: {
+            securitySchemes: {
+                bearerAuth: {
+                    type: 'http',
+                    scheme: 'bearer',
+                    bearerFormat: 'JWT',
+                    description: 'Enter JWT token obtained from /auth/login',
+                },
+            },
+        },
+        security: [
+            {
+                bearerAuth: [],
+            },
+        ],
     },
-    apis: ['./src/server/routers/*.ts'], // Path to the API docs
+    apis: ['./src/server/routers/*.ts'],
 };
 
 export const swaggerSpec = swaggerJsdoc(options);

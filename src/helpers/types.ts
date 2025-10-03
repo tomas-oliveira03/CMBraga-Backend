@@ -30,3 +30,12 @@ export enum HealthProfessionalSpecialty {
     NUTRITIONIST = 'nutritionist',
     GENERAL_PRACTITIONER = 'general_practitioner'
 }
+
+// NON DB TYPES
+
+export enum UserRole {
+    ADMIN = 'admin',
+    INSTRUCTOR = 'instructor', 
+    PARENT = 'parent',
+    HEALTH_PROFESSIONAL = 'health_professional'
+}
