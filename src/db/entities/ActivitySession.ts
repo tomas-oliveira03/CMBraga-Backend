@@ -22,7 +22,7 @@ export class ActivitySession {
     @Column({ type: 'timestamptz' })
     scheduledAt!: Date;
 
-    @Column({ type: 'timestamptz' })
+    @Column({ type: 'timestamptz', nullable: true })
     startedAt!: Date;
 
     @Column({ type: 'timestamptz', nullable: true })
