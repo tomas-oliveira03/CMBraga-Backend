@@ -9,10 +9,47 @@ import { swaggerSpec } from './lib/swagger';
 const app = express();
 
 let server: ReturnType<typeof app.listen>;
+let isShuttingDown = false;
+
+const gracefulShutdown = async (signal: string) => {
+    if (isShuttingDown) {
+        logger.info(`Already shutting down, ignoring ${signal}`);
+        return;
+    }
+    
+    isShuttingDown = true;
+    logger.info(`Received signal ${signal}, shutting down gracefully.`);
+
+    try {
+        // Stop accepting new connections
+        if (server) {
+            await new Promise<void>((resolve, reject) => {
+                server.close((err) => {
+                    if (err) {
+                        logger.error("Error closing Express server:", err);
+                        reject(err);
+                    } else {
+                        logger.info("Express server closed.");
+                        resolve();
+                    }
+                });
+            });
+        }
+
+        logger.info("Graceful shutdown completed.");
+        logger.flush();
+        process.exit(0);
+    } catch (err) {
+        logger.error("Error during shutdown:", err);
+        logger.flush();
+        process.exit(1);
+    }
+};
 
 const startServer = async () => {
     try {
-        await appInitialization()
+        await appInitialization();
+        
         // create logger middleware
         app.use((req, _, next) => {
             logger.info(`${req.method} ${req.url}`);
@@ -32,41 +69,12 @@ const startServer = async () => {
             logger.info(`Swagger documentation available at http://localhost:${envs.PORT}/api-docs`);
         });
 
-        /*
-		  Graceful shutdown
-		*/
+        // Register shutdown handlers only once
         const signals = ["SIGINT", "SIGTERM"];
         for (const signal of signals) {
-            process.on(signal, async () => {
-                logger.info(`Received signal ${signal}, shutting down.`);
-
-                try {
-                    // Stop the server
-                    if (server) {
-                        await new Promise<void>((resolve, reject) => {
-                            server.close((err) => {
-                                if (err) {
-                                    logger.error(
-                                        "Error closing Express server:",
-                                        err,
-                                    );
-                                    reject(err);
-                                } else {
-                                    logger.info("Express server closed.");
-                                    resolve();
-                                }
-                            });
-                        });
-                    }
-
-                    process.exit(0); // Exit the process cleanly
-                } catch (err) {
-                    logger.error("Error during shutdown:", err);
-                    logger.flush();
-                    process.exit(1); // Exit with failure
-                }
-            });
+            process.once(signal, () => gracefulShutdown(signal));
         }
+
     } catch (error) {
         console.log(error);
         logger.error("Error during startup:", error);
