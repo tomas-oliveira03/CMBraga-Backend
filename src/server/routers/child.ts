@@ -416,7 +416,7 @@ router.put('/:id', async (req: Request, res: Response) => {
             return res.status(404).json({ message: "Child not found" });
         }
 
-        // Update admin with updatedAt timestamp
+        // Update child with updatedAt timestamp
         await AppDataSource.getRepository(Child).update(child.id, {
             ...validatedData,
             updatedAt: new Date()

@@ -6,8 +6,8 @@ export const MedicalReportSchema = z.object({
     healthProfessionalId: z.string(),
     diagnosis: z.string(),
     recommendations: z.string().nullable(),
-    createdAt: z.date(),
-    updatedAt: z.date().nullable()
+    createdAt: z.coerce.date(),
+    updatedAt: z.coerce.date().nullable()
 });
 
 export const CreateMedicalReportSchema = MedicalReportSchema.omit({

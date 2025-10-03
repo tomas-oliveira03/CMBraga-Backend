@@ -5,8 +5,8 @@ export const AdminSchema = z.object({
     name: z.string(),
     email: z.string(),
     password: z.string(),
-    createdAt: z.date(),
-    updatedAt: z.date().nullable()
+    createdAt: z.coerce.date(),
+    updatedAt: z.coerce.date().nullable()
 });
 
 export const CreateAdminSchema = AdminSchema.omit({
