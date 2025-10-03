@@ -4,6 +4,7 @@ import { Child } from "@/db/entities/Child";
 import express, { Request, Response } from "express";
 import { CreateParentSchema, UpdateParentSchema } from "../schemas/parent";
 import { z } from "zod";
+import informationHash from "@/lib/information-hash";
 
 const router = express.Router();
 
@@ -194,6 +195,8 @@ router.get('/:id', async (req: Request, res: Response) => {
 router.post('/', async (req: Request, res: Response) => {
     try {
         const validatedData = CreateParentSchema.parse(req.body);
+        validatedData.password = informationHash.encrypt(validatedData.password);
+
         await AppDataSource.getRepository(Parent).insert(validatedData);
         
         return res.status(201).json({ message: "Parent created successfully" });
@@ -277,6 +280,10 @@ router.put('/:id', async (req: Request, res: Response) => {
     try {
         const parentId = req.params.id;
         const validatedData = UpdateParentSchema.parse(req.body);
+
+        if (validatedData.password) {
+            validatedData.password = informationHash.encrypt(validatedData.password);
+        }
         
         const parent = await AppDataSource.getRepository(Parent).findOne({
             where: { id: parentId }

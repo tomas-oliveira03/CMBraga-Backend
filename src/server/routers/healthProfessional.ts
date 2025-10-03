@@ -3,6 +3,7 @@ import express, { Request, Response } from "express";
 import { HealthProfessional } from "@/db/entities/HealthProfessional";
 import { z } from "zod";
 import { CreateHealthProfessionalSchema, UpdateHealthProfessionalSchema } from "../schemas/healthProfessional";
+import informationHash from "@/lib/information-hash";
 
 const router = express.Router();
 
@@ -185,6 +186,8 @@ router.get('/:id', async (req: Request, res: Response) => {
 router.post('/', async (req: Request, res: Response) => {
     try {
         const validatedData = CreateHealthProfessionalSchema.parse(req.body);
+        validatedData.password = informationHash.encrypt(validatedData.password);
+
         await AppDataSource.getRepository(HealthProfessional).insert(validatedData)
         
         return res.status(201).json({message: "Health Professional created successfully"});
@@ -266,6 +269,10 @@ router.put('/:id', async (req: Request, res: Response) => {
     try {
         const healthProfessionalId = req.params.id;
         const validatedData = UpdateHealthProfessionalSchema.parse(req.body);
+
+        if (validatedData.password) {
+            validatedData.password = informationHash.encrypt(validatedData.password);
+        }
         
         const healthProfessional = await AppDataSource.getRepository(HealthProfessional).findOne({
             where: { id: healthProfessionalId }

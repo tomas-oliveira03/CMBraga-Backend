@@ -3,6 +3,7 @@ import { Admin } from "@/db/entities/Admin";
 import express, { Request, Response } from "express";
 import { CreateAdminSchema, UpdateAdminSchema } from "../schemas/admin";
 import { z } from "zod";
+import informationHash from "@/lib/information-hash";
 
 const router = express.Router();
 
@@ -171,6 +172,8 @@ router.get('/:id', async (req: Request, res: Response) => {
 router.post('/', async (req: Request, res: Response) => {
     try {
         const validatedData = CreateAdminSchema.parse(req.body);
+        validatedData.password = informationHash.encrypt(validatedData.password);
+
         await AppDataSource.getRepository(Admin).insert(validatedData)
         
         return res.status(201).json({message: "Admin created successfully"});
@@ -247,6 +250,10 @@ router.put('/:id', async (req: Request, res: Response) => {
     try {
         const adminId = req.params.id;
         const validatedData = UpdateAdminSchema.parse(req.body);
+
+        if (validatedData.password) {
+            validatedData.password = informationHash.encrypt(validatedData.password);
+        }
         
         const admin = await AppDataSource.getRepository(Admin).findOne({
             where: { id: adminId }

@@ -278,6 +278,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 router.post('/', async (req: Request, res: Response) => {
   try {
     const validatedData = CreateChildSchema.parse(req.body);
+        
     const parents = await AppDataSource.getRepository(Parent).find({
         where: {
             id: In (validatedData.parentId)
