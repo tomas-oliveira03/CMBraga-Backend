@@ -8,6 +8,7 @@ import healthProfessionalRouter from "./healthProfessional";
 import medicalReportRouter from "./medicalReport";
 import communicationRouter from "./communication";
 import authRouter from "./auth";
+import activitySessionRouter from "./activitySession";
 
 
 const router = express.Router();
@@ -22,5 +23,6 @@ router.use("/child", childRouter);
 router.use("/health-professional", healthProfessionalRouter);
 router.use("/medical-report", medicalReportRouter);
 router.use("/communication", communicationRouter);
+router.use("/activity-session", activitySessionRouter);
 
 export default router;
