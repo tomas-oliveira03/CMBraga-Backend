@@ -58,6 +58,11 @@ class Envs {
         "communications",
     );
 
+    public readonly LOGGER_SHOW_DATETIME: boolean = this.getBool(
+        "LOGGER_SHOW_DATETIME", 
+        false
+    );
+
     private constructor() {
         if (this.NODE_ENV === EnvName.LOCAL) {
             return;

@@ -10,8 +10,6 @@ export async function initializeMongo(): Promise<void> {
         await client.connect();
         db = client.db();
 
-        logger.info("Connected to MongoDB");
-
         const requiredCollections = ["communications"];
         const existingCollections = await db.listCollections().toArray();
         const existingCollectionNames = existingCollections.map((col) => col.name);
@@ -19,7 +17,7 @@ export async function initializeMongo(): Promise<void> {
         for (const collection of requiredCollections) {
             if (!existingCollectionNames.includes(collection)) {
                 await db.createCollection(collection);
-                logger.info(`Created missing collection: ${collection}`);
+                logger.success(`Created missing collection: ${collection}`);
             }
         }
     } catch (error) {

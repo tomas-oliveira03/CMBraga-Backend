@@ -27,12 +27,14 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/chalk": "^2.2.0",
     "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/mongodb": "^4.0.6",
     "@types/node": "^22.9.1",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.6",
+    "@types/ws": "^8.18.1",
     "cross-env": "^10.1.0",
     "nodemon": "^3.1.10",
     "prettier": "^3.6.2",
@@ -42,6 +44,7 @@
   },
   "dependencies": {
     "@logdna/logger": "^2.6.11",
+    "chalk": "^4.1.2",
     "express": "^5.1.0",
     "ioredis": "^5.8.0",
     "jsonwebtoken": "^9.0.2",
@@ -51,6 +54,7 @@
     "swagger-ui-express": "^5.0.1",
     "typeorm": "^0.3.20",
     "typeorm-naming-strategies": "^4.1.0",
+    "ws": "^8.18.3",
     "zod": "^4.0.5",
     "zod-validation-error": "^3.5.3"
   }

@@ -39,3 +39,13 @@ export enum UserRole {
     PARENT = 'parent',
     HEALTH_PROFESSIONAL = 'health_professional'
 }
+
+
+
+// CHAT
+
+export enum NotificationType {
+    MESSAGE = 'message',
+    MEDICAL_REPORT = 'medical_report',
+    GENERAL = 'general'
+}

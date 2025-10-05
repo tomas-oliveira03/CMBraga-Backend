@@ -2,6 +2,9 @@ import express, { Request, Response } from "express";
 import { saveCommunication, getCommunication } from "@/db/models/communication";
 import { CommunicationSchema } from "../schemas/communication";
 import { z } from "zod";
+import { webSocketManager } from "../services/websocket";
+import { authenticate } from "../middleware/auth";
+import { NotificationType } from "@/helpers/types";
 
 const router = express.Router();
 
@@ -50,7 +53,7 @@ const router = express.Router();
  *       500:
  *         description: Internal server error
  */
-router.post("/", async (req: Request, res: Response) => {
+router.post("/", authenticate, async (req: Request, res: Response) => {
     try {
         const communication = CommunicationSchema.parse(req.body);
         const existingCommunication = await getCommunication(communication.conversation_id);
@@ -116,7 +119,7 @@ router.post("/", async (req: Request, res: Response) => {
  *       500:
  *         description: Internal server error
  */
-router.post("/:conversationId/messages", async (req: Request, res: Response) => {
+router.post("/:conversationId/messages", authenticate, async (req: Request, res: Response) => {
     try {
         const { conversationId } = req.params;
         const { sender_id, content } = req.body;
@@ -143,6 +146,23 @@ router.post("/:conversationId/messages", async (req: Request, res: Response) => 
 
         communication.messages.push(newMessage);
         await saveCommunication(communication);
+
+        // Send WebSocket notification to room members
+        const senderMember = communication.members.find(m => m.id === sender_id);
+        if (senderMember) {
+            await webSocketManager.sendNotificationToRoom(conversationId, {
+                type: NotificationType.MESSAGE,
+                conversationId,
+                title: 'New Message',
+                content: content,
+                from: {
+                    userId: senderMember.id,
+                    name: senderMember.name,
+                    role: req.user!.role
+                },
+                timestamp: newMessage.timestamp
+            }, sender_id); // Exclude sender from notification
+        }
 
         return res.status(201).json({ message: "Message sent successfully", messageData: newMessage });
     } catch (error) {

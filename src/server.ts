@@ -1,14 +1,20 @@
 import express from "express";
+import { createServer } from "http";
+import { WebSocketServer } from "ws";
 import { envs } from "./config";
 import { logger } from "./lib/logger";
 import apiRouter from "./server/routers";
 import { appInitialization } from "./helpers/initialize";
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './lib/swagger';
+import { webSocketManager } from "./server/services/websocket";
+import { AuthService } from "./lib/auth";
+import url from "url";
 
 const app = express();
+const server = createServer(app);
+const wss = new WebSocketServer({ server, path: '/ws' });
 
-let server: ReturnType<typeof app.listen>;
 let isShuttingDown = false;
 
 const gracefulShutdown = async (signal: string) => {
@@ -21,15 +27,20 @@ const gracefulShutdown = async (signal: string) => {
     logger.info(`Received signal ${signal}, shutting down gracefully.`);
 
     try {
+        // Close WebSocket connections
+        wss.clients.forEach((socket) => {
+            socket.close(1001, 'Server shutting down');
+        });
+
         // Stop accepting new connections
         if (server) {
             await new Promise<void>((resolve, reject) => {
                 server.close((err) => {
                     if (err) {
-                        logger.error("Error closing Express server:", err);
+                        logger.error("Error closing server:", err);
                         reject(err);
                     } else {
-                        logger.info("Express server closed.");
+                        logger.info("Server closed.");
                         resolve();
                     }
                 });
@@ -46,13 +57,45 @@ const gracefulShutdown = async (signal: string) => {
     }
 };
 
+const setupWebSocketServer = () => {
+    wss.on('connection', (ws, request) => {
+        try {
+            const { query } = url.parse(request.url!, true);
+            const token = query.token as string;
+
+            if (!token) {
+                ws.close(1008, 'Authentication token required');
+                return;
+            }
+
+            // Verify JWT token
+            const decoded = AuthService.verifyToken(token);
+            
+            // Connect user through WebSocket manager
+            webSocketManager.connectUser(decoded.userId, decoded.role, ws);
+            
+        } catch (error) {
+            logger.error('WebSocket authentication error:', error);
+            ws.close(1008, 'Invalid authentication token');
+        }
+    });
+
+    logger.websocket('WebSocket server initialized');
+};
+
 const startServer = async () => {
     try {
+        // Add visual separation from nodemon startup messages
+        console.log('\n');
+        
         await appInitialization();
+        
+        // Initialize WebSocket rooms from database
+        await webSocketManager.initializeRoomsAndConnections();
         
         // create logger middleware
         app.use((req, _, next) => {
-            logger.info(`${req.method} ${req.url}`);
+            logger.debug(`${req.method} ${req.url}`);
             next();
         });
 
@@ -64,9 +107,14 @@ const startServer = async () => {
         
         app.use("/api", apiRouter);
 
-        server = app.listen(envs.PORT, () => {
-            logger.info(`Server is running at http://localhost:${envs.PORT}`);
-            logger.info(`Swagger documentation available at http://localhost:${envs.PORT}/api-docs`);
+        // Setup WebSocket server
+        setupWebSocketServer();
+
+        server.listen(envs.PORT, () => {
+            logger.port(`Server is running at http://localhost:${envs.PORT}`);
+            logger.port(`WebSocket server available at ws://localhost:${envs.PORT}/ws`);
+            logger.port(`Swagger documentation available at http://localhost:${envs.PORT}/api-docs`);
+            logger.websocket(`Connected users: ${webSocketManager.getConnectedUsersCount()}, Rooms: ${webSocketManager.getRoomsCount()}`);
         });
 
         // Register shutdown handlers only once
