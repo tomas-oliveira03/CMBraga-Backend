@@ -251,6 +251,121 @@ router.post('/child/:id', authenticate, authorize(UserRole.PARENT), async (req: 
 });
 
 
+/**
+ * @swagger
+ * /activity-session/child/{id}:
+ *   delete:
+ *     summary: Remove child from an activity session
+ *     description: Removes a child from a specific activity session. Parent can only remove their own children.
+ *     tags:
+ *       - Activity Session
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "c56ad528-3522-4557-8b34-a787a50900b7"
+ *         description: Activity Session ID (UUID)
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - childId
+ *             properties:
+ *               childId:
+ *                 type: string
+ *                 example: "1bee5237-02ea-4f5c-83f3-bfe6e5a19756"
+ *           example:
+ *             childId: "1bee5237-02ea-4f5c-83f3-bfe6e5a19756"
+ *     responses:
+ *       200:
+ *         description: Child successfully removed from activity session
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Child removed from activity session successfully"
+ *       400:
+ *         description: Child not registered for this activity session
+ *       403:
+ *         description: Not authorized to remove this child
+ *       404:
+ *         description: Activity session or child not found
+ *       500:
+ *         description: Internal server error
+ */
+// Remove child from an activity
+router.delete('/child/:id', authenticate, authorize(UserRole.PARENT), async (req: Request, res: Response) => {
+    try {
+        const activitySessionId = req.params.id;
+        const { childId } = req.body;
+
+        if (!childId) {
+            return res.status(400).json({ message: "Child ID is required" });
+        }
+
+        const activitySession = await AppDataSource.getRepository(ActivitySession).findOne({
+            where: { id: activitySessionId }
+        });
+        if (!activitySession) {
+            return res.status(404).json({ message: "Activity session not found" });
+        }
+
+        const child = await AppDataSource.getRepository(Child).findOne({
+            where: { id: childId }
+        });
+        if (!child) {
+            return res.status(404).json({ message: "Child not found" });
+        }
+
+        // Check if user is parent of the child
+        const parentChild = await AppDataSource.getRepository(ParentChild).findOne({
+            where: {
+                parentId: req.user!.userId,
+                childId: childId
+            }
+        });
+
+        if (!parentChild) {
+            return res.status(403).json({ message: "You are not authorized to remove this child from the activity" });
+        }
+
+        // Check if child is registered for this activity session
+        const existingRegistration = await AppDataSource.getRepository(ChildActivitySession).findOne({
+            where: {
+                childId: childId,
+                activitySessionId: activitySessionId
+            }
+        });
+        if (!existingRegistration) {
+            return res.status(400).json({ message: "Child is not registered for this activity session" });
+        }
+
+        // Remove child from activity session
+        await AppDataSource.getRepository(ChildActivitySession).delete({
+            childId: childId,
+            activitySessionId: activitySessionId
+        });
+
+        return res.status(200).json({ message: "Child removed from activity session successfully" });
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: error });
+    }
+});
+
+
+
 
 /**
  * @swagger
