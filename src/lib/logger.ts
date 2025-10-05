@@ -27,7 +27,7 @@ class LoggerClient {
         
         switch (level.toLowerCase()) {
             case 'debug':
-                return chalk.magentaBright(`${timestamp}[DEBUG] ${message}${metaStr}`);
+                return chalk.white(`${timestamp}[DEBUG] ${message}${metaStr}`);
             case 'info':
                 return chalk.white(`${timestamp}[INFO] ${message}${metaStr}`);
             case 'warn':

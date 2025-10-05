@@ -9,6 +9,7 @@ import medicalReportRouter from "./medicalReport";
 import communicationRouter from "./communication";
 import authRouter from "./auth";
 import activitySessionRouter from "./activitySession";
+import dummyRouter from "./dummy";
 
 
 const router = express.Router();
@@ -24,5 +25,6 @@ router.use("/health-professional", healthProfessionalRouter);
 router.use("/medical-report", medicalReportRouter);
 router.use("/communication", communicationRouter);
 router.use("/activity-session", activitySessionRouter);
+router.use("/dummy", dummyRouter);
 
 export default router;

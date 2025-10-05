@@ -87,7 +87,7 @@ const startServer = async () => {
     try {
         // Add visual separation from nodemon startup messages
         console.log('\n');
-        
+        logger.info("Starting server...")
         await appInitialization();
         
         // Initialize WebSocket rooms from database
