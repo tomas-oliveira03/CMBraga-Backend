@@ -16,8 +16,8 @@ export class StationActivitySession {
     @Column({ type: 'timestamptz' })
     scheduledAt!: Date;
 
-    @Column({ type: 'timestamptz' })
-    arrivedAt!: Date;
+    @Column({ type: 'timestamptz', nullable:true })
+    arrivedAt!: Date | null;
 
     @ManyToOne(() => Station)
     station!: Station;
