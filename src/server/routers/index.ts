@@ -11,6 +11,7 @@ import authRouter from "./auth";
 import activitySessionRouter from "./activitySession";
 import dummyRouter from "./dummy";
 import issueRouter from "./issue";
+import stationRouter from "./station";
 
 
 const router = express.Router();
@@ -28,5 +29,6 @@ router.use("/communication", communicationRouter);
 router.use("/activity-session", activitySessionRouter);
 router.use("/dummy", dummyRouter);
 router.use("/issue", issueRouter);
+router.use("/station", stationRouter)
 
 export default router;
