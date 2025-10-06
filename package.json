@@ -21,7 +21,8 @@
     "mig:revert": "npm run typeorm -- migration:revert",
     "mig:generate": "npm run typeorm -- migration:generate ./src/db/migrations/$npm_config_name",
     "mig:show": "npm run typeorm -- migration:show",
-    "ts": "tsx -r tsconfig-paths/register src/services/inspect/inspect.ts"
+    "ts": "tsx -r tsconfig-paths/register src/services/inspect/inspect.ts",
+    "hydrate": "npx ts-node -r tsconfig-paths/register src/scripts/hydration.ts"
   },
   "keywords": [],
   "author": "",

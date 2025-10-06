@@ -30,3 +30,5 @@
 ### Check if there are any changes left to commit
 `make schema-log`
 
+### Hydrate database
+`npm run hydration`
