@@ -5,6 +5,7 @@ import { z } from "zod";
 import { webSocketManager } from "../services/websocket";
 import { authenticate } from "../middleware/auth";
 import { NotificationType } from "@/helpers/types";
+import { v4 as uuidv4 } from 'uuid';
 
 const router = express.Router();
 
@@ -13,7 +14,7 @@ const router = express.Router();
  * /communication:
  *   post:
  *     summary: Create a new communication
- *     description: Creates a new communication conversation
+ *     description: Creates a new communication conversation.
  *     tags:
  *       - Communication
  *     requestBody:
@@ -47,23 +48,29 @@ const router = express.Router();
  *                 name: "John Doe"
  *     responses:
  *       201:
- *         description: Conversation created successfully
+ *         description: Conversation created successfully.
  *       400:
- *         description: Validation error or conversation already exists
+ *         description: Validation error or conversation already exists.
+ *       401:
+ *         description: Unauthorized access.
  *       500:
- *         description: Internal server error
+ *         description: Internal server error.
  */
-router.post("/", authenticate, async (req: Request, res: Response) => {
+router.post("/", async (req: Request, res: Response) => {
     try {
         const communication = CommunicationSchema.parse(req.body);
-        const existingCommunication = await getCommunication(communication.conversation_id);
-
-        if (existingCommunication) {
-            return res.status(400).json({ message: "Conversation already exists" });
+        let conv_uuid = uuidv4();
+        let existingCommunication = await getCommunication(conv_uuid);
+        while(existingCommunication != null){
+            conv_uuid = uuidv4();
+            existingCommunication = await getCommunication(conv_uuid);
         }
 
-        await saveCommunication(communication);
-        return res.status(201).json({ message: "Conversation created successfully" });
+        communication.conversation_id = conv_uuid as string;
+
+        await saveCommunication(communication as Required<typeof communication>);
+
+        return res.status(201).json({ message: "Conversation created successfully", conversation_id: communication.conversation_id });
     } catch (error) {
         if (error instanceof z.ZodError) {
             return res.status(400).json({ message: "Validation error", errors: error.issues });
@@ -74,10 +81,10 @@ router.post("/", authenticate, async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /communication/{conversationId}/messages:
+ * /communication/messages/{conversationId}:
  *   post:
  *     summary: Add a message to a conversation
- *     description: Adds a new message to an existing communication conversation
+ *     description: Adds a new message to an existing communication conversation.
  *     tags:
  *       - Communication
  *     parameters:
@@ -87,7 +94,7 @@ router.post("/", authenticate, async (req: Request, res: Response) => {
  *         schema:
  *           type: string
  *           example: "conversation-uuid"
- *         description: The ID of the conversation
+ *         description: The ID of the conversation.
  *     requestBody:
  *       required: true
  *       content:
@@ -109,17 +116,19 @@ router.post("/", authenticate, async (req: Request, res: Response) => {
  *             content: "Hello, how are you?"
  *     responses:
  *       201:
- *         description: Message sent successfully
+ *         description: Message sent successfully.
  *       400:
- *         description: Missing conversationId or validation error
+ *         description: Missing conversationId or validation error.
+ *       401:
+ *         description: Unauthorized access.
  *       403:
- *         description: Sender is not a member of the conversation
+ *         description: Sender is not a member of the conversation.
  *       404:
- *         description: Conversation not found
+ *         description: Conversation not found.
  *       500:
- *         description: Internal server error
+ *         description: Internal server error.
  */
-router.post("/:conversationId/messages", authenticate, async (req: Request, res: Response) => {
+router.post("/messages/:conversationId", async (req: Request, res: Response) => {
     try {
         const { conversationId } = req.params;
         const { sender_id, content } = req.body;
@@ -157,7 +166,7 @@ router.post("/:conversationId/messages", authenticate, async (req: Request, res:
                 content: content,
                 from: {
                     userId: senderMember.id,
-                    name: senderMember.name,
+                    name: (senderMember as { id: string; name?: string }).name ?? "",
                     role: req.user!.role
                 },
                 timestamp: newMessage.timestamp
@@ -175,7 +184,7 @@ router.post("/:conversationId/messages", authenticate, async (req: Request, res:
  * /communication/{conversationId}:
  *   get:
  *     summary: Get a communication by ID
- *     description: Retrieves a communication conversation by its ID
+ *     description: Retrieves a communication conversation by its ID.
  *     tags:
  *       - Communication
  *     parameters:
@@ -185,16 +194,18 @@ router.post("/:conversationId/messages", authenticate, async (req: Request, res:
  *         schema:
  *           type: string
  *           example: "conversation-uuid"
- *         description: The ID of the conversation
+ *         description: The ID of the conversation.
  *     responses:
  *       200:
- *         description: Communication retrieved successfully
+ *         description: Communication retrieved successfully.
  *       400:
- *         description: Missing conversationId parameter
+ *         description: Missing conversationId parameter.
+ *       401:
+ *         description: Unauthorized access.
  *       404:
- *         description: Communication not found
+ *         description: Communication not found.
  *       500:
- *         description: Internal server error
+ *         description: Internal server error.
  */
 router.get("/:conversationId", async (req: Request, res: Response) => {
     try {
