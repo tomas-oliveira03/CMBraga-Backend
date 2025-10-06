@@ -1,6 +1,7 @@
 import { Column, Entity, ManyToOne, PrimaryColumn } from "typeorm"
 import { Child } from "./Child"
 import { ActivitySession } from "./ActivitySession"
+import { Station } from "./Station";
 
 @Entity()
 export class ChildActivitySession {
@@ -13,9 +14,16 @@ export class ChildActivitySession {
     @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
     registeredAt!: Date;
 
+    // Station where the child is picked up to school
+	@Column({ type: 'varchar' })
+	stationId!: string;
+
     @ManyToOne(() => Child)
     child!: Child;
 
     @ManyToOne(() => ActivitySession)
     activitySession!: ActivitySession;
+
+    @ManyToOne(() => Station)
+    station!: Station;
 }

@@ -8,6 +8,8 @@ import { Parent } from "@/db/entities/Parent";
 import { In } from "typeorm";
 import { validate } from "@/lib/validator";
 import { ChildActivitySession } from "@/db/entities/ChildActivitySession";
+import { Station } from "@/db/entities/Station";
+import { StationType } from "@/helpers/types";
 
 const router = express.Router();
 
@@ -69,7 +71,6 @@ const router = express.Router();
  *                   type: string
  *                   example: "Child not found"
  */
-
 router.get('/activities/:id', async (req: Request, res: Response) => {
     const childId = req.params.id;
     const child = await AppDataSource.getRepository(Child).findOne({
@@ -93,6 +94,8 @@ router.get('/activities/:id', async (req: Request, res: Response) => {
 
     return res.status(200).json(child.childActivitySessions)
 })
+
+
 
 /**
  * @swagger
@@ -153,6 +156,10 @@ router.get('/activities/:id', async (req: Request, res: Response) => {
  *                             year:
  *                               type: number
  *                         example: [{"type": "appendectomy", "year": 2020}]
+ *                   stationId:
+ *                     type: string
+ *                     example: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
+ *                     description: "School station ID where the child is dropped off"
  *                   createdAt:
  *                     type: string
  *                     format: date-time
@@ -230,6 +237,10 @@ router.get('/', async (req: Request, res: Response) => {
  *                             type: string
  *                           year:
  *                             type: number
+ *                 stationId:
+ *                   type: string
+ *                   example: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
+ *                   description: "School station ID where the child is dropped off"
  *                 createdAt:
  *                   type: string
  *                   format: date-time
@@ -271,7 +282,7 @@ router.get('/:id', async (req: Request, res: Response) => {
  * /child:
  *   post:
  *     summary: Create a new child
- *     description: Creates a new child and associates them with parent(s)
+ *     description: Creates a new child and associates them with parent(s) and a school station
  *     tags:
  *       - Child
  *     requestBody:
@@ -285,7 +296,8 @@ router.get('/:id', async (req: Request, res: Response) => {
  *               - gender
  *               - school
  *               - dateOfBirth
- *               - parentId
+ *               - parentIds
+ *               - stationId
  *             properties:
  *               name:
  *                 type: string
@@ -326,11 +338,15 @@ router.get('/:id', async (req: Request, res: Response) => {
  *                         year:
  *                           type: number
  *                     example: [{"type": "tonsillectomy", "year": 2022}]
- *               parentId:
+ *               parentIds:
  *                 type: array
  *                 items:
  *                   type: string
  *                 example: ["parent-uuid-1", "parent-uuid-2"]
+ *               stationId:
+ *                 type: string
+ *                 example: "station-uuid-1"
+ *                 description: "School station ID where the child will be dropped off"
  *           example:
  *             name: "Ana Costa"
  *             gender: "female"
@@ -340,7 +356,8 @@ router.get('/:id', async (req: Request, res: Response) => {
  *               allergies: ["lactose"]
  *               chronicDiseases: []
  *               surgeries: []
- *             parentId: ["a1b2c3d4-e5f6-7890-abcd-ef1234567890"]
+ *             parentIds: ["a1b2c3d4-e5f6-7890-abcd-ef1234567890"]
+ *             stationId: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
  *     responses:
  *       201:
  *         description: Child created successfully
@@ -355,7 +372,7 @@ router.get('/:id', async (req: Request, res: Response) => {
  *       400:
  *         description: Validation error
  *       404:
- *         description: At least one parent doesn't exist
+ *         description: At least one parent doesn't exist or station does not exist/isn't a school
  *       500:
  *         description: Internal server error
  */
@@ -365,13 +382,24 @@ router.post('/', async (req: Request, res: Response) => {
         
     const parents = await AppDataSource.getRepository(Parent).find({
         where: {
-            id: In (validatedData.parentId)
+            id: In (validatedData.parentIds)
         }
     })
     
-    if(parents.length !== validatedData.parentId.length){
+    if(parents.length !== validatedData.parentIds.length){
         return res.status(404).json({message: "At least one parent doesn't exist"});
     }
+
+    const station = await AppDataSource.getRepository(Station).findOne({
+        where: {
+            id: validatedData.stationId,
+            type: StationType.SCHOOL
+        }
+    })
+    if(!station){
+        return res.status(404).json({message: "Station does not exist or it isn't labeled as school"});
+    }
+
     
     const child = await AppDataSource.getRepository(Child).insert(validatedData);
     const childId = child.identifiers[0]?.id;
@@ -463,12 +491,17 @@ router.post('/', async (req: Request, res: Response) => {
  *                           type: string
  *                         year:
  *                           type: number
+ *               stationId:
+ *                 type: string
+ *                 example: "station-uuid-2"
+ *                 description: "School station ID where the child will be dropped off"
  *           example:
  *             name: "Sofia Mendes"
  *             gender: "female"
  *             school: "Escola Básica Central"
  *             healthProblems:
  *               allergies: ["gluten", "shellfish"]
+ *             stationId: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
  *     responses:
  *       200:
  *         description: Child updated successfully
@@ -483,7 +516,7 @@ router.post('/', async (req: Request, res: Response) => {
  *       400:
  *         description: Validation error
  *       404:
- *         description: Child not found
+ *         description: Child not found or station does not exist/isn't a school
  *       500:
  *         description: Internal server error
  */
@@ -498,6 +531,18 @@ router.put('/:id', async (req: Request, res: Response) => {
 
         if (!child) {
             return res.status(404).json({ message: "Child not found" });
+        }
+
+        if(validatedData.stationId){
+            const station = await AppDataSource.getRepository(Station).findOne({
+                where: {
+                    id: validatedData.stationId,
+                    type: StationType.SCHOOL
+                }
+            })
+            if(!station){
+                return res.status(404).json({message: "Station does not exist or it isn't labeled as school"});
+            }
         }
 
         // Update child with updatedAt timestamp

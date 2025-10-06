@@ -1,9 +1,10 @@
-import { Check, Column, Entity, OneToMany, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm"
+import { Check, Column, Entity, ManyToOne, OneToMany, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm"
 import { ChildActivitySession } from "./ChildActivitySession";
 import { ChildStation } from "./ChildStation";
 import { MedicalReport } from "./MedicalReport";
 import { ParentChild } from "./ParentChild";
 import { ChildGender, ChildHealthProblems } from "@/helpers/types";
+import { Station } from "./Station";
 
 @Entity()
 @Check(`"gender" IN ('male', 'female')`)
@@ -19,6 +20,10 @@ export class Child {
 
 	@Column({ type: 'varchar' })
 	school!: string;
+
+	// Station where the child is dropped off to school
+	@Column({ type: 'varchar' })
+	stationId!: string;
 
 	@Column({ type: 'date' })
 	dateOfBirth!: Date;
@@ -43,5 +48,8 @@ export class Child {
 
 	@OneToMany(() => ParentChild, parentChild => parentChild.child)
 	parentChildren!: ParentChild[];
+
+	@ManyToOne(() => Station)
+	station!: Station;
 }
 

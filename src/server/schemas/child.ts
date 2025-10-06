@@ -15,10 +15,11 @@ const HealthProblemsSchema = z.object({
 
 export const ChildSchema = z.object({
   id: z.string(),
-  parentId: z.array(z.string()),
+  parentIds: z.array(z.string()),
   name: z.string(),
   gender: z.nativeEnum(ChildGender),
   school: z.string(),
+  stationId: z.string(),
   dateOfBirth: z.coerce.date(),
   healthProblems: HealthProblemsSchema.optional(),
   createdAt: z.coerce.date(),

@@ -2,6 +2,8 @@ import { Check, Column, Entity, OneToMany, PrimaryColumn, PrimaryGeneratedColumn
 import { StationActivitySession } from "./StationActivitySession"
 import { ChildStation } from "./ChildStation"
 import { StationType } from "@/helpers/types";
+import { Child } from "./Child";
+import { ChildActivitySession } from "./ChildActivitySession";
 
 @Entity()
 @Check(`"type" IN ('regular', 'school')`)
@@ -26,4 +28,10 @@ export class Station {
 
     @OneToMany(() => ChildStation, childStation => childStation.station)
     childStations!: ChildStation[];
+
+    @OneToMany(() => Child, child => child.station)
+	children!: Child[];
+
+    @OneToMany(() => ChildActivitySession, childActivitySession => childActivitySession.station)
+	childActivitySessions!: ChildActivitySession[];
 }
