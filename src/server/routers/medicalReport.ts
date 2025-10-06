@@ -4,8 +4,109 @@ import express, { Request, Response } from "express";
 import { CreateMedicalReportSchema, UpdateMedicalReportSchema } from "../schemas/medicalReport";
 import { z } from "zod";
 import { Child } from "@/db/entities/Child";
+import { HealthProfessional } from "@/db/entities/HealthProfessional";
 
 const router = express.Router();
+
+/**
+ * @swagger
+ * /medical-report/child/{id}:
+ *   get:
+ *     summary: Get medical reports for a child
+ *     description: Returns the list of medical reports for a given child, including the diagnosis, recommendations and the health professional details.
+ *     tags:
+ *       - Medical Report
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "c1d2e3f4-g5h6-7890-ijkl-mn1234567890"
+ *         description: Child ID (UUID)
+ *     responses:
+ *       200:
+ *         description: List of medical reports for the child
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *                   diagnosis:
+ *                     type: string
+ *                     example: "Asma brônquica leve"
+ *                   recommendations:
+ *                     type: string
+ *                     nullable: true
+ *                     example: "Evitar ambientes com fumo e poeira"
+ *                   createdAt:
+ *                     type: string
+ *                     format: date-time
+ *                     example: "2024-01-15T10:30:00.000Z"
+ *                   healthProfessional:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         example: "h1i2j3k4-l5m6-7890-nopq-rs1234567890"
+ *                       name:
+ *                         type: string
+ *                         example: "Dr. João Pereira"
+ *                       email:
+ *                         type: string
+ *                         format: email
+ *                         example: "joao.pereira@hospital.pt"
+ *                       specialty:
+ *                         type: string
+ *                         example: "Pediatria"
+ *       404:
+ *         description: Child not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Child not found"
+ */
+router.get('/child/:id', async (req: Request, res : Response) => {
+    
+    const childId = req.params.id;
+    const child = await AppDataSource.getRepository(Child).findOne({
+        where: { id: childId }, 
+        relations: {
+            medicalReports: { 
+                healthProfessional: true
+            }
+        },
+        select: {
+            medicalReports:{
+                id: true,
+                diagnosis: true,
+                recommendations: true,
+                createdAt: true, 
+                healthProfessional: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    specialty: true
+                }
+            }
+        }
+    })
+    
+    if(!child){
+        return res.status(404).json({ message: "Child not found" });
+    }
+
+    return res.status(200).json(child.medicalReports)
+})
 
 /**
  * @swagger
@@ -195,8 +296,8 @@ router.post('/', async (req: Request, res: Response) => {
         const child = await AppDataSource.getRepository(Child).findOne({
             where: { id: validatedData.childId}
         })
-        
-        const healthProfessional = await AppDataSource.getRepository(Child).findOne({
+
+        const healthProfessional = await AppDataSource.getRepository(HealthProfessional).findOne({
             where: {
                 id: validatedData.healthProfessionalId
             }
