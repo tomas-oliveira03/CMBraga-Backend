@@ -7,8 +7,92 @@ import { z } from "zod";
 import { Parent } from "@/db/entities/Parent";
 import { In } from "typeorm";
 import { validate } from "@/lib/validator";
+import { ChildActivitySession } from "@/db/entities/ChildActivitySession";
 
 const router = express.Router();
+
+/**
+ * @swagger
+ * /child/activities/{id}:
+ *   get:
+ *     summary: Get activities for a child
+ *     description: Returns the list of activity registrations for a given child, including the registration timestamp and the related activity session details.
+ *     tags:
+ *       - Child
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *         description: Child ID (UUID)
+ *     responses:
+ *       200:
+ *         description: List of child activity registrations
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   registeredAt:
+ *                     type: string
+ *                     format: date-time
+ *                     example: "2024-01-15T10:30:00.000Z"
+ *                   activitySession:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         example: "b1c2d3e4-f5a6-7890-abcd-111213141516"
+ *                       startAt:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2024-02-20T09:00:00.000Z"
+ *                       endAt:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2024-02-20T10:00:00.000Z"
+ *                       name:
+ *                         type: string
+ *                         example: "Atividade de Expressão" 
+ *       404:
+ *         description: Child not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Child not found"
+ */
+
+router.get('/activities/:id', async (req: Request, res: Response) => {
+    const childId = req.params.id;
+    const child = await AppDataSource.getRepository(Child).findOne({
+        where: { id: childId }, 
+        relations: {
+            childActivitySessions: { 
+                activitySession: true
+            }
+        },
+        select: {
+            childActivitySessions:{
+                registeredAt: true,
+                activitySession: true
+            }
+        }
+    })
+    
+    if(!child){
+        return res.status(404).json({ message: "Child not found" });
+    }
+
+    return res.status(200).json(child.childActivitySessions)
+})
 
 /**
  * @swagger
