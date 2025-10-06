@@ -39,7 +39,7 @@ export class ActivitySession {
     @OneToMany(() => StationActivitySession, stationActivitySession => stationActivitySession.activitySession)
     stationActivitySessions!: StationActivitySession[];
 
-    @OneToMany(() => Issue, (issue) => issue.instructor)
+    @OneToMany(() => Issue, (issue) => issue.activitySession)
     issues!: Issue[];
 
     @OneToMany(() => ChildStation, childStation => childStation.activitySession)

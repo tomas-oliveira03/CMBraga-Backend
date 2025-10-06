@@ -8,6 +8,7 @@ import { Instructor } from "@/db/entities/Instructor";
 
 const router = express.Router();
 
+
 /**
  * @swagger
  * /issue:

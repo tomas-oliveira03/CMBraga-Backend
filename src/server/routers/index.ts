@@ -12,7 +12,7 @@ import activitySessionRouter from "./activitySession";
 import dummyRouter from "./dummy";
 import issueRouter from "./issue";
 import stationRouter from "./station";
-
+import dashboardRouter from "./dashboard";
 
 const router = express.Router();
 
@@ -29,6 +29,7 @@ router.use("/communication", communicationRouter);
 router.use("/activity-session", activitySessionRouter);
 router.use("/dummy", dummyRouter);
 router.use("/issue", issueRouter);
-router.use("/station", stationRouter)
+router.use("/station", stationRouter);
+router.use("/dashboard", dashboardRouter);
 
 export default router;
