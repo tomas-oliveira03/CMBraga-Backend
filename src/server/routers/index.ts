@@ -10,6 +10,7 @@ import communicationRouter from "./communication";
 import authRouter from "./auth";
 import activitySessionRouter from "./activitySession";
 import dummyRouter from "./dummy";
+import issueRouter from "./issue";
 
 
 const router = express.Router();
@@ -26,5 +27,6 @@ router.use("/medical-report", medicalReportRouter);
 router.use("/communication", communicationRouter);
 router.use("/activity-session", activitySessionRouter);
 router.use("/dummy", dummyRouter);
+router.use("/issue", issueRouter);
 
 export default router;
