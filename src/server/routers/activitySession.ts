@@ -2,7 +2,6 @@ import { AppDataSource } from "@/db";
 import express, { Request, Response } from "express";
 import { CreateActivitySessionSchema, UpdateActivitySessionSchema } from "../schemas/activitySession";
 import { z } from "zod";
-import { Admin, In } from "typeorm";
 import { ActivitySession } from "@/db/entities/ActivitySession";
 import { Child } from "@/db/entities/Child";
 import { ChildActivitySession } from "@/db/entities/ChildActivitySession";
@@ -15,7 +14,9 @@ import { InstructorActivitySession } from "@/db/entities/InstructorActivitySessi
 const router = express.Router();
 
 
-
+// ========================================
+// CHILD ACTIONS
+// ========================================
 
 /**
  * @swagger
@@ -139,8 +140,6 @@ router.get('/child/:id', async (req: Request, res: Response) => {
     return res.status(200).json(activityInfo?.childActivitySessions);
 });
 
-
-
 /**
  * @swagger
  * /activity-session/child/{id}:
@@ -253,7 +252,6 @@ router.post('/child/:id', authenticate, authorize(UserRole.PARENT), async (req: 
         return res.status(500).json({ message: error });
     }
 });
-
 
 /**
  * @swagger
@@ -370,6 +368,9 @@ router.delete('/child/:id', authenticate, authorize(UserRole.PARENT), async (req
 
 
 
+// ========================================
+// INSTRUCTOR ACTIONS
+// ========================================
 
 /**
  * @swagger
@@ -463,7 +464,6 @@ router.get('/instructor/:id', async (req: Request, res: Response) => {
 
     return res.status(200).json(activityInfo?.instructorActivitySessions);
 });
-
 
 /**
  * @swagger
@@ -666,8 +666,9 @@ router.delete('/instructor/:id', authenticate, authorize(UserRole.ADMIN), async 
 
 
 
-
-
+// ========================================
+// ACTIVITY ACTIONS
+// ========================================
 
 /**
  * @swagger
@@ -1031,12 +1032,6 @@ router.delete('/:id', async (req: Request, res: Response) => {
         return res.status(500).json({ message: error });
     }
 });
-
-
-
-
-
-
 
 
 export default router;
