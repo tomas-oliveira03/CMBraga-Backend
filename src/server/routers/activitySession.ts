@@ -27,7 +27,7 @@ const router = express.Router();
  *     summary: Get all stations from a specific activity session
  *     description: Returns a list of all station activity sessions for a specific activity session ID, ordered by stop number
  *     tags:
- *       - Activity Session
+ *       - Activity Session - Stations
  *     parameters:
  *       - in: path
  *         name: id
@@ -130,7 +130,7 @@ router.get('/station/:id', async (req: Request, res: Response) => {
  *     summary: Add station to an activity session
  *     description: Adds a station to a specific activity session as the last stop. Only admins can add stations.
  *     tags:
- *       - Activity Session
+ *       - Activity Session - Stations
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -150,7 +150,6 @@ router.get('/station/:id', async (req: Request, res: Response) => {
  *             required:
  *               - stationId
  *               - scheduledAt
- *               - arrivedAt
  *             properties:
  *               stationId:
  *                 type: string
@@ -252,7 +251,7 @@ router.post('/station/:id', authenticate, authorize(UserRole.ADMIN), async (req:
  *     summary: Update station order in an activity session
  *     description: Updates the stop number of a station in an activity session. Only admins can update station order.
  *     tags:
- *       - Activity Session
+ *       - Activity Session - Stations
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -389,7 +388,7 @@ router.put('/station/:id', authenticate, authorize(UserRole.ADMIN), async (req: 
  *     summary: Remove station from an activity session
  *     description: Removes a station from a specific activity session and updates stop numbers. Only admins can remove stations.
  *     tags:
- *       - Activity Session
+ *       - Activity Session - Stations
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -506,7 +505,7 @@ router.delete('/station/:id', authenticate, authorize(UserRole.ADMIN), async (re
  *     summary: Get all children from a specific activity session
  *     description: Returns a list of all child activity sessions for a specific activity session ID
  *     tags:
- *       - Activity Session
+ *       - Activity Session - Children
  *     parameters:
  *       - in: path
  *         name: id
@@ -628,7 +627,7 @@ router.get('/child/:id', async (req: Request, res: Response) => {
  *     summary: Add child to an activity session
  *     description: Adds a child to a specific activity session. Parent can only add their own children.
  *     tags:
- *       - Activity Session
+ *       - Activity Session - Children
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -741,7 +740,7 @@ router.post('/child/:id', authenticate, authorize(UserRole.PARENT), async (req: 
  *     summary: Remove child from an activity session
  *     description: Removes a child from a specific activity session. Parent can only remove their own children.
  *     tags:
- *       - Activity Session
+ *       - Activity Session - Children
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -860,7 +859,7 @@ router.delete('/child/:id', authenticate, authorize(UserRole.PARENT), async (req
  *     summary: Get all instructors from a specific activity session
  *     description: Returns a list of all instructor activity sessions for a specific activity session ID
  *     tags:
- *       - Activity Session
+ *       - Activity Session - Instructors
  *     parameters:
  *       - in: path
  *         name: id
@@ -953,7 +952,7 @@ router.get('/instructor/:id', async (req: Request, res: Response) => {
  *     summary: Assign instructor to an activity session
  *     description: Assigns an instructor to a specific activity session. Only admins can assign instructors.
  *     tags:
- *       - Activity Session
+ *       - Activity Session - Instructors
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -1053,7 +1052,7 @@ router.post('/instructor/:id', authenticate, authorize(UserRole.ADMIN), async (r
  *     summary: Remove instructor from an activity session
  *     description: Removes an instructor from a specific activity session. Only admins can remove instructors.
  *     tags:
- *       - Activity Session
+ *       - Activity Session - Instructors
  *     security:
  *       - bearerAuth: []
  *     parameters:
