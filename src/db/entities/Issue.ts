@@ -19,6 +19,9 @@ export class Issue {
 	@Column({ type: 'timestamptz', nullable: true })
 	updatedAt!: Date | null;
 
+    @Column({ type: 'timestamptz', nullable: true })
+    resolvedAt!: Date | null;
+
     @Column({ type: 'varchar' })
     instructorId!: string;
 

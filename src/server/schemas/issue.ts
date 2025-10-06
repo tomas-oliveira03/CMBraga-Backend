@@ -7,13 +7,15 @@ export const IssueSchema = z.object({
     createdAt: z.coerce.date(),
     updatedAt: z.coerce.date().nullable(),
     instructorId: z.string(),
-    activitySessionId: z.string()
+    activitySessionId: z.string(),
+    resolvedAt: z.coerce.date().nullable()
 });
 
 export const CreateIssueSchema = IssueSchema.omit({
     id: true,
     createdAt: true,
-    updatedAt: true
+    updatedAt: true,
+    resolvedAt: true
 });
 
 export const UpdateIssueSchema = IssueSchema.omit({
