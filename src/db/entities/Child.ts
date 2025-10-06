@@ -31,6 +31,9 @@ export class Child {
 	@Column({ type: 'jsonb', nullable: true })
 	healthProblems!: ChildHealthProblems;
 
+	@Column({ type: 'int' })
+	schoolGrade!: number;
+
 	@Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
 	createdAt!: Date;
 

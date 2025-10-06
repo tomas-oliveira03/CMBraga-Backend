@@ -544,6 +544,11 @@ router.delete('/station/:id', authenticate, authorize(UserRole.ADMIN), async (re
  *                       school:
  *                         type: string
  *                         example: "Escola Básica de Braga"
+ *                       schoolGrade:
+ *                         type: integer
+ *                         minimum: 1
+ *                         maximum: 12
+ *                         example: 2
  *                       dateOfBirth:
  *                         type: string
  *                         format: date

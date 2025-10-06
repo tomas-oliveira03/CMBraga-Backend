@@ -128,6 +128,11 @@ router.get('/activities/:id', async (req: Request, res: Response) => {
  *                   school:
  *                     type: string
  *                     example: "Escola Básica de Braga"
+ *                   schoolGrade:
+ *                     type: integer
+ *                     minimum: 1
+ *                     maximum: 12
+ *                     example: 4
  *                   dateOfBirth:
  *                     type: string
  *                     format: date
@@ -212,6 +217,11 @@ router.get('/', async (req: Request, res: Response) => {
  *                 school:
  *                   type: string
  *                   example: "Escola Básica de Braga"
+ *                 schoolGrade:
+ *                   type: integer
+ *                   minimum: 1
+ *                   maximum: 12
+ *                   example: 3
  *                 dateOfBirth:
  *                   type: string
  *                   format: date
@@ -295,6 +305,7 @@ router.get('/:id', async (req: Request, res: Response) => {
  *               - name
  *               - gender
  *               - school
+ *               - schoolGrade
  *               - dateOfBirth
  *               - parentIds
  *               - stationId
@@ -310,6 +321,11 @@ router.get('/:id', async (req: Request, res: Response) => {
  *               school:
  *                 type: string
  *                 example: "Escola Básica de Braga"
+ *               schoolGrade:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 12
+ *                 example: 5
  *               dateOfBirth:
  *                 type: string
  *                 format: date
@@ -351,6 +367,7 @@ router.get('/:id', async (req: Request, res: Response) => {
  *             name: "Ana Costa"
  *             gender: "female"
  *             school: "Escola Básica de Braga"
+ *             schoolGrade: 2
  *             dateOfBirth: "2016-02-14"
  *             healthProblems:
  *               allergies: ["lactose"]
@@ -466,6 +483,11 @@ router.post('/', async (req: Request, res: Response) => {
  *               school:
  *                 type: string
  *                 example: "Escola Secundária de Braga"
+ *               schoolGrade:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 12
+ *                 example: 6
  *               dateOfBirth:
  *                 type: string
  *                 format: date
@@ -499,6 +521,7 @@ router.post('/', async (req: Request, res: Response) => {
  *             name: "Sofia Mendes"
  *             gender: "female"
  *             school: "Escola Básica Central"
+ *             schoolGrade: 1
  *             healthProblems:
  *               allergies: ["gluten", "shellfish"]
  *             stationId: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
