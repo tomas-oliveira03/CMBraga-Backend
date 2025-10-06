@@ -572,6 +572,10 @@ router.delete('/station/:id', authenticate, authorize(UserRole.ADMIN), async (re
  *                                 year:
  *                                   type: number
  *                             example: []
+ *                       stationId:
+ *                         type: string
+ *                         example: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
+ *                         description: "School station ID where the child is dropped off"
  *                       createdAt:
  *                         type: string
  *                         format: date-time
@@ -646,12 +650,18 @@ router.get('/child/:id', async (req: Request, res: Response) => {
  *             type: object
  *             required:
  *               - childId
+ *               - stationId
  *             properties:
  *               childId:
  *                 type: string
  *                 example: "1bee5237-02ea-4f5c-83f3-bfe6e5a19756"
+ *               stationId:
+ *                 type: string
+ *                 example: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
+ *                 description: "Station ID where the child will be picked up/dropped off"
  *           example:
  *             childId: "1bee5237-02ea-4f5c-83f3-bfe6e5a19756"
+ *             stationId: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
  *     responses:
  *       201:
  *         description: Child successfully added to activity session
@@ -664,7 +674,7 @@ router.get('/child/:id', async (req: Request, res: Response) => {
  *                   type: string
  *                   example: "Child added to activity session successfully"
  *       400:
- *         description: Child already registered for this activity session
+ *         description: Child already registered for this activity session or station not assigned to activity
  *       403:
  *         description: Not authorized to add this child
  *       404:
@@ -676,17 +686,25 @@ router.get('/child/:id', async (req: Request, res: Response) => {
 router.post('/child/:id', authenticate, authorize(UserRole.PARENT), async (req: Request, res: Response) => {
     try {
         const activitySessionId = req.params.id;
-        const { childId } = req.body;
+        const { childId, stationId } = req.body;
 
-        if (!childId) {
-            return res.status(400).json({ message: "Child ID is required" });
+        if (!childId || !stationId) {
+            return res.status(400).json({ message: "Child ID and Station ID are required" });
         }
 
         const activitySession = await AppDataSource.getRepository(ActivitySession).findOne({
-            where: { id: activitySessionId }
+            where: { id: activitySessionId },
+            relations: {
+                stationActivitySessions: true
+            }
         });
         if (!activitySession) {
             return res.status(404).json({ message: "Activity session not found" });
+        }
+        console.log(activitySession)
+        // Check if station is within the activity route
+        if (!(activitySession.stationActivitySessions && activitySession.stationActivitySessions.some(sas => sas.stationId === stationId))) {
+            return res.status(400).json({ message: "Station is not assigned to this activity session" });
         }
 
         const child = await AppDataSource.getRepository(Child).findOne({
@@ -722,7 +740,8 @@ router.post('/child/:id', authenticate, authorize(UserRole.PARENT), async (req: 
         // Add child to activity session
         await AppDataSource.getRepository(ChildActivitySession).insert({
             childId: childId,
-            activitySessionId: activitySessionId
+            activitySessionId: activitySessionId,
+            stationId: stationId
         });
 
         return res.status(201).json({ message: "Child added to activity session successfully" });
