@@ -22,7 +22,7 @@ services:
     container_name: cmbraga-service-conversation-mongodb
     image: mongo:7.0
     ports:
-      - '27017:27017'
+      - '27018:27017'
     restart: always
     volumes:
       - cmbraga-service-mongodb-data:/data/db

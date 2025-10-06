@@ -45,7 +45,7 @@ class Envs {
     );
     public readonly MONGODB_URL: string = this.getString(
         "MONGODB_URL",
-        "mongodb://localhost:27017/cmbraga-service",
+        "mongodb://localhost:27018/cmbraga-service",
     );
 
     public readonly MONGODB_DB_NAME: string = this.getString(
