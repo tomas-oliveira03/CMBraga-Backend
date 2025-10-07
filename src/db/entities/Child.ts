@@ -21,6 +21,9 @@ export class Child {
 	@Column({ type: 'varchar' })
 	school!: string;
 
+	@Column({ type: 'int' })
+	schoolGrade!: number;
+	
 	// Station where the child is dropped off to school
 	@Column({ type: 'varchar' })
 	stationId!: string;
@@ -30,9 +33,6 @@ export class Child {
 
 	@Column({ type: 'jsonb', nullable: true })
 	healthProblems!: ChildHealthProblems;
-
-	@Column({ type: 'int' })
-	schoolGrade!: number;
 
 	@Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
 	createdAt!: Date;

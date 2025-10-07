@@ -1,6 +1,7 @@
 import { Column, Entity, Index, OneToMany, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm"
 import { Child } from "./Child";
 import { ParentChild } from "./ParentChild";
+import { ChildActivitySession } from "./ChildActivitySession";
 
 @Entity()
 export class Parent {
@@ -32,4 +33,6 @@ export class Parent {
     @OneToMany(() => ParentChild, parentChild => parentChild.parent)
     parentChildren!: ParentChild[];
 
+    @OneToMany(() => ChildActivitySession, childActivitySession => childActivitySession.parent)
+    parentChildActivitySession!: ChildActivitySession[];
 }

@@ -129,8 +129,18 @@ async function seed() {
     await activityRepo.save([activity1, activity2]);
 
     // ChildActivitySession
-    const cas1 = childActivityRepo.create({ childId: child1.id, activitySessionId: activity1.id, stationId: stationA.id });
-    const cas2 = childActivityRepo.create({ childId: child2.id, activitySessionId: activity2.id, stationId: stationB.id });
+    const cas1 = childActivityRepo.create({ 
+      childId: child1.id, 
+      activitySessionId: activity1.id, 
+      stationId: stationA.id,
+      parentId: parent1.id 
+    });
+    const cas2 = childActivityRepo.create({ 
+      childId: child2.id, 
+      activitySessionId: activity2.id, 
+      stationId: stationB.id,
+      parentId: parent2.id 
+    });
     await childActivityRepo.save([cas1, cas2]);
 
     // InstructorActivitySession

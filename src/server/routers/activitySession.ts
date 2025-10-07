@@ -774,7 +774,7 @@ router.post('/child/:id', authenticate, authorize(UserRole.PARENT), async (req: 
         if (!activitySession) {
             return res.status(404).json({ message: "Activity session not found" });
         }
-        console.log(activitySession)
+        
         // Check if station is within the activity route
         if (!(activitySession.stationActivitySessions && activitySession.stationActivitySessions.some(sas => sas.stationId === stationId))) {
             return res.status(400).json({ message: "Station is not assigned to this activity session" });
@@ -790,7 +790,7 @@ router.post('/child/:id', authenticate, authorize(UserRole.PARENT), async (req: 
         // Check if user is parent of the child
         const parentChild = await AppDataSource.getRepository(ParentChild).findOne({
             where: {
-                parentId: req.user!.userId,
+                parentId: req.user?.userId,
                 childId: childId
             }
         });
@@ -814,7 +814,8 @@ router.post('/child/:id', authenticate, authorize(UserRole.PARENT), async (req: 
         await AppDataSource.getRepository(ChildActivitySession).insert({
             childId: childId,
             activitySessionId: activitySessionId,
-            stationId: stationId
+            stationId: stationId,
+            parentId: req.user?.userId
         });
 
         return res.status(201).json({ message: "Child added to activity session successfully" });
