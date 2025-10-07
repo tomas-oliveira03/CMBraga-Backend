@@ -4,6 +4,7 @@ import { saveCommunication, getCommunication } from "@/db/models/communication";
 import { NotificationType, UserRole } from "@/helpers/types";
 import { logger } from "@/lib/logger";
 import { v4 as uuidv4 } from "uuid";
+import { ObjectId } from "mongodb";
 
 const router = express.Router();
 
@@ -185,6 +186,7 @@ router.post('/simulate-first-message', async (req: Request, res: Response) => {
         }
 
         const newMessage = {
+            _id: new ObjectId(), // Add the missing _id property
             sender_id: senderId,
             content: content,
             timestamp: new Date().toISOString(),
