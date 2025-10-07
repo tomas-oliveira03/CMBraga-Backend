@@ -88,7 +88,7 @@ const router = express.Router();
  *                                 year:
  *                                   type: number
  *                             example: []
- *                       stationId:
+ *                       dropOffStationId:
  *                         type: string
  *                         example: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
  *                         description: "School station ID where the child is dropped off"
@@ -166,18 +166,18 @@ router.get('/:id', async (req: Request, res: Response) => {
  *             type: object
  *             required:
  *               - childId
- *               - stationId
+ *               - dropOffStationId
  *             properties:
  *               childId:
  *                 type: string
  *                 example: "1bee5237-02ea-4f5c-83f3-bfe6e5a19756"
- *               stationId:
+ *               dropOffStationId:
  *                 type: string
  *                 example: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
  *                 description: "Station ID where the child will be picked up/dropped off"
  *           example:
  *             childId: "1bee5237-02ea-4f5c-83f3-bfe6e5a19756"
- *             stationId: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
+ *             dropOffStationId: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
  *     responses:
  *       201:
  *         description: Child successfully added to activity session
@@ -202,9 +202,9 @@ router.get('/:id', async (req: Request, res: Response) => {
 router.post('/:id', authenticate, authorize(UserRole.PARENT), async (req: Request, res: Response) => {
     try {
         const activitySessionId = req.params.id;
-        const { childId, stationId } = req.body;
+        const { childId, pickUpStationId } = req.body;
 
-        if (!childId || !stationId) {
+        if (!childId || !pickUpStationId) {
             return res.status(400).json({ message: "Child ID and Station ID are required" });
         }
 
@@ -219,7 +219,7 @@ router.post('/:id', authenticate, authorize(UserRole.PARENT), async (req: Reques
         }
         
         // Check if station is within the activity route
-        if (!(activitySession.stationActivitySessions && activitySession.stationActivitySessions.some(sas => sas.stationId === stationId))) {
+        if (!(activitySession.stationActivitySessions && activitySession.stationActivitySessions.some(sas => sas.stationId === pickUpStationId))) {
             return res.status(400).json({ message: "Station is not assigned to this activity session" });
         }
 
@@ -257,7 +257,7 @@ router.post('/:id', authenticate, authorize(UserRole.PARENT), async (req: Reques
         await AppDataSource.getRepository(ChildActivitySession).insert({
             childId: childId,
             activitySessionId: activitySessionId,
-            stationId: stationId,
+            pickUpStationId: pickUpStationId,
             parentId: req.user?.userId
         });
 

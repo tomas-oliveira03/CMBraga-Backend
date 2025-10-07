@@ -105,7 +105,7 @@ async function seed() {
       gender: "male" as any, 
       school: "Escola Básica", 
       schoolGrade: 4,
-      stationId: stationA.id, 
+      dropOffStationId: stationA.id, 
       dateOfBirth: new Date("2016-02-14") 
     });
     const child2 = childRepo.create({ 
@@ -113,7 +113,7 @@ async function seed() {
       gender: "female" as any, 
       school: "Escola Secundária", 
       schoolGrade: 7,
-      stationId: stationB.id, 
+      dropOffStationId: stationB.id, 
       dateOfBirth: new Date("2015-08-25") 
     });
     await childRepo.save([child1, child2]);
@@ -132,13 +132,13 @@ async function seed() {
     const cas1 = childActivityRepo.create({ 
       childId: child1.id, 
       activitySessionId: activity1.id, 
-      stationId: stationA.id,
+      pickUpStationId: stationA.id,
       parentId: parent1.id 
     });
     const cas2 = childActivityRepo.create({ 
       childId: child2.id, 
       activitySessionId: activity2.id, 
-      stationId: stationB.id,
+      pickUpStationId: stationB.id,
       parentId: parent2.id 
     });
     await childActivityRepo.save([cas1, cas2]);

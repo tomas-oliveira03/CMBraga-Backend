@@ -29,9 +29,9 @@ export class Station {
     @OneToMany(() => ChildStation, childStation => childStation.station)
     childStations!: ChildStation[];
 
-    @OneToMany(() => Child, child => child.station)
-	children!: Child[];
+    @OneToMany(() => Child, child => child.dropOffStation)
+	dropOffStationChildren!: Child[];
 
-    @OneToMany(() => ChildActivitySession, childActivitySession => childActivitySession.station)
-	childActivitySessions!: ChildActivitySession[];
+    @OneToMany(() => ChildActivitySession, childActivitySession => childActivitySession.pickUpStation)
+	pickUpchildActivitySessions!: ChildActivitySession[];
 }

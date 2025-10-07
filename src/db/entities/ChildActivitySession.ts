@@ -20,7 +20,7 @@ export class ChildActivitySession {
 
     // Station where the child is picked up to school
 	@Column({ type: 'varchar' })
-	stationId!: string;
+	pickUpStationId!: string;
 
     @ManyToOne(() => Child)
     child!: Child;
@@ -29,7 +29,7 @@ export class ChildActivitySession {
     activitySession!: ActivitySession;
 
     @ManyToOne(() => Station)
-    station!: Station;
+    pickUpStation!: Station;
 
     @ManyToOne(() => Parent)
     parent!: Parent;

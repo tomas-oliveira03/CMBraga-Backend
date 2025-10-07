@@ -161,7 +161,7 @@ router.get('/activities/:id', async (req: Request, res: Response) => {
  *                             year:
  *                               type: number
  *                         example: [{"type": "appendectomy", "year": 2020}]
- *                   stationId:
+ *                   dropOffStationId:
  *                     type: string
  *                     example: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
  *                     description: "School station ID where the child is dropped off"
@@ -247,7 +247,7 @@ router.get('/', async (req: Request, res: Response) => {
  *                             type: string
  *                           year:
  *                             type: number
- *                 stationId:
+ *                 dropOffStationId:
  *                   type: string
  *                   example: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
  *                   description: "School station ID where the child is dropped off"
@@ -308,7 +308,7 @@ router.get('/:id', async (req: Request, res: Response) => {
  *               - schoolGrade
  *               - dateOfBirth
  *               - parentIds
- *               - stationId
+ *               - dropOffStationId
  *             properties:
  *               name:
  *                 type: string
@@ -359,7 +359,7 @@ router.get('/:id', async (req: Request, res: Response) => {
  *                 items:
  *                   type: string
  *                 example: ["parent-uuid-1", "parent-uuid-2"]
- *               stationId:
+ *               dropOffStationId:
  *                 type: string
  *                 example: "station-uuid-1"
  *                 description: "School station ID where the child will be dropped off"
@@ -374,7 +374,7 @@ router.get('/:id', async (req: Request, res: Response) => {
  *               chronicDiseases: []
  *               surgeries: []
  *             parentIds: ["a1b2c3d4-e5f6-7890-abcd-ef1234567890"]
- *             stationId: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
+ *             dropOffStationId: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
  *     responses:
  *       201:
  *         description: Child created successfully
@@ -409,7 +409,7 @@ router.post('/', async (req: Request, res: Response) => {
 
     const station = await AppDataSource.getRepository(Station).findOne({
         where: {
-            id: validatedData.stationId,
+            id: validatedData.dropOffStationId,
             type: StationType.SCHOOL
         }
     })
@@ -513,7 +513,7 @@ router.post('/', async (req: Request, res: Response) => {
  *                           type: string
  *                         year:
  *                           type: number
- *               stationId:
+ *               dropOffStationId:
  *                 type: string
  *                 example: "station-uuid-2"
  *                 description: "School station ID where the child will be dropped off"
@@ -524,7 +524,7 @@ router.post('/', async (req: Request, res: Response) => {
  *             schoolGrade: 1
  *             healthProblems:
  *               allergies: ["gluten", "shellfish"]
- *             stationId: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
+ *             dropOffStationId: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
  *     responses:
  *       200:
  *         description: Child updated successfully
@@ -556,10 +556,10 @@ router.put('/:id', async (req: Request, res: Response) => {
             return res.status(404).json({ message: "Child not found" });
         }
 
-        if(validatedData.stationId){
+        if(validatedData.dropOffStationId){
             const station = await AppDataSource.getRepository(Station).findOne({
                 where: {
-                    id: validatedData.stationId,
+                    id: validatedData.dropOffStationId,
                     type: StationType.SCHOOL
                 }
             })

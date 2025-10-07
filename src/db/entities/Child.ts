@@ -26,7 +26,7 @@ export class Child {
 	
 	// Station where the child is dropped off to school
 	@Column({ type: 'varchar' })
-	stationId!: string;
+	dropOffStationId!: string;
 
 	@Column({ type: 'date' })
 	dateOfBirth!: Date;
@@ -53,6 +53,6 @@ export class Child {
 	parentChildren!: ParentChild[];
 
 	@ManyToOne(() => Station)
-	station!: Station;
+	dropOffStation!: Station;
 }
 

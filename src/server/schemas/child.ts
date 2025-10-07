@@ -20,7 +20,7 @@ export const ChildSchema = z.object({
   gender: z.nativeEnum(ChildGender),
   school: z.string(),
   schoolGrade: z.number(),
-  stationId: z.string(),
+  dropOffStationId: z.string(),
   dateOfBirth: z.coerce.date(),
   healthProblems: HealthProblemsSchema.optional(),
   createdAt: z.coerce.date(),
