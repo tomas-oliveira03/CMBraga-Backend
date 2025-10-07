@@ -99,7 +99,11 @@ router.post('/start/:id', authenticate, authorize(UserRole.INSTRUCTOR), async (r
         }
 
         const now = new Date();
-        await activity.update(activitySession.id, { startedAt: now, updatedAt: now });
+        await activity.update(activitySession.id, { 
+            startedAt: now, 
+            updatedAt: now,
+            startedById: req.user?.userId 
+        });
 
         return res.status(200).json({ message: "Activity started successfully" });
     } catch (error) {
@@ -210,7 +214,11 @@ router.post('/end/:id', authenticate, authorize(UserRole.INSTRUCTOR), async (req
         }
 
         const now = new Date();
-        await activity.update(activitySession.id, { finishedAt: now, updatedAt: now });
+        await activity.update(activitySession.id, { 
+            finishedAt: now,
+            updatedAt: now,
+            finishedById: req.user?.userId
+         });
 
         return res.status(200).json({ message: "Activity finished successfully" });
     } catch (error) {

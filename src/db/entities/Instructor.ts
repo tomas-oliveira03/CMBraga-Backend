@@ -2,6 +2,7 @@ import { Column, Entity, Index, OneToMany, PrimaryColumn, PrimaryGeneratedColumn
 import { InstructorActivitySession } from "./InstructorActivitySession"
 import { Issue } from "./Issue";
 import { ChildStation } from "./ChildStation";
+import { ActivitySession } from "./ActivitySession";
 
 @Entity()
 export class Instructor {
@@ -35,4 +36,10 @@ export class Instructor {
 
     @OneToMany(() => ChildStation, childStation => childStation.instructor)
     childStations!: ChildStation[];
+
+    @OneToMany(() => ActivitySession, activitySession => activitySession.startedBy)
+    startedActivitySessions!: ActivitySession[];
+
+    @OneToMany(() => ActivitySession, activitySession => activitySession.finishedBy)
+    finishedActivitySessions!: ActivitySession[];
 }

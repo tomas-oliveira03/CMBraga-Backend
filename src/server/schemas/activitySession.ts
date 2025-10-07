@@ -10,7 +10,9 @@ export const ActivitySessionSchema = z.object({
     startedAt: z.coerce.date(),
     finishedAt: z.coerce.date().nullable(),
     createdAt: z.coerce.date(),
-    updatedAt: z.coerce.date().nullable()
+    updatedAt: z.coerce.date().nullable(),
+    startedById: z.string().nullable(),
+    finishedById: z.string().nullable()
 });
 
 export const CreateActivitySessionSchema = ActivitySessionSchema.omit({
@@ -18,13 +20,17 @@ export const CreateActivitySessionSchema = ActivitySessionSchema.omit({
     startedAt: true,
     finishedAt: true,
     createdAt: true,
-    updatedAt: true
+    updatedAt: true,
+    startedById: true,
+    finishedById: true
 });
 
 export const UpdateActivitySessionSchema = ActivitySessionSchema.omit({
     id: true,
     createdAt: true,
-    updatedAt: true
+    updatedAt: true,
+    startedById: true,
+    finishedById: true
 }).partial();
 
 export type ActivitySession = z.infer<typeof ActivitySessionSchema>;
