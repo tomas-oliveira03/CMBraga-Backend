@@ -493,123 +493,73 @@ router.delete('/station/:id', authenticate, authorize(UserRole.ADMIN), async (re
 });
 
 
-/**
- * @swagger
- * /activity-session/{id}/station/{stationId}/entering:
- *   get:
- *     summary: Get children entering at a specific station
- *     description: Returns a list of children who will be picked up (entering) at a specific station for an activity session
- *     tags:
- *       - Activity Session - Stations
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           example: "c56ad528-3522-4557-8b34-a787a50900b7"
- *         description: Activity Session ID (UUID)
- *       - in: path
- *         name: stationId
- *         required: true
- *         schema:
- *           type: string
- *           example: "1bee5237-02ea-4f5c-83f3-bfe6e5a19756"
- *         description: Station ID (UUID)
- *     responses:
- *       200:
- *         description: List of children entering at this station
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 children:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       name:
- *                         type: string
- *                         example: "Maria Silva"
- *                       school:
- *                         type: string
- *                         example: "Escola Básica de Braga"
- *       404:
- *         description: Activity session or station not found
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *             examples:
- *               activity_not_found:
- *                 summary: Activity session not found
- *                 value:
- *                   message: "Activity session not found"
- *               station_not_found:
- *                 summary: Station not found in activity
- *                 value:
- *                   message: "Station not found in this activity session"
- *       500:
- *         description: Internal server error
- */
-router.get('/:id/station/:stationId/entering', async (req: Request, res: Response) => {
-    try {
-        const activitySessionId = req.params.id;
-        const stationId = req.params.stationId;
+// router.get('/stop', async (req: Request, res: Response) => {
+//     try {
+//         const activitySessionId = req.query.id;
+//         const stationId = req.query.stationId;
 
-        const activitySession = await AppDataSource.getRepository(ActivitySession).findOne({
-            where: { id: activitySessionId }
-        });
+//         if (!activitySessionId || !stationId || typeof activitySessionId !== "string" || typeof stationId !== "string") {
+//             return res.status(400).json({ message: "Activity session ID and station ID are required" });
+//         }
 
-        if (!activitySession) {
-            return res.status(404).json({ message: "Activity session not found" });
-        }
+//         const activitySession = await AppDataSource.getRepository(ActivitySession).findOne({
+//             where: { id: activitySessionId }
+//         });
 
-        const stationActivity = await AppDataSource.getRepository(StationActivitySession).findOne({
-            where: { 
-                activitySessionId: activitySessionId,
-                stationId: stationId 
-            },
-            relations: { station: true },
-            select: {
-                station: {
-                    name: true,
-                    type: true
-                }
-            }
-        });
+//         if (!activitySession) {
+//             return res.status(404).json({ message: "Activity session not found" });
+//         }
 
-        if (!stationActivity) {
-            return res.status(404).json({ message: "Station not found in this activity session" });
-        }
+//         const stationActivity = await AppDataSource.getRepository(StationActivitySession).findOne({
+//             where: { 
+//                 activitySessionId: activitySessionId,
+//                 stationId: stationId 
+//             },
+//             relations: { 
+//                 station: true,
+//                 activitySession: {
+//                     childActivitySessions: {
+//                         child: true
+//                     }
+//                 }
+//             },
+//             select: {
+//                 station: {
+//                     name: true,
+//                     type: true
+//                 }
+//             }
+//         });
 
-        const childrenEntering = await AppDataSource.getRepository(ChildActivitySession).find({
-            where: {
-                activitySessionId: activitySessionId,
-                stationId: stationId
-            },
-            relations: { child: true },
-            select: {
-                child: {
-                    name: true,
-                    school: true
-                }
-            }
-        });
+//         if (!stationActivity) {
+//             return res.status(404).json({ message: "Station not found in this activity session" });
+//         }
 
-        return res.status(200).json({ 
-            station: stationActivity.station,
-            children: childrenEntering.map(c => c.child) });
+//         const childrenEntering = await AppDataSource.getRepository(ChildActivitySession).find({
+//             where: {
+//                 activitySessionId: activitySessionId,
+//                 stationId: stationId
+//             },
+//             relations: { child: true },
+//             select: {
+//                 child: {
+//                     name: true,
+//                     school: true
+//                 }
+//             }
+//         });
 
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: error });
-    }
-});
+//         return res.status(200).json({ 
+//             station: stationActivity.station,
+//             children: childrenEntering.map(c => c.child) });
+
+//     } catch (error) {
+//         console.error(error);
+//         return res.status(500).json({ message: error });
+//     }
+// });
+
+
 
 
 // ========================================
@@ -1493,12 +1443,12 @@ router.post('/', async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /activity-session/{id}/start:
+ * /activity-session/actions/start/{id}:
  *   post:
  *     summary: Start an activity session
- *     description: Marks an activity session as started (sets startedAt). If the first station (stopNumber=1) exists and has no arrivedAt, it will be marked with the same timestamp.
+ *     description: Marks an activity session as started (sets startedAt). Only instructors assigned to the activity can start it.
  *     tags:
- *       - Activity Session
+ *       - Activity Session - Actions
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -1521,18 +1471,62 @@ router.post('/', async (req: Request, res: Response) => {
  *                   type: string
  *                   example: "Activity started successfully"
  *       400:
- *         description: Activity already started
+ *         description: Activity already started or instructor not assigned
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               already_started:
+ *                 summary: Activity already started
+ *                 value:
+ *                   message: "Activity session already started"
+ *               not_assigned:
+ *                 summary: Instructor not assigned
+ *                 value:
+ *                   message: "Instructor is not assigned to this activity session"
  *       404:
  *         description: Activity session not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Activity session not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
  */
-router.post('/:id/start', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
+router.post('/actions/start/:id', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
     try {
         const activitySessionId = req.params.id;
         const activity = AppDataSource.getRepository(ActivitySession);
 
-        const activitySession = await activity.findOne({ where: { id: activitySessionId } });
+        const activitySession = await activity.findOne({ 
+            where: { id: activitySessionId },
+            relations: {
+                instructorActivitySessions: true
+            }
+        });
+        
         if (!activitySession) {
             return res.status(404).json({ message: "Activity session not found" });
+        }
+
+        if (!(activitySession.instructorActivitySessions && activitySession.instructorActivitySessions.some(ias => ias.instructorId === req.user?.userId))) {
+            return res.status(400).json({ message: "Instructor is not assigned to this activity session" });
         }
 
         if (activitySession.startedAt) {
@@ -1553,12 +1547,12 @@ router.post('/:id/start', authenticate, authorize(UserRole.INSTRUCTOR), async (r
 
 /**
  * @swagger
- * /activity-session/{id}/end:
+ * /activity-session/actions/end/{id}:
  *   post:
  *     summary: End an activity session
- *     description: Marks an activity session as finished (sets finishedAt). The activity must be started before it can be finished. Only instructors can end an activity session.
+ *     description: Marks an activity session as finished (sets finishedAt). The activity must be started before it can be finished. Only instructors assigned to the activity can end it.
  *     tags:
- *       - Activity Session
+ *       - Activity Session - Actions
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -1581,7 +1575,7 @@ router.post('/:id/start', authenticate, authorize(UserRole.INSTRUCTOR), async (r
  *                   type: string
  *                   example: "Activity finished successfully"
  *       400:
- *         description: Activity not started yet, already finished, or invalid request
+ *         description: Activity not started yet, already finished, or instructor not assigned
  *         content:
  *           application/json:
  *             schema:
@@ -1589,7 +1583,6 @@ router.post('/:id/start', authenticate, authorize(UserRole.INSTRUCTOR), async (r
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "Activity session not started yet"
  *             examples:
  *               not_started:
  *                 summary: Activity not started
@@ -1599,6 +1592,10 @@ router.post('/:id/start', authenticate, authorize(UserRole.INSTRUCTOR), async (r
  *                 summary: Activity already finished
  *                 value:
  *                   message: "Activity session already finished"
+ *               not_assigned:
+ *                 summary: Instructor not assigned
+ *                 value:
+ *                   message: "Instructor is not assigned to this activity session"
  *       404:
  *         description: Activity session not found
  *         content:
@@ -1620,14 +1617,24 @@ router.post('/:id/start', authenticate, authorize(UserRole.INSTRUCTOR), async (r
  *                   type: string
  *                   example: "Internal server error"
  */
-router.post('/:id/end', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
+router.post('/actions/end/:id', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
     try {
         const activitySessionId = req.params.id;
         const activity = AppDataSource.getRepository(ActivitySession);
 
-        const activitySession = await activity.findOne({ where: { id: activitySessionId } });
+        const activitySession = await activity.findOne({ 
+            where: { id: activitySessionId },
+            relations: {
+                instructorActivitySessions: true
+            }
+        });
+        
         if (!activitySession) {
             return res.status(404).json({ message: "Activity session not found" });
+        }
+
+        if (!(activitySession.instructorActivitySessions && activitySession.instructorActivitySessions.some(ias => ias.instructorId === req.user?.userId))) {
+            return res.status(400).json({ message: "Instructor is not assigned to this activity session" });
         }
 
         if(!activitySession.startedAt){
