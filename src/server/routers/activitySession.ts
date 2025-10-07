@@ -493,6 +493,123 @@ router.delete('/station/:id', authenticate, authorize(UserRole.ADMIN), async (re
 });
 
 
+/**
+ * @swagger
+ * /activity-session/{id}/station/{stationId}/entering:
+ *   get:
+ *     summary: Get children entering at a specific station
+ *     description: Returns a list of children who will be picked up (entering) at a specific station for an activity session
+ *     tags:
+ *       - Activity Session - Stations
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "c56ad528-3522-4557-8b34-a787a50900b7"
+ *         description: Activity Session ID (UUID)
+ *       - in: path
+ *         name: stationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "1bee5237-02ea-4f5c-83f3-bfe6e5a19756"
+ *         description: Station ID (UUID)
+ *     responses:
+ *       200:
+ *         description: List of children entering at this station
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 children:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       name:
+ *                         type: string
+ *                         example: "Maria Silva"
+ *                       school:
+ *                         type: string
+ *                         example: "Escola Básica de Braga"
+ *       404:
+ *         description: Activity session or station not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               activity_not_found:
+ *                 summary: Activity session not found
+ *                 value:
+ *                   message: "Activity session not found"
+ *               station_not_found:
+ *                 summary: Station not found in activity
+ *                 value:
+ *                   message: "Station not found in this activity session"
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/:id/station/:stationId/entering', async (req: Request, res: Response) => {
+    try {
+        const activitySessionId = req.params.id;
+        const stationId = req.params.stationId;
+
+        const activitySession = await AppDataSource.getRepository(ActivitySession).findOne({
+            where: { id: activitySessionId }
+        });
+
+        if (!activitySession) {
+            return res.status(404).json({ message: "Activity session not found" });
+        }
+
+        const stationActivity = await AppDataSource.getRepository(StationActivitySession).findOne({
+            where: { 
+                activitySessionId: activitySessionId,
+                stationId: stationId 
+            },
+            relations: { station: true },
+            select: {
+                station: {
+                    name: true,
+                    type: true
+                }
+            }
+        });
+
+        if (!stationActivity) {
+            return res.status(404).json({ message: "Station not found in this activity session" });
+        }
+
+        const childrenEntering = await AppDataSource.getRepository(ChildActivitySession).find({
+            where: {
+                activitySessionId: activitySessionId,
+                stationId: stationId
+            },
+            relations: { child: true },
+            select: {
+                child: {
+                    name: true,
+                    school: true
+                }
+            }
+        });
+
+        return res.status(200).json({ 
+            station: stationActivity.station,
+            children: childrenEntering.map(c => c.child) });
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: error });
+    }
+});
 
 
 // ========================================
