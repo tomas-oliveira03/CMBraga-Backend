@@ -1412,7 +1412,6 @@ router.post('/:id/start', authenticate, authorize(UserRole.INSTRUCTOR), async (r
     try {
         const activitySessionId = req.params.id;
         const activity = AppDataSource.getRepository(ActivitySession);
-        const stationActivity = AppDataSource.getRepository(StationActivitySession);
 
         const activitySession = await activity.findOne({ where: { id: activitySessionId } });
         if (!activitySession) {
@@ -1427,6 +1426,105 @@ router.post('/:id/start', authenticate, authorize(UserRole.INSTRUCTOR), async (r
         await activity.update(activitySession.id, { startedAt: now, updatedAt: now });
 
         return res.status(200).json({ message: "Activity started successfully" });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: error });
+    }
+});
+
+
+
+/**
+ * @swagger
+ * /activity-session/{id}/end:
+ *   post:
+ *     summary: End an activity session
+ *     description: Marks an activity session as finished (sets finishedAt). The activity must be started before it can be finished. Only instructors can end an activity session.
+ *     tags:
+ *       - Activity Session
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *         description: Activity Session ID (UUID)
+ *     responses:
+ *       200:
+ *         description: Activity finished successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Activity finished successfully"
+ *       400:
+ *         description: Activity not started yet, already finished, or invalid request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Activity session not started yet"
+ *             examples:
+ *               not_started:
+ *                 summary: Activity not started
+ *                 value:
+ *                   message: "Activity session not started yet"
+ *               already_finished:
+ *                 summary: Activity already finished
+ *                 value:
+ *                   message: "Activity session already finished"
+ *       404:
+ *         description: Activity session not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Activity session not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
+router.post('/:id/end', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
+    try {
+        const activitySessionId = req.params.id;
+        const activity = AppDataSource.getRepository(ActivitySession);
+
+        const activitySession = await activity.findOne({ where: { id: activitySessionId } });
+        if (!activitySession) {
+            return res.status(404).json({ message: "Activity session not found" });
+        }
+
+        if(!activitySession.startedAt){
+            return res.status(400).json({ message: "Activity session not started yet"});
+        }
+
+        if (activitySession.finishedAt) {
+            return res.status(400).json({ message: "Activity session already finished" });
+        }
+
+        const now = new Date();
+        await activity.update(activitySession.id, { finishedAt: now, updatedAt: now });
+
+        return res.status(200).json({ message: "Activity finished successfully" });
     } catch (error) {
         console.error(error);
         return res.status(500).json({ message: error });
