@@ -8,11 +8,15 @@ import healthProfessionalRouter from "./healthProfessional";
 import medicalReportRouter from "./medicalReport";
 import communicationRouter from "./communication";
 import authRouter from "./auth";
-import activitySessionRouter from "./activitySession";
 import dummyRouter from "./dummy";
 import issueRouter from "./issue";
 import stationRouter from "./station";
 import dashboardRouter from "./dashboard";
+import activitySessionRouter from "./activitySession";
+import activitySessionStationRouter from "./activitySession/station"
+import activitySessionStationChild from "./activitySession/child"
+import activitySessionStationInstructor from "./activitySession/instructor"
+import activitySessionStationActions from "./activitySession/actions"
 
 const router = express.Router();
 
@@ -26,10 +30,14 @@ router.use("/child", childRouter);
 router.use("/health-professional", healthProfessionalRouter);
 router.use("/medical-report", medicalReportRouter);
 router.use("/communication", communicationRouter);
-router.use("/activity-session", activitySessionRouter);
 router.use("/dummy", dummyRouter);
 router.use("/issue", issueRouter);
 router.use("/station", stationRouter);
 router.use("/dashboard", dashboardRouter);
+router.use("/activity-session/station", activitySessionStationRouter);
+router.use("/activity-session/child", activitySessionStationChild);
+router.use("/activity-session/instructor", activitySessionStationInstructor);
+router.use("/activity-session/actions", activitySessionStationActions);
+router.use("/activity-session", activitySessionRouter);
 
 export default router;
