@@ -259,15 +259,10 @@ router.get('/stop', async (req: Request, res: Response) => {
             }
         });
         if (!activitySession) {
-            return res.status(404).json({ message: "Activity session not found" });
-        }
-
-        if (activitySession.stationActivitySessions.length === 0){
-            return res.status(404).json({ message: "There are no stations found to stop" });
+            return res.status(404).json({ message: "Activity session not found or no more stations left" });
         }
 
         const stationId = activitySession.stationActivitySessions[0]?.stationId
-
 
         const childActivitySessions = await AppDataSource.getRepository(ChildActivitySession).find({
             where: {
@@ -301,9 +296,6 @@ router.get('/stop', async (req: Request, res: Response) => {
             } as ChildWithCheck;
         });
 
-
-
-
         const childrenPreviouslyChekedList = await AppDataSource.getRepository(Child).find({
             where: {
                 childStations: {
@@ -332,17 +324,33 @@ router.get('/stop', async (req: Request, res: Response) => {
                     childStations: true
                 }
             })
-            allChildrenToDropOff = allChildrenWhoHaveThisDropOffStation.filter(
-                child => child.childStations.length === 1
-            );
-        }
 
+            allChildrenToDropOff = allChildrenWhoHaveThisDropOffStation
+                .filter(child => child.childStations.length === 1 || child.childStations.length === 2)
+                .map(child => ({
+                    ...child,
+                    isChecked: child.childStations.length === 2,
+                })) as ChildWithCheck[];
+            }
 
+        await AppDataSource.getRepository(StationActivitySession).update(
+            {
+                stationId: stationId,
+                activitySessionId: activitySessionId
+            },
+            {
+                arrivedAt: new Date()
+            }
+        );
+
+        const filteredChildrenPreviouslyChecked = childrenPreviouslyChecked.filter(
+            prevChild => !allChildrenToDropOff.some(dropChild => dropChild.id === prevChild.id)
+        );
         
         return res.status(200).json({
             childrenIn: allChildrenToPickUp,
-            childrenStillIn: childrenPreviouslyChecked,
-            childrenOut: allChildrenToDropOff
+            childrenStillIn: stripChildStations(filteredChildrenPreviouslyChecked),
+            childrenOut: stripChildStations(allChildrenToDropOff)
         })
 
     } catch (error) {
@@ -350,5 +358,9 @@ router.get('/stop', async (req: Request, res: Response) => {
         return res.status(500).json({ message: error });
     }
 });
+
+
+const stripChildStations = (children: any[]) =>
+  children.map(({ childStations, ...rest }) => rest);
 
 export default router;

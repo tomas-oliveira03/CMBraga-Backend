@@ -13,15 +13,15 @@ export class ChildStation {
 
     @PrimaryColumn({ type: 'varchar' })
     stationId!: string;
+    
+    @PrimaryColumn({ type: 'varchar' })
+    type!: ChildStationType;
 
     @Column({ type: 'varchar' })
     instructorId!: string;
 
     @Column({ type: 'varchar' })
     activitySessionId!: string;
-
-    @Column({ type: 'varchar' })
-    type!: ChildStationType;
 
     @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
     registeredAt!: Date;
