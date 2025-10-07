@@ -1,8 +1,13 @@
 import { AppDataSource } from "@/db";
 import express, { Request, Response } from "express";
 import { ActivitySession } from "@/db/entities/ActivitySession";
-import { UserRole } from "@/helpers/types";
+import { ChildStationType, StationType, UserRole } from "@/helpers/types";
 import { authenticate, authorize } from "@/server/middleware/auth";
+import { StationActivitySession } from "@/db/entities/StationActivitySession";
+import { In, IsNull, Not } from "typeorm";
+import { ChildActivitySession } from "@/db/entities/ChildActivitySession";
+import { ChildStation } from "@/db/entities/ChildStation";
+import { Child } from "@/db/entities/Child";
 
 const router = express.Router();
 
@@ -221,6 +226,125 @@ router.post('/end/:id', authenticate, authorize(UserRole.INSTRUCTOR), async (req
          });
 
         return res.status(200).json({ message: "Activity finished successfully" });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: error });
+    }
+});
+
+router.get('/stop', async (req: Request, res: Response) => {
+    try {
+        const activitySessionId = req.query.id;
+
+        if (!activitySessionId || typeof activitySessionId !== "string") {
+            return res.status(400).json({ message: "Activity session ID is required" });
+        }
+
+        const activitySession = await AppDataSource.getRepository(ActivitySession).findOne({
+            where: { 
+                id: activitySessionId,
+                stationActivitySessions: {
+                    arrivedAt: IsNull()
+                }
+            },
+            order: {
+                stationActivitySessions: {
+                    stopNumber: "ASC"
+                }
+            },
+            relations: {
+                stationActivitySessions: {
+                    station: true
+                }
+            }
+        });
+        if (!activitySession) {
+            return res.status(404).json({ message: "Activity session not found" });
+        }
+
+        if (activitySession.stationActivitySessions.length === 0){
+            return res.status(404).json({ message: "There are no stations found to stop" });
+        }
+
+        const stationId = activitySession.stationActivitySessions[0]?.stationId
+
+
+        const childActivitySessions = await AppDataSource.getRepository(ChildActivitySession).find({
+            where: {
+                pickUpStationId: stationId
+            },
+            relations: {
+                child: true
+            }
+        })
+
+        const allChildrenToPickUpList = childActivitySessions.map(cas => cas.child)
+
+        const childrenAlreadyChecked = await AppDataSource.getRepository(ChildStation).find({
+            where: {
+                activitySessionId: activitySessionId,
+                stationId: stationId,
+                childId: In(allChildrenToPickUpList.map(acp=> acp.id)),
+                type: ChildStationType.IN
+            },
+            select: {
+                childId: true
+            }
+        })
+
+        type ChildWithCheck = Child & { isChecked: boolean };
+
+        const allChildrenToPickUp = allChildrenToPickUpList.map(child => {
+            return {
+                ...child,
+                isChecked: childrenAlreadyChecked.some(c => c.childId === child.id)
+            } as ChildWithCheck;
+        });
+
+
+
+
+        const childrenPreviouslyChekedList = await AppDataSource.getRepository(Child).find({
+            where: {
+                childStations: {
+                    activitySessionId: activitySessionId,
+                    stationId: Not(stationId as string),
+                    childId: Not(In(allChildrenToPickUpList.map(acp=> acp.id)))
+                }
+            },
+            relations:{
+                childStations: true
+            }
+        })
+
+        const childrenPreviouslyChecked = childrenPreviouslyChekedList.filter(
+            child => child.childStations.length === 1
+        );
+        
+        let allChildrenToDropOff: Child[] = []
+        const isStationASchool = activitySession.stationActivitySessions[0]?.station.type === StationType.SCHOOL
+        if(isStationASchool){
+            const allChildrenWhoHaveThisDropOffStation = await AppDataSource.getRepository(Child).find({
+                where: {
+                    dropOffStationId: stationId
+                },
+                relations: {
+                    childStations: true
+                }
+            })
+            allChildrenToDropOff = allChildrenWhoHaveThisDropOffStation.filter(
+                child => child.childStations.length === 1
+            );
+        }
+
+
+        
+        return res.status(200).json({
+            childrenIn: allChildrenToPickUp,
+            childrenStillIn: childrenPreviouslyChecked,
+            childrenOut: allChildrenToDropOff
+        })
+
     } catch (error) {
         console.error(error);
         return res.status(500).json({ message: error });
