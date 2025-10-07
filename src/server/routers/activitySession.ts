@@ -12,6 +12,7 @@ import { Instructor } from "@/db/entities/Instructor";
 import { InstructorActivitySession } from "@/db/entities/InstructorActivitySession";
 import { Station } from "@/db/entities/Station";
 import { StationActivitySession } from "@/db/entities/StationActivitySession";
+import { datetime } from "zod/v4/core/regexes.cjs";
 
 const router = express.Router();
 
@@ -1371,6 +1372,65 @@ router.post('/', async (req: Request, res: Response) => {
     console.error(error);
     return res.status(500).json({ message: error });
   }
+});
+
+/**
+ * @swagger
+ * /activity-session/{id}/start:
+ *   post:
+ *     summary: Start an activity session
+ *     description: Marks an activity session as started (sets startedAt). If the first station (stopNumber=1) exists and has no arrivedAt, it will be marked with the same timestamp.
+ *     tags:
+ *       - Activity Session
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *         description: Activity Session ID (UUID)
+ *     responses:
+ *       200:
+ *         description: Activity started successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Activity started successfully"
+ *       400:
+ *         description: Activity already started
+ *       404:
+ *         description: Activity session not found
+ */
+router.post('/:id/start', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
+    try {
+        const activitySessionId = req.params.id;
+        const activity = AppDataSource.getRepository(ActivitySession);
+        const stationActivity = AppDataSource.getRepository(StationActivitySession);
+
+        const activitySession = await activity.findOne({ where: { id: activitySessionId } });
+        if (!activitySession) {
+            return res.status(404).json({ message: "Activity session not found" });
+        }
+
+        if (activitySession.startedAt) {
+            return res.status(400).json({ message: "Activity session already started" });
+        }
+
+        const now = new Date();
+        await activity.update(activitySession.id, { startedAt: now, updatedAt: now });
+
+        return res.status(200).json({ message: "Activity started successfully" });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: error });
+    }
 });
 
 /**
