@@ -11,3 +11,9 @@ export const CommunicationSchema = z.object({
         })
     ).optional().default([]),
 });
+
+export const MessageSchema = z.object({
+    sender_id: z.string(),
+    sender_name: z.string(),
+    content: z.string()
+})

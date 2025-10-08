@@ -25,3 +25,41 @@ export async function checkIfChatAlreadyExists(usersIDs: string[]): Promise<Chat
         throw new Error("Failed to check if chat exists");
     }
 }
+
+export async function checkIfUserInChat(email: string, chatId: string): Promise<boolean> {
+    try {
+        const userChat = await AppDataSource.getRepository(UserChat)
+            .findOne({ 
+                where: { 
+                    userId: email,
+                    chatId: chatId
+                } 
+            });
+        return userChat !== null;
+    } catch (error) {
+        console.error("Error checking if user is in chat:", error);
+        throw new Error("Failed to check if user is in chat");
+    }
+}
+
+export async function checkIfUserExists(userId: string): Promise<boolean> {
+    try {
+        const user = await AppDataSource.getRepository(User)
+            .findOne({ where: { email: userId } });
+        return user !== null;
+    } catch (error) {
+        console.error("Error checking if user exists:", error);
+        throw new Error("Failed to check if user exists");
+    }
+}
+
+export async function checkIfChatExists(chatId: string): Promise<boolean> {
+    try {
+        const chat = await AppDataSource.getRepository(Chat)
+            .findOne({ where: { id: chatId } });
+        return chat !== null;
+    } catch (error) {
+        console.error("Error checking if chat exists:", error);
+        throw new Error("Failed to check if chat exists");
+    }
+}

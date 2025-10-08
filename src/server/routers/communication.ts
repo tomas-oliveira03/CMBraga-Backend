@@ -1,6 +1,6 @@
 import express, { Request, Response } from "express";
 import { AppDataSource } from "@/db";
-import { CommunicationSchema } from "../schemas/communication";
+import { CommunicationSchema, MessageSchema } from "../schemas/communication";
 import { z } from "zod";
 import { webSocketManager } from "../services/websocket";
 import { authenticate } from "../middleware/auth";
@@ -13,7 +13,7 @@ import { UserChat } from "@/db/entities/UserChat";
 import { Chat } from "@/db/entities/Chat";
 import { TypeOfChat } from "@/helpers/types";
 
-import { checkIfChatAlreadyExists } from "../services/comms";
+import { checkIfChatAlreadyExists, checkIfUserInChat, checkIfUserExists, checkIfChatExists } from "../services/comms";
 
 const router = express.Router();
 
@@ -75,6 +75,11 @@ const router = express.Router();
 router.post("/", async (req: Request, res: Response) => {
     try {
         const parsed = CommunicationSchema.parse(req.body);
+
+        // Check if there is atleast 2 members
+        if (parsed.members.length < 2) {
+            return res.status(400).json({ message: "At least two members are required to create a conversation" });
+        }
 
         const exists = await checkIfChatAlreadyExists(parsed.members.map(m => m.email));
         if (exists !== null) {
@@ -151,11 +156,15 @@ router.post("/", async (req: Request, res: Response) => {
  *             type: object
  *             required:
  *               - sender_id
+ *               - sender_name
  *               - content
  *             properties:
  *               sender_id:
  *                 type: string
  *                 example: "user-uuid"
+ *               sender_name:
+ *                 type: string
+ *                 example: "John Doe"
  *               content:
  *                 type: string
  *                 example: "Hello, how are you?"
@@ -178,7 +187,54 @@ router.post("/", async (req: Request, res: Response) => {
  */
 router.post("/messages/:conversationId", async (req: Request, res: Response) => {
     try {
+        const { conversationId } = req.params;
 
+        if (!conversationId) {
+            return res.status(400).json({ message: "Missing conversationId parameter" });
+        }
+
+        // Validate request body with MessageSchema
+        const parsed = MessageSchema.parse(req.body);
+        const sender_id = parsed.sender_id;
+
+        // Check if user exists
+        const userExists = await checkIfUserExists(sender_id);
+        if (!userExists) {
+            return res.status(400).json({ message: "Sender does not exist" });
+        }
+
+        // Check if conversation exists
+        const chatExists = await checkIfChatExists(conversationId);
+        if (!chatExists) {
+            return res.status(404).json({ message: "Conversation not found" });
+        }
+
+        // Check if sender is part of the chat
+        const isUserInChat = await checkIfUserInChat(sender_id, conversationId);
+        if (!isUserInChat) {
+            return res.status(403).json({ message: "Sender is not a member of the conversation" });
+        }
+
+        // Create a new message
+        const newMessage = new Message();
+        newMessage.content = parsed.content;
+        newMessage.timestamp = new Date();
+        newMessage.chatId = conversationId;
+        newMessage.senderId = sender_id;
+        newMessage.senderName = parsed.sender_name;
+
+        await AppDataSource.getRepository(Message).save(newMessage);
+
+        // Send WebSocket notification to room members
+        /*
+        const senderMember = communication.members.find(m => m.id === sender_id);
+        if (senderMember) {
+            await webSocketManager.sendNotificationToRoom(conversationId, {
+                type: NotificationType.MESSAGE,
+                conversationId,
+                title: 'New Message',
+                content: content,
+                from: {
         // Send WebSocket notification to room members
         /*
         const senderMember = communication.members.find(m => m.id === sender_id);
@@ -198,7 +254,7 @@ router.post("/messages/:conversationId", async (req: Request, res: Response) => 
         }
         */
 
-        return res.status(201).json();
+        return res.status(201).json({ message: "Message sent successfully" });
     } catch (error) {
         return res.status(500).json({ message: "Internal server error" });
     }

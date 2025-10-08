@@ -15,6 +15,12 @@ export class Message {
 
     @Column({ type: 'varchar' })
     chatId!: string;
+
+    @Column({ type: 'varchar' })
+    senderId!: string;
+
+    @Column({ type: 'varchar' })
+    senderName!: string;
     
     @OneToOne(() => User, { nullable: false })
     sender!: User;
