@@ -1,11 +1,14 @@
 import { z } from "zod";
-import { ActivityType } from "@/helpers/types";
+import { ActivityMode, ActivityType } from "@/helpers/types";
 
 export const ActivityTypeEnum = z.enum([ActivityType.PEDIBUS, ActivityType.CICLO_EXPRESSO]);
+export const ActivityModeEnum = z.enum([ActivityMode.WALK, ActivityMode.BIKE]);
 
 export const ActivitySessionSchema = z.object({
     id: z.string(),
     type: ActivityTypeEnum,
+    mode: ActivityModeEnum,
+    isClosed: z.boolean(),
     scheduledAt: z.coerce.date(),
     startedAt: z.coerce.date(),
     finishedAt: z.coerce.date().nullable(),
@@ -17,16 +20,20 @@ export const ActivitySessionSchema = z.object({
 
 export const CreateActivitySessionSchema = ActivitySessionSchema.omit({
     id: true,
+    isClosed: true,
     startedAt: true,
     finishedAt: true,
     createdAt: true,
     updatedAt: true,
     startedById: true,
+    mode: true,
     finishedById: true
 });
 
 export const UpdateActivitySessionSchema = ActivitySessionSchema.omit({
     id: true,
+    isClosed: true,
+    mode: true,
     createdAt: true,
     updatedAt: true,
     startedById: true,

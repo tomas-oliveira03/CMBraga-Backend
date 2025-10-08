@@ -10,6 +10,7 @@ import { swaggerSpec } from './lib/swagger';
 import { webSocketManager } from "./server/services/websocket";
 import { AuthService } from "./lib/auth";
 import url from "url";
+import ActivityCheckCron from "./cron/activityCheck";
 
 const app = express();
 const server = createServer(app);
@@ -92,6 +93,8 @@ const startServer = async () => {
         
         // Initialize WebSocket rooms from database
         await webSocketManager.initializeRoomsAndConnections();
+        
+        ActivityCheckCron.start();
         
         // create logger middleware
         app.use((req, _, next) => {

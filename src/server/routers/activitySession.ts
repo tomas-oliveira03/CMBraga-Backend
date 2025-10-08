@@ -4,7 +4,7 @@ import { CreateActivitySessionSchema, UpdateActivitySessionSchema } from "../sch
 import { z } from "zod";
 import { ActivitySession } from "@/db/entities/ActivitySession";
 import { authenticate, authorize } from "../middleware/auth";
-import { UserRole } from "@/helpers/types";
+import { ActivityMode, ActivityType, UserRole } from "@/helpers/types";
 
 const router = express.Router();
 
@@ -34,6 +34,11 @@ const router = express.Router();
  *                     type: string
  *                     enum: [pedibus, ciclo_expresso]
  *                     example: "pedibus"
+ *                   mode:
+ *                     type: string
+ *                     enum: [walk, bike]
+ *                     example: "walk"
+ *                     description: "Transportation mode (walk for pedibus, bike for ciclo_expresso)"
  *                   scheduledAt:
  *                     type: string
  *                     format: date-time
@@ -93,6 +98,11 @@ router.get('/', async (req: Request, res: Response) => {
  *                   type: string
  *                   enum: [pedibus, ciclo_expresso]
  *                   example: "ciclo_expresso"
+ *                 mode:
+ *                   type: string
+ *                   enum: [walk, bike]
+ *                   example: "bike"
+ *                   description: "Transportation mode (automatically set based on type)"
  *                 scheduledAt:
  *                   type: string
  *                   format: date-time
@@ -147,7 +157,7 @@ router.get('/:id', async (req: Request, res: Response) => {
  * /activity-session:
  *   post:
  *     summary: Create a new activity session
- *     description: Creates a new activity session (Pedibus or Ciclo Expresso)
+ *     description: Creates a new activity session (Pedibus or Ciclo Expresso). The mode is automatically set based on type (pedibus=walk, ciclo_expresso=bike).
  *     tags:
  *       - Activity Session
  *     requestBody:
@@ -164,6 +174,7 @@ router.get('/:id', async (req: Request, res: Response) => {
  *                 type: string
  *                 enum: [pedibus, ciclo_expresso]
  *                 example: "pedibus"
+ *                 description: "Activity type (mode will be auto-set: pedibus=walk, ciclo_expresso=bike)"
  *               scheduledAt:
  *                 type: string
  *                 format: date-time
@@ -191,7 +202,10 @@ router.post('/', async (req: Request, res: Response) => {
   try {
     const validatedData = CreateActivitySessionSchema.parse(req.body);
     
-    await AppDataSource.getRepository(ActivitySession).insert(validatedData);
+    await AppDataSource.getRepository(ActivitySession).insert({
+        ...validatedData,
+        mode: validatedData.type === ActivityType.PEDIBUS ? ActivityMode.WALK : ActivityMode.BIKE
+    });
             
     return res.status(201).json({message: "Session created successfully"});
 
@@ -213,7 +227,7 @@ router.post('/', async (req: Request, res: Response) => {
  * /activity-session/{id}:
  *   put:
  *     summary: Update an activity session
- *     description: Updates an existing activity session
+ *     description: Updates an existing activity session. When type is changed, mode is automatically updated.
  *     tags:
  *       - Activity Session
  *     parameters:
@@ -235,6 +249,7 @@ router.post('/', async (req: Request, res: Response) => {
  *                 type: string
  *                 enum: [pedibus, ciclo_expresso]
  *                 example: "ciclo_expresso"
+ *                 description: "Activity type (mode will be auto-updated: pedibus=walk, ciclo_expresso=bike)"
  *               scheduledAt:
  *                 type: string
  *                 format: date-time
@@ -250,6 +265,7 @@ router.post('/', async (req: Request, res: Response) => {
  *                 nullable: true
  *                 example: "2024-01-25T10:00:00.000Z"
  *           example:
+ *             type: "ciclo_expresso"
  *             startedAt: "2024-01-25T08:05:00.000Z"
  *     responses:
  *       200:
@@ -283,10 +299,19 @@ router.put('/:id', async (req: Request, res: Response) => {
         }
 
         // Update activity session with updatedAt timestamp
-        await AppDataSource.getRepository(ActivitySession).update(activitySession.id, {
-            ...validatedData,
-            updatedAt: new Date()
-        })
+        if (validatedData.type){
+            await AppDataSource.getRepository(ActivitySession).update(activitySession.id, {
+                ...validatedData,
+                updatedAt: new Date(),
+                mode: validatedData.type === ActivityType.PEDIBUS ? ActivityMode.WALK : ActivityMode.BIKE
+            })
+        }
+        else{
+            await AppDataSource.getRepository(ActivitySession).update(activitySession.id, {
+                ...validatedData,
+                updatedAt: new Date()
+            })
+        }
 
         return res.status(200).json({ message: "Activity session updated successfully" });
 

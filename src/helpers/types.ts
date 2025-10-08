@@ -3,6 +3,11 @@ export enum ActivityType {
 	CICLO_EXPRESSO = 'ciclo_expresso'
 }
 
+export enum ActivityMode {
+	WALK = 'walk',
+	BIKE = 'bike'
+}
+
 export enum ChildGender {
 	MALE = 'male',
 	FEMALE = 'female'
