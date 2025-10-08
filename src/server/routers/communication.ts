@@ -104,29 +104,16 @@ router.post("/", async (req: Request, res: Response) => {
         const newChat = new Chat();
         newChat.id = conversationId;
         newChat.chatType = num_members > 2 ? TypeOfChat.GROUP_CHAT : TypeOfChat.INDIVIDUAL_CHAT;
+        newChat.destinatairePhoto = "default-photo-url";
         newChat.messages = [];
         
-
-        // Create UserChat entries for each member
         const userChatEntries = await Promise.all(parsed.members.map(async member => {
             const userChat = new UserChat();
             userChat.userId = member.email;
             userChat.chatId = conversationId;
 
-            const thisUser = await AppDataSource.getRepository(User).findOne({
-                where: { email: member.email }
-            });
-
-            userChat.user = thisUser!;
-            userChat.chat = newChat;
-
             return userChat;
         }));
-
-        newChat.userChat = userChatEntries;
-
-        console.log(newChat)
-        console.log(userChatEntries)
 
         await AppDataSource.getRepository(Chat).save(newChat);
         await AppDataSource.getRepository(UserChat).save(userChatEntries);
@@ -136,7 +123,7 @@ router.post("/", async (req: Request, res: Response) => {
         if (error instanceof z.ZodError) {
             return res.status(400).json({ message: "Validation error", errors: error.issues });
         }
-        return res.status(500).json({ message: "Internal server error" });
+        return res.status(500).json({ error: error });
     }
 });
 
