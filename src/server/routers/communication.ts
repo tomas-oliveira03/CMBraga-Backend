@@ -11,6 +11,7 @@ import { Message } from "@/db/entities/Message";
 import { User } from "@/db/entities/User";
 import { UserChat } from "@/db/entities/UserChat";
 import { Chat } from "@/db/entities/Chat";
+import { TypeOfChat } from "@/helpers/types";
 
 import { checkIfChatAlreadyExists } from "../services/comms";
 
@@ -40,15 +41,15 @@ const router = express.Router();
  *                 items:
  *                   type: object
  *                   properties:
- *                     id:
+ *                     email:
  *                       type: string
- *                       example: "user-uuid"
+ *                       example: "user@example.com"
  *                     name:
  *                       type: string
  *                       example: "John Doe"
  *           example:
  *             members:
- *               - id: "user-uuid"
+ *               - email: "user@example.com"
  *                 name: "John Doe"
  *     responses:
  *       201:
@@ -75,23 +76,23 @@ router.post("/", async (req: Request, res: Response) => {
     try {
         const parsed = CommunicationSchema.parse(req.body);
 
-        const exists = await checkIfChatAlreadyExists(parsed.members.map(m => m.id));
-
-        if(exists !== null) {
+        const exists = await checkIfChatAlreadyExists(parsed.members.map(m => m.email));
+        if (exists !== null) {
             return res.status(400).json({ message: "Conversation already exists" });
         }
 
         let conversationId = uuidv4();
 
+        const num_members = parsed.members.length;
+
         // Find if a conversation with the exact same members already exists
         let alreadyExists = await AppDataSource.getRepository(Chat).findOne({
             where: {
                 id: conversationId,
-
             }
         });
 
-        while(alreadyExists !== null) {
+        while (alreadyExists !== null) {
             conversationId = uuidv4();
             alreadyExists = await AppDataSource.getRepository(Chat).findOne({
                 where: {
@@ -102,9 +103,35 @@ router.post("/", async (req: Request, res: Response) => {
 
         const newChat = new Chat();
         newChat.id = conversationId;
-        await AppDataSource.getRepository(Chat).save(newChat);
+        newChat.chatType = num_members > 2 ? TypeOfChat.GROUP_CHAT : TypeOfChat.INDIVIDUAL_CHAT;
+        newChat.messages = [];
         
-        return res.status(201).json();
+
+        // Create UserChat entries for each member
+        const userChatEntries = await Promise.all(parsed.members.map(async member => {
+            const userChat = new UserChat();
+            userChat.userId = member.email;
+            userChat.chatId = conversationId;
+
+            const thisUser = await AppDataSource.getRepository(User).findOne({
+                where: { email: member.email }
+            });
+
+            userChat.user = thisUser!;
+            userChat.chat = newChat;
+
+            return userChat;
+        }));
+
+        newChat.userChat = userChatEntries;
+
+        console.log(newChat)
+        console.log(userChatEntries)
+
+        await AppDataSource.getRepository(Chat).save(newChat);
+        await AppDataSource.getRepository(UserChat).save(userChatEntries);
+
+        return res.status(201).json({ message: "Conversation created successfully", conversation_id: conversationId });
     } catch (error) {
         if (error instanceof z.ZodError) {
             return res.status(400).json({ message: "Validation error", errors: error.issues });
