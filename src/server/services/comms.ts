@@ -4,6 +4,8 @@ import { User } from "@/db/entities/User";
 import { UserChat } from "@/db/entities/UserChat";
 import { Chat } from "@/db/entities/Chat";
 
+const MESSAGES_PER_PAGE = 20;
+
 export async function checkIfChatAlreadyExists(usersIDs: string[]): Promise<Chat | null> {
     try {
         const chats = await AppDataSource.getRepository(Chat)
@@ -61,5 +63,32 @@ export async function checkIfChatExists(chatId: string): Promise<boolean> {
     } catch (error) {
         console.error("Error checking if chat exists:", error);
         throw new Error("Failed to check if chat exists");
+    }
+}
+
+export async function getMessagesFromChat(chatId: string, page: number): Promise<Partial<Message>[]> {
+    try {
+        const query = AppDataSource.getRepository(Message)
+            .createQueryBuilder("message")
+            .where("message.chatId = :chatId", { chatId })
+            .orderBy("message.timestamp", "DESC");
+
+        if (page > 0) {
+            query.skip((page - 1) * MESSAGES_PER_PAGE).take(MESSAGES_PER_PAGE);
+        } else {
+            query.take(MESSAGES_PER_PAGE);
+        }
+
+        const messages = await query.getMany();
+
+        // Map messages to exclude senderId, chatId, and id
+        return messages.map(({ content, timestamp, senderName }) => ({
+            content,
+            timestamp,
+            senderName,
+        }));
+    } catch (error) {
+        console.error("Error retrieving messages from chat:", error);
+        throw new Error("Failed to retrieve messages from chat");
     }
 }

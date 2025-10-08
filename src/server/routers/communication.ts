@@ -13,7 +13,7 @@ import { UserChat } from "@/db/entities/UserChat";
 import { Chat } from "@/db/entities/Chat";
 import { TypeOfChat } from "@/helpers/types";
 
-import { checkIfChatAlreadyExists, checkIfUserInChat, checkIfUserExists, checkIfChatExists } from "../services/comms";
+import { checkIfChatAlreadyExists, checkIfUserInChat, checkIfUserExists, checkIfChatExists, getMessagesFromChat } from "../services/comms";
 
 const router = express.Router();
 
@@ -49,8 +49,10 @@ const router = express.Router();
  *                       example: "John Doe"
  *           example:
  *             members:
- *               - email: "user@example.com"
+ *               - email: "user1@example.com"
  *                 name: "John Doe"
+ *               - email: "user2@example.com"
+ *                 name: "Jane Doe"
  *     responses:
  *       201:
  *         description: Conversation created successfully.
@@ -67,8 +69,6 @@ const router = express.Router();
  *                   example: "conversation-uuid"
  *       400:
  *         description: Validation error or conversation already exists.
- *       401:
- *         description: Unauthorized access.
  *       500:
  *         description: Internal server error.
  */
@@ -170,14 +170,13 @@ router.post("/", async (req: Request, res: Response) => {
  *                 example: "Hello, how are you?"
  *           example:
  *             sender_id: "user-uuid"
+ *             sender_name: "John Doe"
  *             content: "Hello, how are you?"
  *     responses:
  *       201:
  *         description: Message sent successfully.
  *       400:
- *         description: Missing conversationId or validation error.
- *       401:
- *         description: Unauthorized access.
+ *         description: Validation error or missing conversationId.
  *       403:
  *         description: Sender is not a member of the conversation.
  *       404:
@@ -265,7 +264,7 @@ router.post("/messages/:conversationId", async (req: Request, res: Response) => 
  * /communication/{conversationId}:
  *   get:
  *     summary: Get a communication by ID
- *     description: Retrieves a communication conversation by its ID, with optional pagination using the `jump` query parameter.
+ *     description: Retrieves a communication conversation by its ID, including all messages.
  *     tags:
  *       - Communication
  *     parameters:
@@ -299,6 +298,9 @@ router.post("/messages/:conversationId", async (req: Request, res: Response) => 
  *                       sender_id:
  *                         type: string
  *                         example: "user-uuid"
+ *                       sender_name:
+ *                         type: string
+ *                         example: "John Doe"
  *                       content:
  *                         type: string
  *                         example: "Hello, how are you?"
@@ -308,8 +310,6 @@ router.post("/messages/:conversationId", async (req: Request, res: Response) => 
  *                         example: "2023-10-01T12:00:00Z"
  *       400:
  *         description: Missing conversationId parameter.
- *       401:
- *         description: Unauthorized access.
  *       404:
  *         description: Communication not found.
  *       500:
@@ -317,7 +317,18 @@ router.post("/messages/:conversationId", async (req: Request, res: Response) => 
  */
 router.get("/:conversationId", async (req: Request, res: Response) => {
     try {
-        return res.status(200).json();
+        const { conversationId } = req.params;
+        const jump = parseInt(req.query.jump as string) || 0;
+        if (!conversationId) {
+            return res.status(400).json({ message: "Missing conversationId parameter" });
+        }
+        const messages = await getMessagesFromChat(conversationId, jump);
+
+        if (messages.length === 0) {
+            return res.status(404).json({ message: "Communication not found" });
+        }
+
+        return res.status(200).json({ messages });
     } catch (error) {
         return res.status(500).json({ message: "Internal server error" });
     }
