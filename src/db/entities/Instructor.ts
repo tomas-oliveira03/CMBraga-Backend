@@ -1,8 +1,9 @@
-import { Column, Entity, Index, OneToMany, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm"
+import { Column, Entity, Index, OneToMany, OneToOne, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm"
 import { InstructorActivitySession } from "./InstructorActivitySession"
 import { Issue } from "./Issue";
 import { ChildStation } from "./ChildStation";
 import { ActivitySession } from "./ActivitySession";
+import { User } from "./User";
 
 @Entity()
 export class Instructor {
@@ -42,4 +43,7 @@ export class Instructor {
 
     @OneToMany(() => ActivitySession, activitySession => activitySession.finishedBy)
     finishedActivitySessions!: ActivitySession[];
+
+    @OneToOne(() => User)
+    user!: User;
 }

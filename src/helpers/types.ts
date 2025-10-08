@@ -40,6 +40,10 @@ export enum UserRole {
     HEALTH_PROFESSIONAL = 'health_professional'
 }
 
+export enum TypeOfChat {
+    GROUP_CHAT = 'group_chat',
+    INDIVIDUAL_CHAT = 'individual_chat'
+}
 
 
 // CHAT

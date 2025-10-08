@@ -4,7 +4,6 @@ import { Admin } from '@/db/entities/Admin';
 import { Instructor } from '@/db/entities/Instructor';
 import { Parent } from '@/db/entities/Parent';
 import { HealthProfessional } from '@/db/entities/HealthProfessional';
-import { getMongoDB } from '@/db/mongo';
 import { logger } from '@/lib/logger';
 import { NotificationType, UserRole } from '@/helpers/types';
 
@@ -147,23 +146,6 @@ class WebSocketManager {
     async initializeRoomsAndConnections(): Promise<void> {
         try {
             logger.websocket('Initializing WebSocket rooms from database...');
-
-            // Load all communications from MongoDB
-            const db = getMongoDB();
-            const communications = await db.collection('communications').find({}).toArray();
-
-            // Initialize room mappings (without active connections)
-            for (const comm of communications) {
-                const roomId = comm.conversation_id;
-                const memberIds = comm.members.map((m: any) => m.id);
-                
-                if (!this.rooms.has(roomId)) {
-                    this.rooms.set(roomId, new Set());
-                }
-                
-                logger.debug(`Initialized room ${roomId} with ${memberIds.length} potential members`);
-            }
-
             logger.websocket('WebSocket room initialization completed');
         } catch (error) {
             logger.error('Error initializing WebSocket rooms:', error);
@@ -197,14 +179,9 @@ class WebSocketManager {
 
     private async loadUserRooms(userId: string): Promise<string[]> {
         try {
-            const db = getMongoDB();
-            
-            // Find all communications where user is a member
-            const communications = await db.collection('communications').find({
-                'members.id': userId
-            }).toArray();
+        
 
-            return communications.map(comm => comm.conversation_id);
+            return []; // Placeholder for actual room IDs
         } catch (error) {
             logger.error(`Error loading rooms for user ${userId}:`, error);
             return [];

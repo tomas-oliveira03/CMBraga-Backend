@@ -1,4 +1,5 @@
-import { Column, Entity, Index, PrimaryGeneratedColumn } from "typeorm"
+import { Column, Entity, Index, PrimaryGeneratedColumn, OneToOne } from "typeorm"
+import { User } from "./User";
 
 @Entity()
 export class Admin {
@@ -20,4 +21,7 @@ export class Admin {
 
     @Column({ type: 'timestamptz', nullable: true })
     updatedAt!: Date | null;
+
+    @OneToOne(() => User)
+    user!: User;
 }

@@ -43,20 +43,6 @@ class Envs {
         "JWT_SECRET", 
         "your_secret"
     );
-    public readonly MONGODB_URL: string = this.getString(
-        "MONGODB_URL",
-        "mongodb://localhost:27018/cmbraga-service",
-    );
-
-    public readonly MONGODB_DB_NAME: string = this.getString(
-        "MONGODB_DB_NAME",
-        "cmbraga-service",
-    );
-
-    public readonly MONGODB_COLLECTION_NAME: string = this.getString(
-        "MONGODB_COLLECTION_NAME",
-        "communications",
-    );
 
     public readonly LOGGER_SHOW_DATETIME: boolean = this.getBool(
         "LOGGER_SHOW_DATETIME", 

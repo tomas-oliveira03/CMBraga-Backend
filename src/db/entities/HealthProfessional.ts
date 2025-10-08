@@ -1,6 +1,7 @@
-import { Check, Column, Entity, Index, OneToMany, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm"
+import { Check, Column, Entity, Index, OneToMany, OneToOne, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm"
 import { MedicalReport } from "./MedicalReport"
 import { HealthProfessionalSpecialty } from "@/helpers/types";
+import { User } from "./User";
 
 @Entity()
 @Check(`"specialty" IN ('pediatrician', 'nutritionist', 'general_practitioner')`)
@@ -29,4 +30,7 @@ export class HealthProfessional {
 
     @OneToMany(() => MedicalReport, medicalReport => medicalReport.healthProfessional)
     medicalReports!: MedicalReport[];
+
+    @OneToOne(() => User)
+    user!: User;
 }

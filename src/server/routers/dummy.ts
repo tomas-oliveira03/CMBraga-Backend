@@ -1,10 +1,8 @@
 import express, { Request, Response } from "express";
 import { webSocketManager } from "../services/websocket";
-import { saveCommunication, getCommunication } from "@/db/models/communication";
 import { NotificationType, UserRole } from "@/helpers/types";
 import { logger } from "@/lib/logger";
 import { v4 as uuidv4 } from "uuid";
-import { ObjectId } from "mongodb";
 
 const router = express.Router();
 
@@ -103,32 +101,6 @@ router.post('/simulate-new-user', async (req: Request, res: Response) => {
  *         description: Internal server error
  */
 router.post('/create-empty-conversation', async (req: Request, res: Response) => {
-    try {
-        const { conversationId, members } = req.body;
-        const finalConversationId = conversationId || `conv-${uuidv4()}`;
-        
-        // Check if conversation already exists
-        const existingConversation = await getCommunication(finalConversationId);
-        if (existingConversation) {
-            return res.status(400).json({ message: "Conversation already exists" });
-        }
-
-        // Create empty conversation
-        const newConversation = {
-            conversation_id: finalConversationId,
-            members: members,
-            messages: []
-        };
-
-        await saveCommunication(newConversation);
-        
-        return res.status(201).json({
-            message: "Empty conversation created successfully",
-            conversation: newConversation
-        });
-    } catch (error) {
-        return res.status(500).json({ message: "Internal server error" });
-    }
 });
 
 /**
@@ -177,50 +149,6 @@ router.post('/create-empty-conversation', async (req: Request, res: Response) =>
  *         description: Internal server error
  */
 router.post('/simulate-first-message', async (req: Request, res: Response) => {
-    try {
-        const { conversationId, senderId, senderName, senderRole, content } = req.body;
-        
-        const communication = await getCommunication(conversationId);
-        if (!communication) {
-            return res.status(404).json({ message: "Conversation not found" });
-        }
-
-        const newMessage = {
-            _id: new ObjectId(), // Add the missing _id property
-            sender_id: senderId,
-            content: content,
-            timestamp: new Date().toISOString(),
-        };
-
-        communication.messages.push(newMessage);
-        await saveCommunication(communication);
-
-        // Send WebSocket notification to room members
-        await webSocketManager.sendNotificationToRoom(conversationId, {
-            type: NotificationType.MESSAGE,
-            conversationId,
-            title: 'First Message!',
-            content: content,
-            from: {
-                userId: senderId,
-                name: senderName,
-                role: senderRole as UserRole
-            },
-            timestamp: newMessage.timestamp
-        }, senderId);
-
-        return res.status(201).json({
-            message: "First message sent successfully",
-            messageData: newMessage,
-            conversationInfo: {
-                id: conversationId,
-                totalMessages: communication.messages.length,
-                members: communication.members
-            }
-        });
-    } catch (error) {
-        return res.status(500).json({ message: "Internal server error" });
-    }
 });
 
 /**
@@ -281,68 +209,6 @@ router.post('/simulate-first-message', async (req: Request, res: Response) => {
  *         description: Internal server error
  */
 router.post('/simulate-conversation', async (req: Request, res: Response) => {
-    try {
-        const { conversationId, members, messages } = req.body;
-        const finalConversationId = conversationId || `conv-simulation-${uuidv4()}`;
-        
-        // Create the conversation
-        const newConversation = {
-            conversation_id: finalConversationId,
-            members: members,
-            messages: [] as any[]
-        };
-
-        await saveCommunication(newConversation);
-
-        // Send messages with delays
-        const sentMessages: any[] = [];
-        
-        for (const msgData of messages) {
-            if (msgData.delayMs > 0) {
-                await new Promise(resolve => setTimeout(resolve, msgData.delayMs));
-            }
-
-            const sender = members.find((m: any) => m.id === msgData.senderId);
-            if (!sender) continue;
-
-            const newMessage = {
-                sender_id: msgData.senderId,
-                content: msgData.content,
-                timestamp: new Date().toISOString(),
-            };
-
-            newConversation.messages.push(newMessage);
-            await saveCommunication(newConversation);
-
-            // Send WebSocket notification
-            await webSocketManager.sendNotificationToRoom(finalConversationId, {
-                type: NotificationType.MESSAGE,
-                conversationId: finalConversationId,
-                title: 'New Message',
-                content: msgData.content,
-                from: {
-                    userId: sender.id,
-                    name: sender.name,
-                    role: sender.role as UserRole
-                },
-                timestamp: newMessage.timestamp
-            }, msgData.senderId);
-
-            sentMessages.push(newMessage);
-        }
-
-        return res.status(201).json({
-            message: "Conversation simulation completed",
-            conversation: {
-                id: finalConversationId,
-                members: members,
-                totalMessages: sentMessages.length
-            },
-            sentMessages: sentMessages
-        });
-    } catch (error) {
-        return res.status(500).json({ message: "Internal server error" });
-    }
 });
 
 /**

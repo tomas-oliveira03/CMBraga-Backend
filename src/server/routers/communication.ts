@@ -1,5 +1,4 @@
 import express, { Request, Response } from "express";
-import { saveCommunication, getCommunication, getRecentMessages } from "@/db/models/communication";
 import { CommunicationSchema } from "../schemas/communication";
 import { z } from "zod";
 import { webSocketManager } from "../services/websocket";
@@ -71,21 +70,7 @@ const router = express.Router();
  */
 router.post("/", async (req: Request, res: Response) => {
     try {
-        const communication = CommunicationSchema.parse(req.body);
-        let conv_uuid = uuidv4();
-        let existingCommunication = await getCommunication(conv_uuid);
-        while(existingCommunication != null){
-            conv_uuid = uuidv4();
-            existingCommunication = await getCommunication(conv_uuid);
-        }
-
-        communication.conversation_id = conv_uuid as string;
-
-        communication.messages = []; // Initialize messages as an empty array
-
-        await saveCommunication(communication as any);
-
-        return res.status(201).json({ message: "Conversation created successfully", conversation_id: communication.conversation_id });
+        return res.status(201).json();
     } catch (error) {
         if (error instanceof z.ZodError) {
             return res.status(400).json({ message: "Validation error", errors: error.issues });
@@ -145,35 +130,6 @@ router.post("/", async (req: Request, res: Response) => {
  */
 router.post("/messages/:conversationId", async (req: Request, res: Response) => {
     try {
-        const { conversationId } = req.params;
-        const { sender_id, content } = req.body;
-
-        if (!conversationId) {
-            return res.status(400).json({ message: "Missing conversationId parameter" });
-        }
-
-        const communication = await getCommunication(conversationId);
-        if (!communication) {
-            return res.status(404).json({ message: "Conversation not found" });
-        }
-
-        const isMember = communication.members.some(member => member.id === sender_id);
-        if (!isMember) {
-            return res.status(403).json({ message: "Sender is not a member of the conversation" });
-        }
-
-        const newMessage = {
-            sender_id,
-            content,
-            timestamp: new Date().toISOString(),
-        };
-
-        if (!communication.messages) {
-            communication.messages = [];
-        }
-
-        communication.messages.push(newMessage);
-        await saveCommunication(communication);
 
         // Send WebSocket notification to room members
         /*
@@ -194,7 +150,7 @@ router.post("/messages/:conversationId", async (req: Request, res: Response) => 
         }
         */
 
-        return res.status(201).json({ message: "Message sent successfully", messageData: newMessage });
+        return res.status(201).json();
     } catch (error) {
         return res.status(500).json({ message: "Internal server error" });
     }
@@ -257,17 +213,7 @@ router.post("/messages/:conversationId", async (req: Request, res: Response) => 
  */
 router.get("/:conversationId", async (req: Request, res: Response) => {
     try {
-        const { conversationId } = req.params;
-        const jump = req.query.jump ? parseInt(req.query.jump as string, 10) : 0
-
-        if (!conversationId) {
-            return res.status(400).json({ message: "Missing conversationId parameter" });
-        }
-        const communication = await getRecentMessages(conversationId, jump);
-        if (!communication) {
-            return res.status(404).json({ message: "Communication not found" });
-        }
-        return res.status(200).json(communication);
+        return res.status(200).json();
     } catch (error) {
         return res.status(500).json({ message: "Internal server error" });
     }
