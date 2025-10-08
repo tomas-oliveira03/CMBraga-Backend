@@ -147,6 +147,7 @@ async function seed() {
     // Atividade principal
     const atividade = activityRepo.create({
       type: "pedibus" as any,
+      mode: "walk" as any,
       scheduledAt: new Date("2024-04-01T08:00:00.000Z"),
       startedAt: new Date("2024-04-01T08:05:00.000Z"),
       startedById: instrutores[0]!.id
