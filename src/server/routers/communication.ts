@@ -1,4 +1,5 @@
 import express, { Request, Response } from "express";
+import { AppDataSource } from "@/db";
 import { CommunicationSchema } from "../schemas/communication";
 import { z } from "zod";
 import { webSocketManager } from "../services/websocket";
@@ -6,9 +7,16 @@ import { authenticate } from "../middleware/auth";
 import { NotificationType } from "@/helpers/types";
 import { v4 as uuidv4 } from 'uuid';
 
+import { Message } from "@/db/entities/Message";
+import { User } from "@/db/entities/User";
+import { UserChat } from "@/db/entities/UserChat";
+import { Chat } from "@/db/entities/Chat";
+
+import { checkIfChatAlreadyExists } from "../services/comms";
+
 const router = express.Router();
 
-// #TODO: Add access control not based in user passed in the request, but authenticated user
+// TODO: Add access control not based in user passed in the request, but authenticated user
 
 /**
  * @swagger
@@ -25,12 +33,8 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             required:
- *               - conversation_id
  *               - members
  *             properties:
- *               conversation_id:
- *                 type: string
- *                 example: "conversation-uuid"
  *               members:
  *                 type: array
  *                 items:
@@ -43,7 +47,6 @@ const router = express.Router();
  *                       type: string
  *                       example: "John Doe"
  *           example:
- *             conversation_id: "conversation-uuid"
  *             members:
  *               - id: "user-uuid"
  *                 name: "John Doe"
@@ -70,6 +73,37 @@ const router = express.Router();
  */
 router.post("/", async (req: Request, res: Response) => {
     try {
+        const parsed = CommunicationSchema.parse(req.body);
+
+        const exists = await checkIfChatAlreadyExists(parsed.members.map(m => m.id));
+
+        if(exists !== null) {
+            return res.status(400).json({ message: "Conversation already exists" });
+        }
+
+        let conversationId = uuidv4();
+
+        // Find if a conversation with the exact same members already exists
+        let alreadyExists = await AppDataSource.getRepository(Chat).findOne({
+            where: {
+                id: conversationId,
+
+            }
+        });
+
+        while(alreadyExists !== null) {
+            conversationId = uuidv4();
+            alreadyExists = await AppDataSource.getRepository(Chat).findOne({
+                where: {
+                    id: conversationId,
+                }
+            });
+        }
+
+        const newChat = new Chat();
+        newChat.id = conversationId;
+        await AppDataSource.getRepository(Chat).save(newChat);
+        
         return res.status(201).json();
     } catch (error) {
         if (error instanceof z.ZodError) {

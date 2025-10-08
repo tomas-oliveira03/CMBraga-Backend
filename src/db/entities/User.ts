@@ -1,4 +1,4 @@
-import { Column, Entity, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, OneToMany, OneToOne, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm";
 import { Admin } from "./Admin";
 import { Instructor } from "./Instructor";
 import { Parent } from "./Parent";
@@ -7,10 +7,7 @@ import { UserChat } from "./UserChat";
 
 @Entity()
 export class User {
-    @PrimaryGeneratedColumn("uuid")
-    id!: string;
-
-    @Column({ type: 'varchar', unique: true })
+    @PrimaryColumn({ type: 'varchar'})
     email!: string;
 
     @OneToOne(() => Admin, { nullable: true })

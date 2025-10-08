@@ -1,6 +1,7 @@
 import { AppDataSource } from "@/db";
 import { Parent } from "@/db/entities/Parent";
 import { Child } from "@/db/entities/Child";
+import { User } from "@/db/entities/User";
 import express, { Request, Response } from "express";
 import { CreateParentSchema, UpdateParentSchema } from "../schemas/parent";
 import { z } from "zod";
@@ -199,15 +200,22 @@ router.post('/', async (req: Request, res: Response) => {
     try {
         const validatedData = CreateParentSchema.parse(req.body);
         
-        const emailExists = await checkIfEmailExists(validatedData.email)
-        if (emailExists){
-            return res.status(409).json({message: "Email already exists"});
+        const emailExists = await checkIfEmailExists(validatedData.email);
+        if (emailExists) {
+            return res.status(409).json({ message: "Email already exists" });
         }
 
         validatedData.password = informationHash.encrypt(validatedData.password);
 
-        await AppDataSource.getRepository(Parent).insert(validatedData);
-        
+        const newParent = AppDataSource.getRepository(Parent).create(validatedData);
+        await AppDataSource.getRepository(Parent).insert(newParent);
+
+        const newUser = AppDataSource.getRepository(User).create({
+            email: validatedData.email,
+            parent: newParent
+        });
+        await AppDataSource.getRepository(User).insert(newUser);
+
         return res.status(201).json({ message: "Parent created successfully" });
 
     } catch (error) {
