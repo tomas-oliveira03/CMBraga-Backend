@@ -15,6 +15,7 @@ import { Issue } from "./Issue";
 import { ChildStation } from "./ChildStation";
 import { ActivityMode, ActivityType } from "@/helpers/types";
 import { Instructor } from "./Instructor";
+import { ChildActivityRecord } from "./ChildActivityRecord";
 
 @Entity()
 @Check(`"type" IN ('pedibus', 'ciclo_expresso')`)
@@ -68,6 +69,9 @@ export class ActivitySession {
 
     @OneToMany(() => ChildStation, (childStation) => childStation.activitySession)
     childStations!: ChildStation[];
+
+    @OneToMany(() => ChildActivityRecord, childActivityRecord => childActivityRecord.child)
+    childActivityRecords!: ChildActivitySession[];
 
     @ManyToOne(() => Instructor, { nullable: true })
     startedBy!: Instructor | null;
