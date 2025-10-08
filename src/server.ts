@@ -99,9 +99,25 @@ const startServer = async () => {
         
         initCronJobs()
         
-        // create logger middleware
+        // Route timing middleware
+        app.use((req, res, next) => {
+            const startTime = Date.now();
+            
+            res.on('finish', () => {
+                const duration = Date.now() - startTime;
+                if (req.url.startsWith('/api/') || req.url === '/') {
+                    logger.debug(`${req.method} ${req.url} - ${res.statusCode} - ${duration}ms`);
+                }
+            });
+            
+            next();
+        });
+
+        // Logger middleware
         app.use((req, _, next) => {
-            logger.debug(`${req.method} ${req.url}`);
+            if (req.url.startsWith('/api/')) {
+                logger.debug(`${req.method} ${req.url}`);
+            }
             next();
         });
 
