@@ -10,7 +10,7 @@ import { swaggerSpec } from './lib/swagger';
 import { webSocketManager } from "./server/services/websocket";
 import { AuthService } from "./lib/auth";
 import url from "url";
-import ActivityCheckCron from "./cron/activityCheck";
+import { initCronJobs, stopCronJobs } from "./cron";
 
 const app = express();
 const server = createServer(app);
@@ -28,6 +28,9 @@ const gracefulShutdown = async (signal: string) => {
     logger.info(`Received signal ${signal}, shutting down gracefully.`);
 
     try {
+        // Stop cron jobs first
+        stopCronJobs();
+        
         // Close WebSocket connections
         wss.clients.forEach((socket) => {
             socket.close(1001, 'Server shutting down');
@@ -94,7 +97,7 @@ const startServer = async () => {
         // Initialize WebSocket rooms from database
         await webSocketManager.initializeRoomsAndConnections();
         
-        ActivityCheckCron.start();
+        initCronJobs()
         
         // create logger middleware
         app.use((req, _, next) => {

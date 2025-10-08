@@ -10,16 +10,18 @@ class ActivityCheckCron {
 
     public static start(): void {
         if (this.job) {
-            logger.warn('ActivityCheckCron job already running. Skipping duplicate schedule.');
+            logger.cron('ActivityCheckCron: Job already running. Skipping duplicate schedule.');
             return;
         }
 
-        this.job = cron.schedule('51 13 * * *', async () => {
+        this.job = cron.schedule(CronExpression.EVERY_HOUR, async () => {
             try {
+                logger.cron('ActivityCheckCron: Starting activity check job execution');
+                
                 const now = new Date();
                 const twelveHoursFromNow = new Date(now.getTime() + 12 * 60 * 60 * 1000);
                 
-                await AppDataSource.getRepository(ActivitySession).update(
+                const result = await AppDataSource.getRepository(ActivitySession).update(
                     {
                         scheduledAt: LessThan(twelveHoursFromNow),
                         isClosed: false,
@@ -27,17 +29,23 @@ class ActivityCheckCron {
                     {
                         isClosed: true
                     }
-                )
+                );
 
-                logger.info('Daily cron job executed: closed all activity sessions');
+                logger.cron(`ActivityCheckCron: Completed - ${result.affected || 0} activities marked as closed`);
             } catch (err) {
-                logger.error('Error executing cron job:', err);
+                logger.cron('ActivityCheckCron: Error executing activity check job', { error: err });
             }
         }, {
             timezone: 'Europe/Lisbon',
         });
+    }
 
-        logger.info('Activity check cron job started - runs every day at midnight');
+    public static stop(): void {
+        if (this.job) {
+            this.job.stop();
+            this.job = null;
+            logger.cron('ActivityCheckCron: Cron job stopped');
+        }
     }
 }
 

@@ -83,6 +83,12 @@ class LoggerClient {
         this.logger?.info?.(message, { meta: { ...metadata, level: 'port' } });
     }
 
+    public cron(message: string, metadata = {}): void {
+        const timestamp = envs.LOGGER_SHOW_DATETIME ? `[${new Date().toISOString()}] ` : '';
+        console.log(chalk.hex('#9966FF')(`${timestamp}[CRON] ${message}${Object.keys(metadata).length > 0 ? ` - ${JSON.stringify(metadata)}` : ''}`));
+        this.logger?.info?.(message, { meta: { ...metadata, level: 'cron' } });
+    }
+
     public flush(): void {
         this.logger?.flush();
     }
