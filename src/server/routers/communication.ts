@@ -317,4 +317,108 @@ router.get("/:conversationId", async (req: Request, res: Response) => {
     }
 });
 
+/**
+ * @swagger
+ * /communication/chats/{userId}:
+ *   get:
+ *     summary: Get chats for a user
+ *     description: Retrieves a paginated list of chats for a specific user, sorted by the most recent message.
+ *     tags:
+ *       - Communication
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "user@example.com"
+ *         description: The email of the user.
+ *       - in: query
+ *         name: page
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *         description: The page number for pagination.
+ *     responses:
+ *       200:
+ *         description: Chats retrieved successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 chats:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       chatId:
+ *                         type: string
+ *                         example: "chat-uuid"
+ *                       messageContent:
+ *                         type: string
+ *                         example: "Hello, how are you?"
+ *                       sender:
+ *                         type: string
+ *                         example: "John Doe"
+ *                       timestamp:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2023-10-01T12:00:00Z"
+ *                 page:
+ *                   type: integer
+ *                   example: 1
+ *       404:
+ *         description: User not found.
+ *       500:
+ *         description: Internal server error.
+ */
+router.get("/chats/:userId", async (req: Request, res: Response) => {
+    try {
+        const { userId } = req.params;
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = 10;
+
+        const userExists = await AppDataSource.getRepository(User).findOne({ where: { email: userId } });
+        if (!userExists) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const chats = await AppDataSource.getRepository(Chat)
+            .createQueryBuilder("chat")
+            .leftJoinAndSelect("chat.messages", "message")
+            .innerJoin("chat.userChat", "userChat")
+            .where("userChat.userId = :userId", { userId })
+            .orderBy("message.timestamp", "DESC")
+            .addOrderBy("chat.id", "ASC")
+            .getMany();
+
+        const sortedChats = chats
+            .map(chat => {
+                const mostRecentMessage = chat.messages?.[0];
+                return {
+                    chatId: chat.id,
+                    messageContent: mostRecentMessage?.content || null,
+                    sender: mostRecentMessage?.senderName || null,
+                    timestamp: mostRecentMessage?.timestamp || null,
+                };
+            })
+            .sort((a, b) => {
+                if (a.timestamp && b.timestamp) {
+                    return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+                }
+                if (a.timestamp) return -1;
+                if (b.timestamp) return 1;
+                return 0;
+            })
+            .slice((page - 1) * limit, page * limit);
+
+        return res.status(200).json({ chats: sortedChats, page });
+    } catch (error) {
+        console.error("Error fetching user chats:", error);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+});
+
 export default router;
