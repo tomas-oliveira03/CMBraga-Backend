@@ -10,6 +10,9 @@ export class User {
     @PrimaryColumn({ type: 'varchar'})
     email!: string;
 
+    @Column({ type: 'varchar' })
+    name!: string;
+
     @OneToOne(() => Admin, { nullable: true })
     admin!: Admin | null;
 

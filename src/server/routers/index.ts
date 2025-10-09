@@ -12,6 +12,7 @@ import dummyRouter from "./dummy";
 import issueRouter from "./issue";
 import stationRouter from "./station";
 import dashboardRouter from "./dashboard";
+import userRouter from "./user";
 import activitySessionRouter from "./activitySession";
 import activitySessionStationRouter from "./activitySession/station"
 import activitySessionStationChild from "./activitySession/child"
@@ -39,5 +40,6 @@ router.use("/activity-session/child", activitySessionStationChild);
 router.use("/activity-session/instructor", activitySessionStationInstructor);
 router.use("/activity-session/actions", activitySessionStationActions);
 router.use("/activity-session", activitySessionRouter);
+router.use("/user", userRouter);
 
 export default router;

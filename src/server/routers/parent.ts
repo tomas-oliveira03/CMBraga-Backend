@@ -212,6 +212,7 @@ router.post('/', async (req: Request, res: Response) => {
 
         const newUser = AppDataSource.getRepository(User).create({
             email: validatedData.email,
+            name: validatedData.name,
             parent: newParent
         });
         await AppDataSource.getRepository(User).insert(newUser);

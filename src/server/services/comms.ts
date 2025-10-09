@@ -92,3 +92,17 @@ export async function getMessagesFromChat(chatId: string, page: number): Promise
         throw new Error("Failed to retrieve messages from chat");
     }
 }
+
+export async function searchSimilarUsers(query: string): Promise<User[] | null> {
+    try {
+        // Given a part of a name or email, find if it belongs to any user, even if in middle of name or email
+        const users = await AppDataSource.getRepository(User)
+            .createQueryBuilder("user")
+            .where("user.name LIKE :query OR user.email LIKE :query", { query: `%${query}%` })
+            .getMany();
+        return users;
+    } catch (error) {
+        console.error("Error searching for users:", error);
+        throw new Error("Failed to search for users");
+    }
+}
