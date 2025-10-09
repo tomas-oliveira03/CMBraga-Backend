@@ -4,6 +4,7 @@ import { ActivitySession } from "@/db/entities/ActivitySession";
 import { authenticate, authorize } from "@/server/middleware/auth";
 import { getAllChildrenAlreadyDroppedOff, getAllChildrenAtPickupStation, getAllChildrenByDroppedOffStatus, getAllChildrenByPickupStatus, getAllChildrenLeftToPickUp, getAllChildrenYetToBeDroppedOff, getAllStationsLeft, getCurrentStation, stripChildStations } from "@/server/services/actions";
 import { UserRole } from "@/helpers/types";
+import { StationActivitySession } from "@/db/entities/StationActivitySession";
 
 const router = express.Router();
 
@@ -229,7 +230,7 @@ router.post('/end/:id', authenticate, authorize(UserRole.INSTRUCTOR), async (req
 });
 
 
-router.get('/child/pick-up', async (req: Request, res: Response) => {
+router.get('/station/pick-up', async (req: Request, res: Response) => {
     try {
         const activitySessionId = req.query.id;
         
@@ -261,7 +262,7 @@ router.get('/child/pick-up', async (req: Request, res: Response) => {
 });
 
 
-router.get('/child/still-in', async (req: Request, res: Response) => {
+router.get('/station/still-in', async (req: Request, res: Response) => {
     try {
         const activitySessionId = req.query.id;
         
@@ -298,7 +299,7 @@ router.get('/child/still-in', async (req: Request, res: Response) => {
 });
 
 
-router.get('/child/drop-off', async (req: Request, res: Response) => {
+router.get('/station/drop-off', async (req: Request, res: Response) => {
     try {
         const activitySessionId = req.query.id;
         
@@ -327,6 +328,50 @@ router.get('/child/drop-off', async (req: Request, res: Response) => {
     }
 });
 
+
+router.post('/station/next-stop', async (req: Request, res: Response) => {
+    try {
+        const activitySessionId = req.body.id;
+
+        if (!activitySessionId || typeof activitySessionId !== "string") {
+            return res.status(400).json({ message: "Activity session ID is required" });
+        }
+
+        const allStationIdsLeft = await getAllStationsLeft(activitySessionId)
+
+        if (allStationIdsLeft.length === 0 || !allStationIdsLeft[0]){
+            return res.status(404).json({ message: "Activity session not found or no more stations left" });
+        }
+
+        const currentStationId = allStationIdsLeft[0]
+
+        const allChildrenToBeDroppedOff = await getAllChildrenByDroppedOffStatus(activitySessionId, currentStationId, false)
+
+        if (allChildrenToBeDroppedOff.length > 0){
+            return res.status(402).json({ message: "There are still children to be dropped off at the current station" });
+        }
+
+        if(allStationIdsLeft.length === 1){
+            return res.status(201).json({ message: "This is the last station" })
+        }
+
+        await AppDataSource.getRepository(StationActivitySession).update(
+            {
+                activitySessionId: activitySessionId,
+                stationId: currentStationId
+            },
+            {
+                arrivedAt: new Date()
+            }
+        )
+
+        return res.status(200).json({ message: "Move to next stop" })
+        
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: error });
+    }
+});
 
 
 export default router;
