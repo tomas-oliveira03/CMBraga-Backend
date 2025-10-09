@@ -669,7 +669,7 @@ router.post('/child/check-in', authenticate, authorize(UserRole.INSTRUCTOR), asy
             registeredAt: new Date()
         });
 
-        return res.status(200).json({message: "Child checked in successfully"});
+        return res.status(200).json({message: "Child checked-in successfully"});
 
     } catch (error) {
         console.error(error);
@@ -771,12 +771,211 @@ router.post('/child/check-out', authenticate, authorize(UserRole.INSTRUCTOR), as
             registeredAt: new Date()
         });
 
-        return res.status(200).json({message: "Child checked out successfully"});
+        return res.status(200).json({message: "Child checked-out successfully"});
 
     } catch (error) {
         console.error(error);
         return res.status(500).json({ message: "Internal server error" });
     }
 });
+
+
+
+router.delete('/child/check-in', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
+    try {
+        const childId = req.query.childId;
+        const activitySessionId = req.query.activitySessionId;
+        
+        if (!childId || !activitySessionId || typeof childId !== "string" || typeof activitySessionId !== "string") {
+            return res.status(400).json({ 
+                message: "Child ID, Station ID and Activity Session ID are required" 
+            });
+        }
+        const stationId = await getCurrentStation(activitySessionId)
+        
+        if (!stationId || typeof stationId !== "string"){
+            return res.status(404).json({ message: "Activity session not found or no more stations left" });
+        }
+
+        const activitySession = await AppDataSource.getRepository(ActivitySession).findOne({
+            where: { id: activitySessionId },
+            relations: {
+                instructorActivitySessions: true
+            }
+        });
+
+        if (!activitySession) {
+            return res.status(404).json({ message: "Activity session not found" });
+        }
+
+        if (!(activitySession.instructorActivitySessions && activitySession.instructorActivitySessions.some(ias => ias.instructorId === req.user?.userId))) {
+            return res.status(400).json({ message: "Instructor is not assigned to this activity session" });
+        }
+
+        const child = await AppDataSource.getRepository(Child).findOne({
+            where: { id: childId }
+        });
+
+        if (!child) {
+            return res.status(404).json({ message: "Child not found" });
+        }
+
+        const childActivitySession = await AppDataSource.getRepository(ChildActivitySession).findOne({
+            where: {
+                childId: childId,
+                activitySessionId: activitySessionId,
+                pickUpStationId: stationId, 
+            }
+        });
+
+        if (!childActivitySession) {
+            return res.status(400).json({ 
+                message: "Child is not registered for this activity session in this station" 
+            });
+        }
+
+        const stationActivity = await AppDataSource.getRepository(StationActivitySession).findOne({
+            where: {
+                stationId: stationId,
+                activitySessionId: activitySessionId
+            }
+        });
+
+        if (!stationActivity) {
+            return res.status(404).json({ 
+                message: "Station not found in this activity session" 
+            });
+        }
+
+        const alreadyCheckedIn = await AppDataSource.getRepository(ChildStation).findOne({
+            where: {
+                childId: childId,
+                stationId: stationId,
+                activitySessionId: activitySessionId,
+                type: ChildStationType.IN
+            }
+        });
+
+        if (!alreadyCheckedIn){
+            return res.status(400).json({
+                message: "Child is not checked-in"
+            });
+        }
+
+
+        await AppDataSource.getRepository(ChildStation).delete({
+            childId: childId,
+            stationId: stationId,
+            type: ChildStationType.IN,
+            activitySessionId: activitySessionId
+        });
+
+        return res.status(200).json({message: "Child uncheked-in sucessfully"});
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+});
+
+
+
+router.delete('/child/check-out', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
+    try {
+        const childId = req.query.childId;
+        const activitySessionId = req.query.activitySessionId;
+        
+        if (!childId || !activitySessionId || typeof childId !== "string" || typeof activitySessionId !== "string") {
+            return res.status(400).json({ 
+                message: "Child ID, Station ID and Activity Session ID are required" 
+            });
+        }
+        const stationId = await getCurrentStation(activitySessionId)
+        
+        if (!stationId || typeof stationId !== "string"){
+            return res.status(404).json({ message: "Activity session not found or no more stations left" });
+        }
+
+
+        const activitySession = await AppDataSource.getRepository(ActivitySession).findOne({
+            where: { id: activitySessionId },
+            relations: {
+                instructorActivitySessions: true
+            }
+        });
+
+        if (!activitySession) {
+            return res.status(404).json({ message: "Activity session not found" });
+        }
+
+        if (!(activitySession.instructorActivitySessions && activitySession.instructorActivitySessions.some(ias => ias.instructorId === req.user?.userId))) {
+            return res.status(400).json({ message: "Instructor is not assigned to this activity session" });
+        }
+
+        const child = await AppDataSource.getRepository(Child).findOne({
+            where: { 
+                id: childId,
+                dropOffStationId: stationId
+            }
+        });
+
+        if (!child) {
+            return res.status(404).json({ message: "Child not found or not at the correct station" });
+        }
+
+        const childActivitySession = await AppDataSource.getRepository(ChildActivitySession).findOne({
+            where: {
+                childId: childId,
+                activitySessionId: activitySessionId
+            }
+        });
+
+        if (!childActivitySession) {
+            return res.status(400).json({ 
+                message: "Child is not registered for this activity session in this station" 
+            });
+        }
+
+        const stationActivity = await AppDataSource.getRepository(StationActivitySession).findOne({
+            where: {
+                stationId: stationId,
+                activitySessionId: activitySessionId
+            }
+        });
+
+        if (!stationActivity) {
+            return res.status(404).json({ 
+                message: "Station not found in this activity session" 
+            });
+        }
+
+        const alreadyCheckedOut = await AppDataSource.getRepository(ChildStation).findOne({
+            where: {
+                childId: childId,
+                stationId: stationId,
+                activitySessionId: activitySessionId,
+                type: ChildStationType.OUT
+            }
+        })
+
+        if(!alreadyCheckedOut){
+            res.status(400).json({ message : "Child not checked-out"})
+        }
+
+        await AppDataSource.getRepository(ChildStation).delete({
+            childId: childId,
+            stationId: stationId,
+            type: ChildStationType.OUT,
+            activitySessionId: activitySessionId,
+        });
+
+        return res.status(200).json({message: "Child unchecked-out successfully"});
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+});
+
 
 export default router;
