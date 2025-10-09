@@ -86,42 +86,24 @@ router.post("/", async (req: Request, res: Response) => {
             return res.status(400).json({ message: "Conversation already exists" });
         }
 
-        let conversationId = uuidv4();
-
         const num_members = parsed.members.length;
 
-        // Find if a conversation with the exact same members already exists
-        let alreadyExists = await AppDataSource.getRepository(Chat).findOne({
-            where: {
-                id: conversationId,
-            }
-        });
+        const newChat = {
+            chatType: num_members > 2 ? TypeOfChat.GROUP_CHAT : TypeOfChat.INDIVIDUAL_CHAT,
+            destinatairePhoto: "default-photo-url",
+            messages: [],
+        };
 
-        while (alreadyExists !== null) {
-            conversationId = uuidv4();
-            alreadyExists = await AppDataSource.getRepository(Chat).findOne({
-                where: {
-                    id: conversationId,
-                }
-            });
-        }
+        // Save the new chat and let the database generate the ID
+        const createdChat = await AppDataSource.getRepository(Chat).save(newChat);
+        const conversationId = String(createdChat.id);
 
-        const newChat = new Chat();
-        newChat.id = conversationId;
-        newChat.chatType = num_members > 2 ? TypeOfChat.GROUP_CHAT : TypeOfChat.INDIVIDUAL_CHAT;
-        newChat.destinatairePhoto = "default-photo-url";
-        newChat.messages = [];
-        
-        const userChatEntries = await Promise.all(parsed.members.map(async member => {
-            const userChat = new UserChat();
-            userChat.userId = member.email;
-            userChat.chatId = conversationId;
-
-            return userChat;
+        const userChatEntries = parsed.members.map(member => ({
+            userId: member.email,
+            chatId: conversationId,
         }));
 
-        await AppDataSource.getRepository(Chat).save(newChat);
-        await AppDataSource.getRepository(UserChat).save(userChatEntries);
+        await AppDataSource.getRepository(UserChat).insert(userChatEntries);
 
         return res.status(201).json({ message: "Conversation created successfully", conversation_id: conversationId });
     } catch (error) {
@@ -215,14 +197,15 @@ router.post("/messages/:conversationId", async (req: Request, res: Response) => 
         }
 
         // Create a new message
-        const newMessage = new Message();
-        newMessage.content = parsed.content;
-        newMessage.timestamp = new Date();
-        newMessage.chatId = conversationId;
-        newMessage.senderId = sender_id;
-        newMessage.senderName = parsed.sender_name;
+        const newMessage = {
+            content: parsed.content,
+            timestamp: new Date(),
+            chatId: conversationId,
+            senderId: sender_id,
+            senderName: parsed.sender_name,
+        };
 
-        await AppDataSource.getRepository(Message).save(newMessage);
+        await AppDataSource.getRepository(Message).insert(newMessage);
 
         // Send WebSocket notification to room members
         /*
