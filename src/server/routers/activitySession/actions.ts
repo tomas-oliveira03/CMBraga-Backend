@@ -5,6 +5,7 @@ import { authenticate, authorize } from "@/server/middleware/auth";
 import { getAllChildrenAlreadyDroppedOff, getAllChildrenAtPickupStation, getAllChildrenByDroppedOffStatus, getAllChildrenByPickupStatus, getAllChildrenLeftToPickUp, getAllChildrenYetToBeDroppedOff, getAllStationsLeft, getCurrentStation, stripChildStations } from "@/server/services/actions";
 import { UserRole } from "@/helpers/types";
 import { StationActivitySession } from "@/db/entities/StationActivitySession";
+import { Station } from "@/db/entities/Station";
 
 const router = express.Router();
 
@@ -351,10 +352,6 @@ router.post('/station/next-stop', async (req: Request, res: Response) => {
             return res.status(402).json({ message: "There are still children to be dropped off at the current station" });
         }
 
-        if(allStationIdsLeft.length === 1){
-            return res.status(201).json({ message: "This is the last station" })
-        }
-
         await AppDataSource.getRepository(StationActivitySession).update(
             {
                 activitySessionId: activitySessionId,
@@ -365,13 +362,91 @@ router.post('/station/next-stop', async (req: Request, res: Response) => {
             }
         )
 
-        return res.status(200).json({ message: "Move to next stop" })
+        if (allChildrenToBeDroppedOff.length <= 1){
+            return res.status(402).json({ message: "There isn't a next station" });
+        }
+
+
+        let nextStation = await AppDataSource.getRepository(Station).findOne({
+            where: {
+                id: allStationIdsLeft[1]
+            }
+        })
+
+        if (!nextStation){
+            return res.status(404).json({ message: "Next station not found" });
+        }
+
+        type StationWithFlag = Station & { isLastStation: boolean };
+
+        const nextStationWithFlag: StationWithFlag = {
+            ...nextStation,
+            isLastStation: allStationIdsLeft.length === 2
+        };
+
+        return res.status(200).json(nextStationWithFlag)
         
     } catch (error) {
         console.error(error);
         return res.status(500).json({ message: error });
     }
 });
+
+
+router.post('/station/status', async (req: Request, res: Response) => {
+    try {
+        const activitySessionId = req.body.id;
+
+        if (!activitySessionId || typeof activitySessionId !== "string") {
+            return res.status(400).json({ message: "Activity session ID is required" });
+        }
+
+        const activitySession = await AppDataSource.getRepository(ActivitySession).findOne({
+            where: {
+                id: activitySessionId
+            }
+        })
+
+        if (!activitySession){
+            return res.status(404).json({ message: "Activity session doesn't exist" });
+        }
+
+        const allStationIdsLeft = await getAllStationsLeft(activitySessionId)
+
+        // Activity already ended or it is ready to end
+        if (allStationIdsLeft.length === 0){
+            if(activitySession.finishedAt){
+                return res.status(202).json({ message: "Activity already ended" });
+            }
+
+            return res.status(201).json({ message: "Activity ready to be ended" });
+        }
+
+        const currentStation = await AppDataSource.getRepository(Station).findOne({
+            where: {
+                id: allStationIdsLeft[0]
+            }
+        })
+
+        if (!currentStation){
+            return res.status(404).json({ message: "Current station not found" });
+        }
+
+        type StationWithFlag = Station & { isLastStation: boolean };
+
+        const currentStationWithFlag: StationWithFlag = {
+            ...currentStation,
+            isLastStation: allStationIdsLeft.length === 1
+        };
+
+        return res.status(200).json(currentStationWithFlag)
+        
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: error });
+    }
+});
+
 
 
 export default router;
