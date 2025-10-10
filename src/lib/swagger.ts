@@ -11,7 +11,7 @@ const options = {
         },
         servers: [
             {
-                url: `http://localhost:${envs.PORT}/api`,
+                url: `http://${envs.HOST}:${envs.PORT}/api`,
                 description: 'Development server',
             },
         ],

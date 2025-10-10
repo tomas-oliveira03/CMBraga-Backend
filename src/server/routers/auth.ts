@@ -4,6 +4,7 @@ import { AuthenticationService } from "../services/auth";
 import { authenticate, authorize } from "../middleware/auth";
 import { UserRole } from "@/helpers/types";
 import { LoginSchema } from "../schemas/login";
+import { envs } from "@/config";
 
 const router = express.Router();
 
@@ -64,7 +65,13 @@ router.post('/login', async (req: Request, res: Response) => {
         const validatedData = LoginSchema.parse(req.body);
         const result = await AuthenticationService.login(validatedData);
         
-        return res.status(200).json(result);
+        // Add WebSocket connection URL
+        const wsUrl = `ws://${envs.HOST}:${envs.PORT}/ws?token=${result.token}`;
+        
+        return res.status(200).json({
+            ...result,
+            websocketURL: wsUrl 
+        });
     } catch (error) {
         if (error instanceof z.ZodError) {
             return res.status(400).json({

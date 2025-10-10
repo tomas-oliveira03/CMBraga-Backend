@@ -13,6 +13,7 @@ class Envs {
     private missingKeys: string[] = [];
 
     public readonly DOCKER_BUILD: boolean = this.getBool("DOCKER_BUILD", false);
+    public readonly HOST: string = this.getString("HOST", "localhost");
     public readonly PORT: number = this.getInt("PORT", 3001);
     public readonly DATABASE_URL: string = this.getString(
         "DATABASE_URL",

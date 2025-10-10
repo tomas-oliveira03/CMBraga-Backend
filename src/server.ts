@@ -68,12 +68,14 @@ const setupWebSocketServer = () => {
             const token = query.token as string;
 
             if (!token) {
+                logger.websocket('WebSocket connection rejected: No token provided');
                 ws.close(1008, 'Authentication token required');
                 return;
             }
 
             // Verify JWT token
             const decoded = AuthService.verifyToken(token);
+            logger.websocket(`WebSocket authentication successful for user ${decoded.userId}`);
             
             // Connect user through WebSocket manager
             webSocketManager.connectUser(decoded.userId, decoded.role, ws);
@@ -93,9 +95,6 @@ const startServer = async () => {
         console.log('\n');
         logger.info("Starting server...")
         await appInitialization();
-        
-        // Initialize WebSocket rooms from database
-        await webSocketManager.initializeRoomsAndConnections();
         
         initCronJobs()
         
@@ -131,12 +130,13 @@ const startServer = async () => {
 
         // Setup WebSocket server
         setupWebSocketServer();
+        console.log(new Date())
 
         server.listen(envs.PORT, () => {
-            logger.port(`Server is running at http://localhost:${envs.PORT}`);
-            logger.port(`WebSocket server available at ws://localhost:${envs.PORT}/ws`);
-            logger.port(`Swagger documentation available at http://localhost:${envs.PORT}/api-docs`);
-            logger.websocket(`Connected users: ${webSocketManager.getConnectedUsersCount()}, Rooms: ${webSocketManager.getRoomsCount()}`);
+            logger.port(`Server is running at http://${envs.HOST}:${envs.PORT}`);
+            logger.port(`WebSocket server available at ws://${envs.HOST}:${envs.PORT}/ws`);
+            logger.port(`Swagger documentation available at http://${envs.HOST}:${envs.PORT}/api-docs`);
+            logger.websocket(`WebSocket manager initialized. Connected users: ${webSocketManager.getConnectedUsersCount()}`);
         });
 
         // Register shutdown handlers only once

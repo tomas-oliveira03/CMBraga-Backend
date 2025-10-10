@@ -1,155 +1,143 @@
 import { WebSocket } from 'ws';
-import { AppDataSource } from '@/db';
-import { Admin } from '@/db/entities/Admin';
-import { Instructor } from '@/db/entities/Instructor';
-import { Parent } from '@/db/entities/Parent';
-import { HealthProfessional } from '@/db/entities/HealthProfessional';
+import { UserRole } from '@/helpers/types';
 import { logger } from '@/lib/logger';
-import { NotificationType, UserRole } from '@/helpers/types';
 
-export interface UserConnection {
-    userId: string;
-    role: UserRole;
-    socket: WebSocket;
-    rooms: Set<string>;
+export enum WebSocketEvent {
+    NEW_MESSAGE = 'newMessage',
+    ACTIVITY_STATUS_CHANGED = 'activityStatusChanged',
+    NEW_NOTIFICATION = 'newNotification',
+    CONNECTION_STATUS = 'connectionStatus'
 }
 
-export interface RoomMember {
-    userId: string;
-    name: string;
-    role: UserRole;
-}
-
-export interface NotificationMessage {
-    type: NotificationType;
-    conversationId?: string;
-    title: string;
-    content: string;
-    from: RoomMember;
-    timestamp: string;
+interface WebSocketMessage {
+    event: WebSocketEvent;
+    data: any;
+    timestamp: Date;
 }
 
 class WebSocketManager {
-    private connections: Map<string, UserConnection> = new Map();
-    private rooms: Map<string, Set<string>> = new Map(); // roomId -> Set of userIds
+    private connections: Map<string, WebSocket> = new Map();
+    
+    // Connect user - ensures only one connection per user
+    connectUser(userId: string, role: UserRole, ws: WebSocket): void {
+        // Close existing connection if any
+        if (this.connections.has(userId)) {
+            const existingWs = this.connections.get(userId);
+            if (existingWs && existingWs.readyState === WebSocket.OPEN) {
+                existingWs.close(1000, 'New connection established');
+                logger.websocket(`Closed existing connection for user ${userId}`);
+            }
+        }
 
-    // Connect user and load their rooms
-    async connectUser(userId: string, role: UserRole, socket: WebSocket): Promise<void> {
+        // Store new connection
+        this.connections.set(userId, ws);
+        logger.websocket(`User ${userId} (${role}) connected. Total connections: ${this.connections.size}`);
+
+        // Handle disconnection
+        ws.on('close', () => {
+            this.connections.delete(userId);
+            logger.websocket(`User ${userId} disconnected. Total connections: ${this.connections.size}`);
+        });
+
+        // Handle errors
+        ws.on('error', (error) => {
+            logger.error(`WebSocket error for user ${userId}:`, error);
+            this.connections.delete(userId);
+        });
+
+        // Send connection status message
+        this.sendToUser(userId, {
+            event: WebSocketEvent.CONNECTION_STATUS,
+            data: {
+                status: 'connected',
+                message: 'WebSocket connection established successfully',
+            },
+            timestamp: new Date()
+        });
+    }
+
+    // Send message to specific user
+    sendToUser(userId: string, message: WebSocketMessage): boolean {
+        const ws = this.connections.get(userId);
+        
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+            logger.websocket(`Cannot send to user ${userId}: Connection not open`);
+            return false;
+        }
+
         try {
-            // Get user details
-            const user = await this.getUserDetails(userId, role);
-            if (!user) {
-                socket.close(1008, 'User not found');
-                return;
-            }
-
-            // Close existing connection if any
-            if (this.connections.has(userId)) {
-                const existingConnection = this.connections.get(userId);
-                existingConnection?.socket.close(1000, 'New connection established');
-            }
-
-            const userRooms = await this.loadUserRooms(userId);
-            
-            const connection: UserConnection = {
-                userId,
-                role,
-                socket,
-                rooms: new Set(userRooms)
-            };
-
-            this.connections.set(userId, connection);
-
-            // Add user to room mappings
-            userRooms.forEach(roomId => {
-                if (!this.rooms.has(roomId)) {
-                    this.rooms.set(roomId, new Set());
-                }
-                this.rooms.get(roomId)!.add(userId);
-            });
-
-            // Setup socket event handlers
-            this.setupSocketHandlers(connection);
-
-            logger.websocket(`User ${userId} connected with ${userRooms.length} rooms`, { userId, role, roomCount: userRooms.length });
+            ws.send(JSON.stringify(message));
+            logger.websocket(`Sent ${message.event} to user ${userId}`);
+            return true;
         } catch (error) {
-            logger.error(`Error connecting user ${userId}:`, error);
-            socket.close(1011, 'Internal server error');
+            logger.error(`Error sending message to user ${userId}:`, error);
+            return false;
         }
     }
 
-    // Disconnect user
-    disconnectUser(userId: string): void {
-        const connection = this.connections.get(userId);
-        if (!connection) return;
+    // Send message to multiple users
+    sendToUsers(userIds: string[], message: WebSocketMessage): void {
+        userIds.forEach(userId => {
+            this.sendToUser(userId, message);
+        });
+    }
 
-        // Remove user from all rooms
-        connection.rooms.forEach(roomId => {
-            const roomMembers = this.rooms.get(roomId);
-            if (roomMembers) {
-                roomMembers.delete(userId);
-                if (roomMembers.size === 0) {
-                    this.rooms.delete(roomId);
-                }
+    // Broadcast to all connected users
+    broadcast(message: WebSocketMessage, excludeUserId?: string): void {
+        this.connections.forEach((ws, userId) => {
+            if (userId !== excludeUserId) {
+                this.sendToUser(userId, message);
             }
         });
-
-        // Close socket and remove connection
-        if (connection.socket.readyState === WebSocket.OPEN) {
-            connection.socket.close(1000, 'User disconnected');
-        }
-        this.connections.delete(userId);
-
-        logger.websocket(`User ${userId} disconnected`, { userId });
     }
 
-    // Send notification to specific users in a room
-    async sendNotificationToRoom(roomId: string, notification: NotificationMessage, excludeUserId?: string): Promise<void> {
-        const roomMembers = this.rooms.get(roomId);
-        if (!roomMembers) return;
-
-        const message = JSON.stringify({
-            type: 'notification',
-            data: notification
+    // Emit new message event
+    emitNewMessage(userId: string, data: {
+        conversationId: string;
+        message: string;
+        senderId: string;
+        senderName: string;
+    }): boolean {
+        return this.sendToUser(userId, {
+            event: WebSocketEvent.NEW_MESSAGE,
+            data,
+            timestamp: new Date()
         });
-
-        roomMembers.forEach(userId => {
-            if (excludeUserId && userId === excludeUserId) return;
-            
-            const connection = this.connections.get(userId);
-            if (connection && connection.socket.readyState === WebSocket.OPEN) {
-                connection.socket.send(message);
-            }
-        });
-
-        logger.websocket(`Sent notification to room ${roomId} (${roomMembers.size} members)`, { roomId, memberCount: roomMembers.size, notificationType: notification.type });
     }
 
-    // Send notification to specific user
-    async sendNotificationToUser(userId: string, notification: NotificationMessage): Promise<void> {
-        const connection = this.connections.get(userId);
-        if (!connection || connection.socket.readyState !== WebSocket.OPEN) {
-            logger.warn(`Cannot send notification to user ${userId}: not connected`);
-            return;
-        }
-
-        const message = JSON.stringify({
-            type: 'notification',
-            data: notification
+    // Emit activity status changed event
+    emitActivityStatusChanged(userIds: string[], data: {
+        activitySessionId: string;
+        status: 'started' | 'finished' | 'updated';
+        message: string;
+    }): void {
+        this.sendToUsers(userIds, {
+            event: WebSocketEvent.ACTIVITY_STATUS_CHANGED,
+            data,
+            timestamp: new Date()
         });
-
-        connection.socket.send(message);
-        logger.websocket(`Sent notification to user ${userId}`, { userId, notificationType: notification.type });
     }
 
-    // Load all rooms and connections when server starts
-    async initializeRoomsAndConnections(): Promise<void> {
-        try {
-            logger.websocket('Initializing WebSocket rooms from database...');
-            logger.websocket('WebSocket room initialization completed');
-        } catch (error) {
-            logger.error('Error initializing WebSocket rooms:', error);
-        }
+    // Emit new notification event
+    emitNewNotification(userId: string, data: {
+        title: string;
+        message: string;
+        type?: 'info' | 'warning' | 'error' | 'success';
+    }): boolean {
+        return this.sendToUser(userId, {
+            event: WebSocketEvent.NEW_NOTIFICATION,
+            data: {
+                ...data,
+                type: data.type || 'info'
+            },
+            timestamp: new Date()
+        });
+    }
+
+    // Check if user is connected
+    isUserConnected(userId: string): boolean {
+        const ws = this.connections.get(userId);
+        return ws !== undefined && ws.readyState === WebSocket.OPEN;
     }
 
     // Get connected users count
@@ -157,82 +145,18 @@ class WebSocketManager {
         return this.connections.size;
     }
 
-    // Get rooms count
-    getRoomsCount(): number {
-        return this.rooms.size;
+    // Get all connected user IDs
+    getConnectedUserIds(): string[] {
+        return Array.from(this.connections.keys());
     }
 
-    private async getUserDetails(userId: string, role: UserRole) {
-        switch (role) {
-            case UserRole.ADMIN:
-                return await AppDataSource.getRepository(Admin).findOne({ where: { id: userId } });
-            case UserRole.INSTRUCTOR:
-                return await AppDataSource.getRepository(Instructor).findOne({ where: { id: userId } });
-            case UserRole.PARENT:
-                return await AppDataSource.getRepository(Parent).findOne({ where: { id: userId } });
-            case UserRole.HEALTH_PROFESSIONAL:
-                return await AppDataSource.getRepository(HealthProfessional).findOne({ where: { id: userId } });
-            default:
-                return null;
-        }
-    }
-
-    private async loadUserRooms(userId: string): Promise<string[]> {
-        try {
-        
-
-            return []; // Placeholder for actual room IDs
-        } catch (error) {
-            logger.error(`Error loading rooms for user ${userId}:`, error);
-            return [];
-        }
-    }
-
-    private setupSocketHandlers(connection: UserConnection): void {
-        const { userId, socket } = connection;
-
-        socket.on('close', (code, reason) => {
-            logger.websocket(`WebSocket closed for user ${userId}: ${code} - ${reason}`, { userId, code, reason });
-            this.disconnectUser(userId);
-        });
-
-        socket.on('error', (error) => {
-            logger.error(`WebSocket error for user ${userId}:`, { userId, error });
-            this.disconnectUser(userId);
-        });
-
-        socket.on('message', (data) => {
-            try {
-                const message = JSON.parse(data.toString());
-                this.handleSocketMessage(userId, message);
-            } catch (error) {
-                logger.error(`Error parsing message from user ${userId}:`, { userId, error });
-            }
-        });
-
-        // Send initial connection success message
-        socket.send(JSON.stringify({
-            type: 'connected',
-            data: {
-                message: 'WebSocket connected successfully',
-                rooms: Array.from(connection.rooms)
-            }
-        }));
-    }
-
-    private handleSocketMessage(userId: string, message: any): void {
-        switch (message.type) {
-            case 'ping':
-                const connection = this.connections.get(userId);
-                if (connection && connection.socket.readyState === WebSocket.OPEN) {
-                    connection.socket.send(JSON.stringify({ type: 'pong' }));
-                }
-                break;
-            case 'join_room':
-                // Handle joining new rooms (for dynamic room joining)
-                break;
-            default:
-                logger.warn(`Unknown message type from user ${userId}: ${message.type}`, { userId, messageType: message.type });
+    // Disconnect user
+    disconnectUser(userId: string): void {
+        const ws = this.connections.get(userId);
+        if (ws) {
+            ws.close(1000, 'Disconnected by server');
+            this.connections.delete(userId);
+            logger.websocket(`User ${userId} disconnected by server`);
         }
     }
 }
