@@ -18,6 +18,7 @@ import activitySessionStationRouter from "./activitySession/station"
 import activitySessionStationChild from "./activitySession/child"
 import activitySessionStationInstructor from "./activitySession/instructor"
 import activitySessionStationActions from "./activitySession/actions"
+import activitySessionStationParent from "./activitySession/parent"
 
 const router = express.Router();
 
@@ -39,6 +40,7 @@ router.use("/activity-session/station", activitySessionStationRouter);
 router.use("/activity-session/child", activitySessionStationChild);
 router.use("/activity-session/instructor", activitySessionStationInstructor);
 router.use("/activity-session/actions", activitySessionStationActions);
+router.use("/activity-session/parent", activitySessionStationParent);
 router.use("/activity-session", activitySessionRouter);
 router.use("/user", userRouter);
 

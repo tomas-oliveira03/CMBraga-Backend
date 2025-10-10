@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class AddedName1760041046240 implements MigrationInterface {
-    name = 'AddedName1760041046240'
+export class AddTableParentActivitySession1760094030829 implements MigrationInterface {
+    name = 'AddTableParentActivitySession1760094030829'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`CREATE TABLE "admin" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "email" character varying NOT NULL, "password" character varying NOT NULL, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE, CONSTRAINT "UQ_de87485f6489f5d0995f5841952" UNIQUE ("email"), CONSTRAINT "PK_e032310bcef831fb83101899b10" PRIMARY KEY ("id"))`);
@@ -27,6 +27,7 @@ export class AddedName1760041046240 implements MigrationInterface {
         await queryRunner.query(`CREATE TABLE "chat" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "chat_type" character varying NOT NULL, "destinataire_photo" character varying NOT NULL, CONSTRAINT "CHK_da8a040f3fee38a8681e9c969d" CHECK ("chat_type" IN ('group_chat', 'individual_chat')), CONSTRAINT "PK_9d0b2ba74336710fd31154738a5" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "user_chat" ("user_id" character varying NOT NULL, "chat_id" uuid NOT NULL, "user_email" character varying, CONSTRAINT "PK_1a0006be82337a8768d40250893" PRIMARY KEY ("user_id", "chat_id"))`);
         await queryRunner.query(`CREATE TABLE "user" ("email" character varying NOT NULL, "name" character varying NOT NULL, CONSTRAINT "PK_e12875dfb3b1d92d7d7c5377e22" PRIMARY KEY ("email"))`);
+        await queryRunner.query(`CREATE TABLE "parent_activity_session" ("parent_id" uuid NOT NULL, "activity_session_id" uuid NOT NULL, "assigned_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_a7b357c4f5f847068cd3d3e5b60" PRIMARY KEY ("parent_id", "activity_session_id"))`);
         await queryRunner.query(`ALTER TABLE "station_activity_session" ADD CONSTRAINT "FK_48139306c10b136f8e99513536e" FOREIGN KEY ("station_id") REFERENCES "station"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "station_activity_session" ADD CONSTRAINT "FK_18b72a4646c8cd18e3dca0525ca" FOREIGN KEY ("activity_session_id") REFERENCES "activity_session"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "child_station" ADD CONSTRAINT "FK_c3b9a250b4ad2797f1b59ac7984" FOREIGN KEY ("child_id") REFERENCES "child"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
@@ -53,9 +54,13 @@ export class AddedName1760041046240 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "message" ADD CONSTRAINT "FK_859ffc7f95098efb4d84d50c632" FOREIGN KEY ("chat_id") REFERENCES "chat"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "user_chat" ADD CONSTRAINT "FK_e5a196de679e63bccc3c8900cf3" FOREIGN KEY ("user_email") REFERENCES "user"("email") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "user_chat" ADD CONSTRAINT "FK_5366da78c4f08914a33f6e23d51" FOREIGN KEY ("chat_id") REFERENCES "chat"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "parent_activity_session" ADD CONSTRAINT "FK_8694de248de861ea28aa90db4c4" FOREIGN KEY ("parent_id") REFERENCES "parent"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "parent_activity_session" ADD CONSTRAINT "FK_607aaf42631f778872cab70192f" FOREIGN KEY ("activity_session_id") REFERENCES "activity_session"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`ALTER TABLE "parent_activity_session" DROP CONSTRAINT "FK_607aaf42631f778872cab70192f"`);
+        await queryRunner.query(`ALTER TABLE "parent_activity_session" DROP CONSTRAINT "FK_8694de248de861ea28aa90db4c4"`);
         await queryRunner.query(`ALTER TABLE "user_chat" DROP CONSTRAINT "FK_5366da78c4f08914a33f6e23d51"`);
         await queryRunner.query(`ALTER TABLE "user_chat" DROP CONSTRAINT "FK_e5a196de679e63bccc3c8900cf3"`);
         await queryRunner.query(`ALTER TABLE "message" DROP CONSTRAINT "FK_859ffc7f95098efb4d84d50c632"`);
@@ -82,6 +87,7 @@ export class AddedName1760041046240 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "child_station" DROP CONSTRAINT "FK_c3b9a250b4ad2797f1b59ac7984"`);
         await queryRunner.query(`ALTER TABLE "station_activity_session" DROP CONSTRAINT "FK_18b72a4646c8cd18e3dca0525ca"`);
         await queryRunner.query(`ALTER TABLE "station_activity_session" DROP CONSTRAINT "FK_48139306c10b136f8e99513536e"`);
+        await queryRunner.query(`DROP TABLE "parent_activity_session"`);
         await queryRunner.query(`DROP TABLE "user"`);
         await queryRunner.query(`DROP TABLE "user_chat"`);
         await queryRunner.query(`DROP TABLE "chat"`);

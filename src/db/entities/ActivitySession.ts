@@ -11,6 +11,7 @@ import {
 import { ChildActivitySession } from "./ChildActivitySession";
 import { InstructorActivitySession } from "./InstructorActivitySession";
 import { StationActivitySession } from "./StationActivitySession";
+import { ParentActivitySession } from "./ParentActivitySession";
 import { Issue } from "./Issue";
 import { ChildStation } from "./ChildStation";
 import { ActivityMode, ActivityType } from "@/helpers/types";
@@ -60,6 +61,9 @@ export class ActivitySession {
 
     @OneToMany(() => InstructorActivitySession, (ias) => ias.activitySession)
     instructorActivitySessions!: InstructorActivitySession[];
+
+    @OneToMany(() => ParentActivitySession, (pas) => pas.activitySession)
+    parentActivitySessions!: ParentActivitySession[];
 
     @OneToMany(() => StationActivitySession, (sas) => sas.activitySession)
     stationActivitySessions!: StationActivitySession[];
