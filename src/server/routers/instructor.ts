@@ -5,6 +5,7 @@ import { CreateInstructorSchema, UpdateInstructorSchema } from "@/server/schemas
 import informationHash from "@/lib/information-hash";
 import { checkIfEmailExists } from "../services/validator";
 import z from "zod";
+import { User } from "@/db/entities/User";
 
 const router = express.Router();
 
@@ -188,6 +189,12 @@ router.post('/', async (req: Request, res: Response) => {
         if (emailExists){
             return res.status(409).json({message: "Email already exists"});
         }
+
+        const newUser = AppDataSource.getRepository(User).create({
+            email: validatedData.email,
+            name: validatedData.name,
+            instructor: validatedData as Instructor
+        });
 
         validatedData.password = informationHash.encrypt(validatedData.password);
 
