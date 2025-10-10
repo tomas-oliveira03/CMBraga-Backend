@@ -6,7 +6,6 @@ export const appInitialization = async () => {
 	logger.database("Initializing database resources...");
 
 	await initializeDatabase()
-	await redisClient.initialize()
 	
 	logger.database("All database resources have been initialized.");
 
