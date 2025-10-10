@@ -96,6 +96,7 @@ const startServer = async () => {
         logger.info("Starting server...")
         
         await appInitialization();
+        console.log(envs.NODE_ENV)
 
         initCronJobs()
         
