@@ -97,7 +97,6 @@ const startServer = async () => {
         
         await appInitialization();
 
-        
         initCronJobs()
         
         // Route timing middleware
