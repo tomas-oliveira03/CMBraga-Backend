@@ -108,6 +108,17 @@ router.post('/start', authenticate, authorize(UserRole.INSTRUCTOR), async (req: 
             return res.status(400).json({ message: "Activity session already started" });
         }
 
+        const scheduledTime = new Date(activitySession.scheduledAt);
+        const earliestStartTime = new Date(scheduledTime.getTime() - 30 * 60 * 1000);
+
+        const DateNow = new Date();
+        const time = DateNow.getTime() - earliestStartTime.getTime();
+
+        if (time < 0) {
+            return res.status(400).json({ message: "Cannot start activity: must be within 30 minutes of scheduled time" });
+        }
+
+
         const now = new Date();
         await AppDataSource.getRepository(ActivitySession).update(activitySession.id, { 
             startedAt: now, 
