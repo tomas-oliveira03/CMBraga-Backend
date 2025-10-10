@@ -1,19 +1,7 @@
 import { WebSocket } from 'ws';
 import { UserRole } from '@/helpers/types';
 import { logger } from '@/lib/logger';
-
-export enum WebSocketEvent {
-    NEW_MESSAGE = 'newMessage',
-    ACTIVITY_STATUS_CHANGED = 'activityStatusChanged',
-    NEW_NOTIFICATION = 'newNotification',
-    CONNECTION_STATUS = 'connectionStatus'
-}
-
-interface WebSocketMessage {
-    event: WebSocketEvent;
-    data: any;
-    timestamp: Date;
-}
+import { userConnectedToWebsocket, WebSocketEvent, WebSocketMessage } from './websocket-events';
 
 class WebSocketManager {
     private connections: Map<string, WebSocket> = new Map();
@@ -45,15 +33,7 @@ class WebSocketManager {
             this.connections.delete(userId);
         });
 
-        // Send connection status message
-        this.sendToUser(userId, {
-            event: WebSocketEvent.CONNECTION_STATUS,
-            data: {
-                status: 'connected',
-                message: 'WebSocket connection established successfully',
-            },
-            timestamp: new Date()
-        });
+        userConnectedToWebsocket(userId);
     }
 
     // Send message to specific user
@@ -88,49 +68,6 @@ class WebSocketManager {
             if (userId !== excludeUserId) {
                 this.sendToUser(userId, message);
             }
-        });
-    }
-
-    // Emit new message event
-    emitNewMessage(userId: string, data: {
-        conversationId: string;
-        message: string;
-        senderId: string;
-        senderName: string;
-    }): boolean {
-        return this.sendToUser(userId, {
-            event: WebSocketEvent.NEW_MESSAGE,
-            data,
-            timestamp: new Date()
-        });
-    }
-
-    // Emit activity status changed event
-    emitActivityStatusChanged(userIds: string[], data: {
-        activitySessionId: string;
-        status: 'started' | 'finished' | 'updated';
-        message: string;
-    }): void {
-        this.sendToUsers(userIds, {
-            event: WebSocketEvent.ACTIVITY_STATUS_CHANGED,
-            data,
-            timestamp: new Date()
-        });
-    }
-
-    // Emit new notification event
-    emitNewNotification(userId: string, data: {
-        title: string;
-        message: string;
-        type?: 'info' | 'warning' | 'error' | 'success';
-    }): boolean {
-        return this.sendToUser(userId, {
-            event: WebSocketEvent.NEW_NOTIFICATION,
-            data: {
-                ...data,
-                type: data.type || 'info'
-            },
-            timestamp: new Date()
         });
     }
 

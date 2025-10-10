@@ -33,7 +33,6 @@ class WebSocketTester {
         }
         
         console.log('✅ Login successful');
-        console.log('🔗 WebSocket URL:', this.websocketURL);
         return this.websocketURL;
     }
 
