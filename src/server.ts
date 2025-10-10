@@ -94,8 +94,6 @@ const startServer = async () => {
         // Add visual separation from nodemon startup messages
         console.log('\n');
         logger.info("Starting server...")
-        console.log(envs.PORT)
-
         
         await appInitialization();
 
@@ -134,7 +132,6 @@ const startServer = async () => {
 
         // Setup WebSocket server
         setupWebSocketServer();
-        console.log(new Date())
 
         server.listen(envs.PORT, () => {
             logger.port(`Server is running at http://${envs.HOST}:${envs.PORT}`);
