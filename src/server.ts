@@ -95,7 +95,6 @@ const startServer = async () => {
         console.log('\n');
         logger.info("Starting server...")
         
-        console.log(envs.NODE_ENV)
         await appInitialization();
 
         initCronJobs()
@@ -134,9 +133,9 @@ const startServer = async () => {
         setupWebSocketServer();
 
         server.listen(envs.PORT, () => {
-            logger.port(`Server is running at http://${envs.HOST}:${envs.PORT}`);
-            logger.port(`WebSocket server available at ws://${envs.HOST}:${envs.PORT}/ws`);
-            logger.port(`Swagger documentation available at http://${envs.HOST}:${envs.PORT}/api-docs`);
+            logger.port(`Server is running at ${envs.BASE_URL}`);
+            logger.port(`WebSocket server available at ${envs.WEBSOCKET_BASE_URL}`);
+            logger.port(`Swagger documentation available at ${envs.BASE_URL}/api-docs`);
             logger.websocket(`WebSocket manager initialized. Connected users: ${webSocketManager.getConnectedUsersCount()}`);
         });
 

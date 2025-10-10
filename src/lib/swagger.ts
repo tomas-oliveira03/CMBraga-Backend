@@ -11,7 +11,7 @@ const options = {
         },
         servers: [
             {
-                url: `http://${envs.HOST}:${envs.PORT}/api`,
+                url: `${envs.BASE_URL}/api`,
                 description: 'Development server',
             },
         ],

@@ -50,6 +50,15 @@ class Envs {
         false
     );
 
+    public readonly BASE_URL = this.isProd 
+        ? `${this.HOST}`
+        : `http://${this.HOST}:${this.PORT}`;
+
+    public readonly WEBSOCKET_BASE_URL = this.isProd
+        ? `wss://${this.HOST.replace(/^https?:\/\//, '')}`
+        : `ws://${this.HOST}:${this.PORT}`;
+    
+
     private constructor() {
         if (this.NODE_ENV === EnvName.LOCAL) {
             return;

@@ -10,7 +10,6 @@ const migrationsPaths = envs.DOCKER_BUILD
     ? "dist/db/migrations/*.js"
     : "src/db/migrations/*.ts";
 
-console.log(envs.isProd)
 
 const sslConfig = envs.isProd
   ? { rejectUnauthorized: false }

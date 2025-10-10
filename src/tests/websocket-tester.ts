@@ -13,7 +13,7 @@ class WebSocketTester {
 
     // Login and get JWT token
     async login(email: string, password: string): Promise<string> {
-        const response = await fetch(`http://${envs.HOST}:${envs.PORT}/api/auth/login`, {
+        const response = await fetch(`${envs.BASE_URL}/api/auth/login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
