@@ -90,8 +90,6 @@ Build and start the Docker containers:
 make du
 ```
 
-#### Without Docker
-
 Start the development server:
 
 ```bash
