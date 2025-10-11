@@ -2,7 +2,6 @@ import { webSocketManager } from "./websocket";
 
 export enum WebSocketEvent {
     NEW_MESSAGE = 'newMessage',
-    ACTIVITY_STATUS_CHANGED = 'activityStatusChanged',
     NEW_NOTIFICATION = 'newNotification',
     CONNECTION_STATUS = 'connectionStatus'
 }

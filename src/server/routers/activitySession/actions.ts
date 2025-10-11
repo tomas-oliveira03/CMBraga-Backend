@@ -15,22 +15,22 @@ const router = express.Router();
 
 /**
  * @swagger
- * /activity-session/actions/start/{id}:
+ * /activity-session/actions/start:
  *   post:
  *     summary: Start an activity session
- *     description: Marks an activity session as started (sets startedAt). Only instructors assigned to the activity can start it.
+ *     description: Allows an instructor to start an activity session within 30 minutes before the scheduled time.
  *     tags:
  *       - Activity Session - Actions
  *     security:
  *       - bearerAuth: []
  *     parameters:
- *       - in: path
+ *       - in: query
  *         name: id
  *         required: true
  *         schema:
  *           type: string
- *           example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
- *         description: Activity Session ID (UUID)
+ *         description: Activity session ID
+ *         example: "c56ad528-3522-4557-8b34-a787a50900b7"
  *     responses:
  *       200:
  *         description: Activity started successfully
@@ -41,9 +41,12 @@ const router = express.Router();
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "Activity started successfully"
+ *             examples:
+ *               success:
+ *                 value:
+ *                   message: "Activity started successfully"
  *       400:
- *         description: Activity already started or instructor not assigned
+ *         description: Bad request or already started
  *         content:
  *           application/json:
  *             schema:
@@ -52,14 +55,18 @@ const router = express.Router();
  *                 message:
  *                   type: string
  *             examples:
- *               already_started:
- *                 summary: Activity already started
+ *               missing_id:
  *                 value:
- *                   message: "Activity session already started"
+ *                   message: "Activity session ID is required"
  *               not_assigned:
- *                 summary: Instructor not assigned
  *                 value:
  *                   message: "Instructor is not assigned to this activity session"
+ *               already_started:
+ *                 value:
+ *                   message: "Activity session already started"
+ *               too_early:
+ *                 value:
+ *                   message: "Cannot start activity: must be within 30 minutes of scheduled time"
  *       404:
  *         description: Activity session not found
  *         content:
@@ -69,17 +76,10 @@ const router = express.Router();
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "Activity session not found"
- *       500:
- *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Internal server error"
+ *             examples:
+ *               not_found:
+ *                 value:
+ *                   message: "Activity session not found"
  */
 router.post('/start', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
     try {
@@ -136,22 +136,22 @@ router.post('/start', authenticate, authorize(UserRole.INSTRUCTOR), async (req: 
 
 /**
  * @swagger
- * /activity-session/actions/end/{id}:
+ * /activity-session/actions/end:
  *   post:
  *     summary: End an activity session
- *     description: Marks an activity session as finished (sets finishedAt). The activity must be started before it can be finished. Only instructors assigned to the activity can end it.
+ *     description: Allows an instructor to end an activity session if all children have checked out and all stations are completed.
  *     tags:
  *       - Activity Session - Actions
  *     security:
  *       - bearerAuth: []
  *     parameters:
- *       - in: path
+ *       - in: query
  *         name: id
  *         required: true
  *         schema:
  *           type: string
- *           example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
- *         description: Activity Session ID (UUID)
+ *         description: Activity session ID
+ *         example: "c56ad528-3522-4557-8b34-a787a50900b7"
  *     responses:
  *       200:
  *         description: Activity finished successfully
@@ -162,9 +162,12 @@ router.post('/start', authenticate, authorize(UserRole.INSTRUCTOR), async (req: 
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "Activity finished successfully"
+ *             examples:
+ *               success:
+ *                 value:
+ *                   message: "Activity finished successfully"
  *       400:
- *         description: Activity not started yet, already finished, or instructor not assigned
+ *         description: Cannot finish activity
  *         content:
  *           application/json:
  *             schema:
@@ -174,17 +177,17 @@ router.post('/start', authenticate, authorize(UserRole.INSTRUCTOR), async (req: 
  *                   type: string
  *             examples:
  *               not_started:
- *                 summary: Activity not started
  *                 value:
  *                   message: "Activity session not started yet"
  *               already_finished:
- *                 summary: Activity already finished
  *                 value:
  *                   message: "Activity session already finished"
- *               not_assigned:
- *                 summary: Instructor not assigned
+ *               incomplete_checkouts:
  *                 value:
- *                   message: "Instructor is not assigned to this activity session"
+ *                   message: "Cannot finish activity: some children have incomplete check-out records"
+ *               stations_in_progress:
+ *                 value:
+ *                   message: "Cannot finish activity: some stations are still in progress"
  *       404:
  *         description: Activity session not found
  *         content:
@@ -194,17 +197,10 @@ router.post('/start', authenticate, authorize(UserRole.INSTRUCTOR), async (req: 
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "Activity session not found"
- *       500:
- *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Internal server error"
+ *             examples:
+ *               not_found:
+ *                 value:
+ *                   message: "Activity session not found"
  */
 router.post('/end', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
     try {
@@ -295,6 +291,72 @@ router.post('/end', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Re
 });
 
 
+/**
+ * @swagger
+ * /activity-session/actions/station/pick-up:
+ *   get:
+ *     summary: Get children to pick up at current and upcoming stations
+ *     description: Returns children to be picked up at the current and upcoming stations for the ongoing activity session.
+ *     tags:
+ *       - Activity Session - Actions
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Activity session ID
+ *         example: "c56ad528-3522-4557-8b34-a787a50900b7"
+ *     responses:
+ *       200:
+ *         description: Children to pick up
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 childrenToPickUp:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id: { type: string, example: "child-uuid-1" }
+ *                       name: { type: string, example: "João Silva" }
+ *                 upcomingStationChildrenToPickUp:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id: { type: string, example: "child-uuid-2" }
+ *                       name: { type: string, example: "Maria Santos" }
+ *             examples:
+ *               example:
+ *                 value:
+ *                   childrenToPickUp:
+ *                     - id: "child-uuid-1"
+ *                       name: "João Silva"
+ *                   upcomingStationChildrenToPickUp:
+ *                     - id: "child-uuid-2"
+ *                       name: "Maria Santos"
+ *       404:
+ *         description: Activity session not found or no more stations left
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               not_found:
+ *                 value:
+ *                   message: "Activity session doesn't exist"
+ *               no_stations:
+ *                 value:
+ *                   message: "Activity session not found or no more stations left"
+ */
 router.get('/station/pick-up', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
     try {
         const activitySessionId = req.query.id;
@@ -343,6 +405,79 @@ router.get('/station/pick-up', authenticate, authorize(UserRole.INSTRUCTOR), asy
 });
 
 
+/**
+ * @swagger
+ * /activity-session/actions/station/still-in:
+ *   get:
+ *     summary: Get children still in the current station
+ *     description: Returns children already picked up, to be dropped off, and yet to be dropped off at the current station.
+ *     tags:
+ *       - Activity Session - Actions
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Activity session ID
+ *         example: "c56ad528-3522-4557-8b34-a787a50900b7"
+ *     responses:
+ *       200:
+ *         description: Children still in station
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 allChildrenAlreadyPickedUp:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id: { type: string, example: "child-uuid-1" }
+ *                       name: { type: string, example: "João Silva" }
+ *                 allChildrenToBeDroppedOff:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id: { type: string, example: "child-uuid-2" }
+ *                       name: { type: string, example: "Maria Santos" }
+ *                 allChildrenYetToBeDroppedOff:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id: { type: string, example: "child-uuid-3" }
+ *                       name: { type: string, example: "Ana Costa" }
+ *             examples:
+ *               example:
+ *                 value:
+ *                   allChildrenAlreadyPickedUp:
+ *                     - id: "child-uuid-1"
+ *                       name: "João Silva"
+ *                   allChildrenToBeDroppedOff:
+ *                     - id: "child-uuid-2"
+ *                       name: "Maria Santos"
+ *                   allChildrenYetToBeDroppedOff:
+ *                     - id: "child-uuid-3"
+ *                       name: "Ana Costa"
+ *       404:
+ *         description: Activity session not found or no more stations left
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               not_found:
+ *                 value:
+ *                   message: "Activity session not found or no more stations left"
+ */
 router.get('/station/still-in', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
     try {
         const activitySessionId = req.query.id;
@@ -396,6 +531,69 @@ router.get('/station/still-in', authenticate, authorize(UserRole.INSTRUCTOR), as
 });
 
 
+/**
+ * @swagger
+ * /activity-session/actions/station/drop-off:
+ *   get:
+ *     summary: Get children to drop off at current station
+ *     description: Returns children to be dropped off and already dropped off at the current station.
+ *     tags:
+ *       - Activity Session - Actions
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Activity session ID
+ *         example: "c56ad528-3522-4557-8b34-a787a50900b7"
+ *     responses:
+ *       200:
+ *         description: Children to drop off
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 allChildrenDroppedOff:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id: { type: string, example: "child-uuid-1" }
+ *                       name: { type: string, example: "João Silva" }
+ *                 allChildrenPreviouslyDroppedOff:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id: { type: string, example: "child-uuid-2" }
+ *                       name: { type: string, example: "Maria Santos" }
+ *             examples:
+ *               example:
+ *                 value:
+ *                   allChildrenDroppedOff:
+ *                     - id: "child-uuid-1"
+ *                       name: "João Silva"
+ *                   allChildrenPreviouslyDroppedOff:
+ *                     - id: "child-uuid-2"
+ *                       name: "Maria Santos"
+ *       404:
+ *         description: Activity session not found or no more stations left
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               not_found:
+ *                 value:
+ *                   message: "Activity session not found or no more stations left"
+ */
 router.get('/station/drop-off', authenticate, authorize(UserRole.INSTRUCTOR),async (req: Request, res: Response) => {
     try {
         const activitySessionId = req.query.id;
@@ -442,6 +640,77 @@ router.get('/station/drop-off', authenticate, authorize(UserRole.INSTRUCTOR),asy
 });
 
 
+/**
+ * @swagger
+ * /activity-session/actions/station/next-stop:
+ *   post:
+ *     summary: Move to the next station
+ *     description: Marks the current station as completed and returns the next station.
+ *     tags:
+ *       - Activity Session - Actions
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Activity session ID
+ *         example: "c56ad528-3522-4557-8b34-a787a50900b7"
+ *     responses:
+ *       200:
+ *         description: Next station info
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id: { type: string, example: "station-uuid-2" }
+ *                 name: { type: string, example: "Biblioteca Central" }
+ *                 type: { type: string, enum: [regular, school], example: "regular" }
+ *                 isLastStation: { type: boolean, example: false }
+ *                 createdAt: { type: string, format: date-time, example: "2024-01-15T10:30:00.000Z" }
+ *                 updatedAt: { type: string, format: date-time, nullable: true, example: null }
+ *             examples:
+ *               example:
+ *                 value:
+ *                   id: "station-uuid-2"
+ *                   name: "Biblioteca Central"
+ *                   type: "regular"
+ *                   isLastStation: false
+ *                   createdAt: "2024-01-15T10:30:00.000Z"
+ *                   updatedAt: null
+ *       402:
+ *         description: There are still children to be dropped off or no next station
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               children_pending:
+ *                 value:
+ *                   message: "There are still children to be dropped off at the current station"
+ *               no_next_station:
+ *                 value:
+ *                   message: "There isn't a next station"
+ *       404:
+ *         description: Next station not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               not_found:
+ *                 value:
+ *                   message: "Next station not found"
+ */
 router.post('/station/next-stop', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
     try {
         const activitySessionId = req.query.id;
@@ -523,6 +792,98 @@ router.post('/station/next-stop', authenticate, authorize(UserRole.INSTRUCTOR), 
 });
 
 
+/**
+ * @swagger
+ * /activity-session/actions/station/status:
+ *   post:
+ *     summary: Get current station status
+ *     description: Returns the current station and whether it is the last station, or the activity status.
+ *     tags:
+ *       - Activity Session - Actions
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Activity session ID
+ *         example: "c56ad528-3522-4557-8b34-a787a50900b7"
+ *     responses:
+ *       200:
+ *         description: Current station info
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id: { type: string, example: "station-uuid-1" }
+ *                 name: { type: string, example: "Estação Central" }
+ *                 type: { type: string, enum: [regular, school], example: "regular" }
+ *                 isLastStation: { type: boolean, example: false }
+ *                 createdAt: { type: string, format: date-time, example: "2024-01-15T10:30:00.000Z" }
+ *             examples:
+ *               example:
+ *                 value:
+ *                   id: "station-uuid-1"
+ *                   name: "Estação Central"
+ *                   type: "regular"
+ *                   isLastStation: false
+ *                   createdAt: "2024-01-15T10:30:00.000Z"
+ *       201:
+ *         description: Activity ready to be ended
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               ready:
+ *                 value:
+ *                   message: "Activity ready to be ended"
+ *       202:
+ *         description: Activity already ended
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               ended:
+ *                 value:
+ *                   message: "Activity already ended"
+ *       203:
+ *         description: Activity not started yet
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               not_started:
+ *                 value:
+ *                   message: "Activity not started yet"
+ *       404:
+ *         description: Current station not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               not_found:
+ *                 value:
+ *                   message: "Current station not found"
+ */
 router.post('/station/status', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
     try {
         const activitySessionId = req.query.id;
@@ -589,6 +950,84 @@ router.post('/station/status', authenticate, authorize(UserRole.INSTRUCTOR), asy
 });
 
 
+/**
+ * @swagger
+ * /activity-session/actions/child/check-in:
+ *   post:
+ *     summary: Check in a child at the current station
+ *     description: Checks in a child at the current station for the activity session.
+ *     tags:
+ *       - Activity Session - Actions
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: childId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Child ID
+ *         example: "child-uuid-1"
+ *       - in: query
+ *         name: activitySessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Activity session ID
+ *         example: "c56ad528-3522-4557-8b34-a787a50900b7"
+ *     responses:
+ *       200:
+ *         description: Child checked-in successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               success:
+ *                 value:
+ *                   message: "Child checked-in successfully"
+ *       400:
+ *         description: Bad request or already checked-in
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               missing_params:
+ *                 value:
+ *                   message: "Child ID, Station ID and Activity Session ID are required"
+ *               not_registered:
+ *                 value:
+ *                   message: "Child is not registered for this activity session in this station"
+ *               already_checked_in:
+ *                 value:
+ *                   message: "Child already checked-in"
+ *       404:
+ *         description: Not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               child_not_found:
+ *                 value:
+ *                   message: "Child not found"
+ *               activity_not_found:
+ *                 value:
+ *                   message: "Activity session not found"
+ *               no_stations:
+ *                 value:
+ *                   message: "Activity session not found or no more stations left"
+ */
 router.post('/child/check-in', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
     try {
         const childId = req.query.childId;
@@ -689,7 +1128,81 @@ router.post('/child/check-in', authenticate, authorize(UserRole.INSTRUCTOR), asy
 });
 
 
-
+/**
+ * @swagger
+ * /activity-session/actions/child/check-out:
+ *   post:
+ *     summary: Check out a child at the current station
+ *     description: Checks out a child at the current station for the activity session.
+ *     tags:
+ *       - Activity Session - Actions
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: childId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Child ID
+ *         example: "child-uuid-1"
+ *       - in: query
+ *         name: activitySessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Activity session ID
+ *         example: "c56ad528-3522-4557-8b34-a787a50900b7"
+ *     responses:
+ *       200:
+ *         description: Child checked-out successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               success:
+ *                 value:
+ *                   message: "Child checked-out successfully"
+ *       400:
+ *         description: Bad request or already checked-out
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               missing_params:
+ *                 value:
+ *                   message: "Child ID, Station ID and Activity Session ID are required"
+ *               not_registered:
+ *                 value:
+ *                   message: "Child is not registered for this activity session in this station"
+ *               already_checked_out:
+ *                 value:
+ *                   message: "Child already checked-out"
+ *       404:
+ *         description: Not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               child_not_found:
+ *                 value:
+ *                   message: "Child not found or not at the correct station"
+ *               activity_not_found:
+ *                 value:
+ *                   message: "Activity session not found"
+ */
 router.post('/child/check-out', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
     try {
         const childId = req.query.childId;
@@ -791,7 +1304,75 @@ router.post('/child/check-out', authenticate, authorize(UserRole.INSTRUCTOR), as
 });
 
 
-
+/**
+ * @swagger
+ * /activity-session/actions/child/check-in:
+ *   delete:
+ *     summary: Undo check-in for a child at the current station
+ *     description: Removes the check-in record for a child at the current station.
+ *     tags:
+ *       - Activity Session - Actions
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: childId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Child ID
+ *         example: "child-uuid-1"
+ *       - in: query
+ *         name: activitySessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Activity session ID
+ *         example: "c56ad528-3522-4557-8b34-a787a50900b7"
+ *     responses:
+ *       200:
+ *         description: Child unchecked-in successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               success:
+ *                 value:
+ *                   message: "Child uncheked-in sucessfully"
+ *       400:
+ *         description: Child is not checked-in
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               not_checked_in:
+ *                 value:
+ *                   message: "Child is not checked-in"
+ *               missing_params:
+ *                 value:
+ *                   message: "Child ID, Station ID and Activity Session ID are required"
+ *       404:
+ *         description: Not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               not_found:
+ *                 value:
+ *                   message: "Child not found"
+ */
 router.delete('/child/check-in', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
     try {
         const childId = req.query.childId;
@@ -890,7 +1471,75 @@ router.delete('/child/check-in', authenticate, authorize(UserRole.INSTRUCTOR), a
 });
 
 
-
+/**
+ * @swagger
+ * /activity-session/actions/child/check-out:
+ *   delete:
+ *     summary: Undo check-out for a child at the current station
+ *     description: Removes the check-out record for a child at the current station.
+ *     tags:
+ *       - Activity Session - Actions
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: childId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Child ID
+ *         example: "child-uuid-1"
+ *       - in: query
+ *         name: activitySessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Activity session ID
+ *         example: "c56ad528-3522-4557-8b34-a787a50900b7"
+ *     responses:
+ *       200:
+ *         description: Child unchecked-out successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               success:
+ *                 value:
+ *                   message: "Child unchecked-out successfully"
+ *       400:
+ *         description: Child not checked-out
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               not_checked_out:
+ *                 value:
+ *                   message: "Child not checked-out"
+ *               missing_params:
+ *                 value:
+ *                   message: "Child ID, Station ID and Activity Session ID are required"
+ *       404:
+ *         description: Not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               not_found:
+ *                 value:
+ *                   message: "Child not found or not at the correct station"
+ */
 router.delete('/child/check-out', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
     try {
         const childId = req.query.childId;
