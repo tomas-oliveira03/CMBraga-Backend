@@ -13,6 +13,8 @@ import { IsNull } from "typeorm";
 
 const router = express.Router();
 
+// TODO: Create UserStat after ending an activity session, for parent and child, be careful, there can be multiple parents for one child
+
 /**
  * @swagger
  * /activity-session/actions/start:
