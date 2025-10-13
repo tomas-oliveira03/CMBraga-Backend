@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class Added1760373254742 implements MigrationInterface {
-    name = 'Added1760373254742'
+export class AddMigration1760381487253 implements MigrationInterface {
+    name = 'AddMigration1760381487253'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`CREATE TABLE "admin" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "email" character varying NOT NULL, "password" character varying NOT NULL, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE, CONSTRAINT "UQ_de87485f6489f5d0995f5841952" UNIQUE ("email"), CONSTRAINT "PK_e032310bcef831fb83101899b10" PRIMARY KEY ("id"))`);
@@ -24,10 +24,10 @@ export class Added1760373254742 implements MigrationInterface {
         await queryRunner.query(`CREATE TABLE "instructor_activity_session" ("instructor_id" uuid NOT NULL, "activity_session_id" uuid NOT NULL, "assigned_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_ce4be5546999080c882bcfacf56" PRIMARY KEY ("instructor_id", "activity_session_id"))`);
         await queryRunner.query(`CREATE TABLE "instructor" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "email" character varying NOT NULL, "password" character varying NOT NULL, "phone" character varying NOT NULL, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE, CONSTRAINT "UQ_6222960ab4f2b68e84bc00bfeeb" UNIQUE ("email"), CONSTRAINT "PK_ccc0348eefb581ca002c05ef2f3" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE INDEX "IDX_6222960ab4f2b68e84bc00bfee" ON "instructor" ("email") `);
+        await queryRunner.query(`CREATE TABLE "user" ("email" character varying NOT NULL, "name" character varying NOT NULL, CONSTRAINT "PK_e12875dfb3b1d92d7d7c5377e22" PRIMARY KEY ("email"))`);
         await queryRunner.query(`CREATE TABLE "message" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "content" text NOT NULL, "timestamp" TIMESTAMP NOT NULL, "chat_id" uuid NOT NULL, "sender_id" character varying NOT NULL, "sender_name" character varying NOT NULL, CONSTRAINT "PK_ba01f0a3e0123651915008bc578" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "chat" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "chat_type" character varying NOT NULL, "destinataire_photo" character varying NOT NULL, CONSTRAINT "CHK_da8a040f3fee38a8681e9c969d" CHECK ("chat_type" IN ('group_chat', 'individual_chat')), CONSTRAINT "PK_9d0b2ba74336710fd31154738a5" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "user_chat" ("user_id" character varying NOT NULL, "chat_id" uuid NOT NULL, "user_email" character varying, CONSTRAINT "PK_1a0006be82337a8768d40250893" PRIMARY KEY ("user_id", "chat_id"))`);
-        await queryRunner.query(`CREATE TABLE "user" ("email" character varying NOT NULL, "name" character varying NOT NULL, CONSTRAINT "PK_e12875dfb3b1d92d7d7c5377e22" PRIMARY KEY ("email"))`);
         await queryRunner.query(`CREATE TABLE "client_stat" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "parent_id" uuid, "child_id" uuid, "meters_walked" integer NOT NULL DEFAULT '0', "co2_saved" integer NOT NULL DEFAULT '0', "calories_burned" integer NOT NULL DEFAULT '0', "date" date NOT NULL, "activity_session_id" uuid NOT NULL, CONSTRAINT "PK_42311d46b67da5fc71f32dc3cc3" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "badge" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "description" character varying NOT NULL, "image_url" character varying NOT NULL, "criteria" character varying NOT NULL, "valueneeded" integer, CONSTRAINT "UQ_35ed068bad78456ff543323916d" UNIQUE ("name"), CONSTRAINT "PK_76b7011c864d4521a14a5196c49" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "client_badge" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "parent_id" uuid, "child_id" uuid, "badge_id" uuid NOT NULL, CONSTRAINT "PK_5c99c874b9c97ca4c30b35f5ea5" PRIMARY KEY ("id"))`);
@@ -99,10 +99,10 @@ export class Added1760373254742 implements MigrationInterface {
         await queryRunner.query(`DROP TABLE "client_badge"`);
         await queryRunner.query(`DROP TABLE "badge"`);
         await queryRunner.query(`DROP TABLE "client_stat"`);
-        await queryRunner.query(`DROP TABLE "user"`);
         await queryRunner.query(`DROP TABLE "user_chat"`);
         await queryRunner.query(`DROP TABLE "chat"`);
         await queryRunner.query(`DROP TABLE "message"`);
+        await queryRunner.query(`DROP TABLE "user"`);
         await queryRunner.query(`DROP INDEX "public"."IDX_6222960ab4f2b68e84bc00bfee"`);
         await queryRunner.query(`DROP TABLE "instructor"`);
         await queryRunner.query(`DROP TABLE "instructor_activity_session"`);
