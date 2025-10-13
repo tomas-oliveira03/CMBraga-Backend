@@ -46,6 +46,10 @@ const router = express.Router();
  *                     type: string
  *                     format: date-time
  *                     example: "2024-01-20T08:17:00.000Z"
+ *                   leftAt:
+ *                     type: string
+ *                     format: date-time
+ *                     example: "2024-01-20T08:17:00.000Z"
  *                   station:
  *                     type: object
  *                     properties:
@@ -97,6 +101,7 @@ router.get('/:id', async (req: Request, res: Response) => {
                 stopNumber: true,
                 scheduledAt: true,
                 arrivedAt: true,
+                leftAt: true,
                 station: true
             }
         }
@@ -148,6 +153,11 @@ router.get('/:id', async (req: Request, res: Response) => {
  *                 format: date-time
  *                 example: "2024-01-20T08:15:00.000Z"
  *               arrivedAt:
+ *                 type: string
+ *                 format: date-time
+ *                 nullable: true
+ *                 example: null
+ *               leftAt:
  *                 type: string
  *                 format: date-time
  *                 nullable: true

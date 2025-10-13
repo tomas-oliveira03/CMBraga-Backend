@@ -218,10 +218,6 @@ router.post('/:id', authenticate, authorize(UserRole.PARENT), async (req: Reques
             return res.status(404).json({ message: "Activity session not found" });
         }
         
-        if(activitySession.isClosed){
-            return res.status(404).json({ message: "New registrations for this activity are closed" });
-        }
-        
         // Check if station is within the activity route
         if (!(activitySession.stationActivitySessions && activitySession.stationActivitySessions.some(sas => sas.stationId === pickUpStationId))) {
             return res.status(400).json({ message: "Station is not assigned to this activity session" });
@@ -257,11 +253,23 @@ router.post('/:id', authenticate, authorize(UserRole.PARENT), async (req: Reques
             return res.status(400).json({ message: "Child is already registered for this activity session" });
         }
 
+
+        let isNormalDeadlineOver = false
+        if(activitySession.inLateRegistration){
+            if(activitySession.startedAt){
+                return res.status(404).json({ message: "Cannot register on an ongoing or past activity" });
+            }
+            else{
+                isNormalDeadlineOver = true
+            }
+        }
+
         // Add child to activity session
         await AppDataSource.getRepository(ChildActivitySession).insert({
             childId: childId,
             activitySessionId: activitySessionId,
             pickUpStationId: pickUpStationId,
+            isLateRegistration: isNormalDeadlineOver,
             parentId: req.user?.userId
         });
 

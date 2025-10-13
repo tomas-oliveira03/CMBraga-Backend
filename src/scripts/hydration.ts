@@ -184,7 +184,8 @@ async function seed() {
           childId: criancas[i]!.id,
           activitySessionId: atividade.id,
           pickUpStationId: postos[postoIndex]!.id,
-          parentId: pais[i]!.id
+          parentId: pais[i]!.id,
+          isLateRegistration: false
         })
       );
     }
@@ -239,7 +240,6 @@ async function seed() {
     console.log("✅ Criados 5 postos e 10 crianças (2 por posto)");
     console.log("🚌 Atividade iniciada, postos 1 e 2 já visitados");
     console.log("📍 Próximo posto: Biblioteca (posto 3)");
-    console.log(`\n🧪 Testar rota: GET /api/activity-session/actions/stop?id=${atividade.id}`);
 
     console.log("Seeding finished.");
   } catch (err) {

@@ -8,7 +8,7 @@ export const ActivitySessionSchema = z.object({
     id: z.string(),
     type: ActivityTypeEnum,
     mode: ActivityModeEnum,
-    isClosed: z.boolean(),
+    inLateRegistration: z.boolean(),
     scheduledAt: z.coerce.date(),
     startedAt: z.coerce.date(),
     finishedAt: z.coerce.date().nullable(),
@@ -20,7 +20,7 @@ export const ActivitySessionSchema = z.object({
 
 export const CreateActivitySessionSchema = ActivitySessionSchema.omit({
     id: true,
-    isClosed: true,
+    inLateRegistration: true,
     startedAt: true,
     finishedAt: true,
     createdAt: true,
@@ -32,7 +32,7 @@ export const CreateActivitySessionSchema = ActivitySessionSchema.omit({
 
 export const UpdateActivitySessionSchema = ActivitySessionSchema.omit({
     id: true,
-    isClosed: true,
+    inLateRegistration: true,
     mode: true,
     createdAt: true,
     updatedAt: true,

@@ -24,10 +24,10 @@ class ActivityCheckCron {
                 const result = await AppDataSource.getRepository(ActivitySession).update(
                     {
                         scheduledAt: LessThan(twelveHoursFromNow),
-                        isClosed: false,
+                        inLateRegistration: false,
                     },
                     {
-                        isClosed: true
+                        inLateRegistration: true
                     }
                 );
 

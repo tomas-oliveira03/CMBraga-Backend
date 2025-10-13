@@ -2,18 +2,16 @@ import { AppDataSource } from "@/db";
 import express, { Request, Response } from "express";
 import { ActivitySession } from "@/db/entities/ActivitySession";
 import { authenticate, authorize } from "@/server/middleware/auth";
-import { getAllChildrenAlreadyDroppedOff, getAllChildrenAtPickupStation, getAllChildrenByDroppedOffStatus, getAllChildrenByPickupStatus, getAllChildrenLeftToPickUp, getAllChildrenYetToBeDroppedOff, getAllStationsLeft, getCurrentStation, stripChildStations } from "@/server/services/actions";
+import { getAllChildrenAlreadyDroppedOff, getAllChildrenAtPickupStation, getAllChildrenByDroppedOffStatus, getAllChildrenByPickupStatus, getAllChildrenLeftToPickUp, getAllChildrenYetToBeDroppedOff, getAllStationsLeftIds, getCurrentStationId, stripChildStations } from "@/server/services/actions";
 import { ChildStationType, UserRole } from "@/helpers/types";
 import { StationActivitySession } from "@/db/entities/StationActivitySession";
 import { Station } from "@/db/entities/Station";
 import { Child } from "@/db/entities/Child";
 import { ChildActivitySession } from "@/db/entities/ChildActivitySession";
 import { ChildStation } from "@/db/entities/ChildStation";
-import { IsNull } from "typeorm";
+import { IsNull, Not } from "typeorm";
 
 const router = express.Router();
-
-// TODO: Create UserStat after ending an activity session, for parent and child, be careful, there can be multiple parents for one child
 
 /**
  * @swagger
@@ -120,7 +118,6 @@ router.post('/start', authenticate, authorize(UserRole.INSTRUCTOR), async (req: 
             return res.status(400).json({ message: "Cannot start activity: must be within 30 minutes of scheduled time" });
         }
 
-
         const now = new Date();
         await AppDataSource.getRepository(ActivitySession).update(activitySession.id, { 
             startedAt: now, 
@@ -128,7 +125,22 @@ router.post('/start', authenticate, authorize(UserRole.INSTRUCTOR), async (req: 
             startedById: req.user?.userId 
         });
 
-        return res.status(200).json({ message: "Activity started successfully" });
+
+        const firstStationId = await getCurrentStationId(activitySessionId)
+        if (!firstStationId){
+            return res.status(404).json({ message: "First station not found" });
+        }
+
+        const firstStation = await AppDataSource.getRepository(Station).find({
+            where: {
+                id: firstStationId
+            }
+        })
+        if (!firstStation){
+            return res.status(404).json({ message: "First station not found" });
+        }
+
+        return res.status(200).json(firstStation);
     } catch (error) {
         console.error(error);
         return res.status(500).json({ message: error });
@@ -242,7 +254,7 @@ router.post('/end', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Re
         const childCount = new Map<string, number>();
 
         for (const cs of allChildStation) {
-        childCount.set(cs.childId, (childCount.get(cs.childId) || 0) + 1);
+            childCount.set(cs.childId, (childCount.get(cs.childId) || 0) + 1);
         }
 
         const hasIncomplete = Array.from(childCount.values()).some(count => count !== 2);
@@ -256,7 +268,7 @@ router.post('/end', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Re
         const allStationsInActivity = await AppDataSource.getRepository(StationActivitySession).find({
             where:{
                 activitySessionId: activitySessionId,
-                arrivedAt: IsNull()
+                leftAt: IsNull()
             }
         })
 
@@ -272,7 +284,7 @@ router.post('/end', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Re
                 stationId: stationId
             },
             {
-                arrivedAt: new Date()
+                leftAt: new Date()
             }
         )
 
@@ -282,8 +294,6 @@ router.post('/end', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Re
             updatedAt: now,
             finishedById: req.user?.userId
         });
-
-
 
         return res.status(200).json({ message: "Activity finished successfully" });
     } catch (error) {
@@ -383,7 +393,7 @@ router.get('/station/pick-up', authenticate, authorize(UserRole.INSTRUCTOR), asy
             return res.status(400).json({ message: "Instructor is not assigned to this activity session" });
         }
 
-        const allStationIdsLeft = await getAllStationsLeft(activitySessionId)
+        const allStationIdsLeft = await getAllStationsLeftIds(activitySessionId)
 
         if (allStationIdsLeft.length === 0 || !allStationIdsLeft[0]){
             return res.status(404).json({ message: "Activity session not found or no more stations left" });
@@ -504,7 +514,7 @@ router.get('/station/still-in', authenticate, authorize(UserRole.INSTRUCTOR), as
             return res.status(400).json({ message: "Instructor is not assigned to this activity session" });
         }
 
-        const allStationIdsLeft = await getAllStationsLeft(activitySessionId)
+        const allStationIdsLeft = await getAllStationsLeftIds(activitySessionId)
 
         if (allStationIdsLeft.length === 0 || !allStationIdsLeft[0]){
             return res.status(404).json({ message: "Activity session not found or no more stations left" });
@@ -620,7 +630,7 @@ router.get('/station/drop-off', authenticate, authorize(UserRole.INSTRUCTOR),asy
             return res.status(400).json({ message: "Instructor is not assigned to this activity session" });
         }
 
-        const currentStationId = await getCurrentStation(activitySessionId)
+        const currentStationId = await getCurrentStationId(activitySessionId)
 
         if (!currentStationId){
             return res.status(404).json({ message: "Activity session not found or no more stations left" });
@@ -668,19 +678,31 @@ router.get('/station/drop-off', authenticate, authorize(UserRole.INSTRUCTOR),asy
  *             schema:
  *               type: object
  *               properties:
- *                 id: { type: string, example: "station-uuid-2" }
- *                 name: { type: string, example: "Biblioteca Central" }
- *                 type: { type: string, enum: [regular, school], example: "regular" }
- *                 isLastStation: { type: boolean, example: false }
- *                 createdAt: { type: string, format: date-time, example: "2024-01-15T10:30:00.000Z" }
- *                 updatedAt: { type: string, format: date-time, nullable: true, example: null }
+ *                 id: 
+ *                   type: string
+ *                   example: "station-uuid-2"
+ *                 name: 
+ *                   type: string
+ *                   example: "Biblioteca Central"
+ *                 type: 
+ *                   type: string
+ *                   enum: [regular, school]
+ *                   example: "regular"
+ *                 createdAt: 
+ *                   type: string
+ *                   format: date-time
+ *                   example: "2024-01-15T10:30:00.000Z"
+ *                 updatedAt: 
+ *                   type: string
+ *                   format: date-time
+ *                   nullable: true
+ *                   example: null
  *             examples:
  *               example:
  *                 value:
  *                   id: "station-uuid-2"
  *                   name: "Biblioteca Central"
  *                   type: "regular"
- *                   isLastStation: false
  *                   createdAt: "2024-01-15T10:30:00.000Z"
  *                   updatedAt: null
  *       402:
@@ -737,7 +759,7 @@ router.post('/station/next-stop', authenticate, authorize(UserRole.INSTRUCTOR), 
             return res.status(400).json({ message: "Instructor is not assigned to this activity session" });
         }
 
-        const allStationIdsLeft = await getAllStationsLeft(activitySessionId)
+        const allStationIdsLeft = await getAllStationsLeftIds(activitySessionId)
 
         if (allStationIdsLeft.length === 0 || !allStationIdsLeft[0]){
             return res.status(404).json({ message: "Activity session not found or no more stations left" });
@@ -751,12 +773,9 @@ router.post('/station/next-stop', authenticate, authorize(UserRole.INSTRUCTOR), 
             return res.status(402).json({ message: "There are still children to be dropped off at the current station" });
         }
 
-        
-
         if (allStationIdsLeft.length <= 1){
             return res.status(402).json({ message: "There isn't a next station" });
         }
-
 
         let nextStation = await AppDataSource.getRepository(Station).findOne({
             where: {
@@ -768,11 +787,190 @@ router.post('/station/next-stop', authenticate, authorize(UserRole.INSTRUCTOR), 
             return res.status(404).json({ message: "Next station not found" });
         }
 
+
+        const previousStation = await AppDataSource.getRepository(StationActivitySession).findOne({
+            where: {
+                arrivedAt: Not(IsNull()),
+                leftAt: IsNull()
+            }
+        })
+
+        if(!previousStation){
+            return res.status(404).json({ message: "Cannot go to next stop yet" });
+        }
+
+        await AppDataSource.getRepository(StationActivitySession).update(
+            {
+                activitySessionId: activitySessionId,
+                stationId: previousStation.stationId
+            },
+            {
+                leftAt: new Date()
+            }
+        )
+
+        return res.status(200).json(nextStation)
+        
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: error });
+    }
+});
+
+
+/**
+ * @swagger
+ * /activity-session/actions/station/arrived-at-stop:
+ *   post:
+ *     summary: Mark arrival at current station
+ *     description: Marks the instructor as arrived at the current station and returns the station info with flags.
+ *     tags:
+ *       - Activity Session - Actions
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Activity session ID
+ *         example: "c56ad528-3522-4557-8b34-a787a50900b7"
+ *     responses:
+ *       200:
+ *         description: Current station info with arrival confirmation
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id: 
+ *                   type: string
+ *                   example: "station-uuid-1"
+ *                 name: 
+ *                   type: string
+ *                   example: "Biblioteca Central"
+ *                 type: 
+ *                   type: string
+ *                   enum: [regular, school]
+ *                   example: "regular"
+ *                 isLastStation: 
+ *                   type: boolean
+ *                   example: false
+ *                   description: "Indicates if this is the last station in the route"
+ *                 createdAt: 
+ *                   type: string
+ *                   format: date-time
+ *                   example: "2024-01-15T10:30:00.000Z"
+ *                 updatedAt: 
+ *                   type: string
+ *                   format: date-time
+ *                   nullable: true
+ *                   example: null
+ *             examples:
+ *               example:
+ *                 value:
+ *                   id: "station-uuid-1"
+ *                   name: "Biblioteca Central"
+ *                   type: "regular"
+ *                   isLastStation: false
+ *                   createdAt: "2024-01-15T10:30:00.000Z"
+ *                   updatedAt: null
+ *       400:
+ *         description: Bad request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               missing_id:
+ *                 value:
+ *                   message: "Activity session ID is required"
+ *               not_assigned:
+ *                 value:
+ *                   message: "Instructor is not assigned to this activity session"
+ *       404:
+ *         description: Not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               activity_not_found:
+ *                 value:
+ *                   message: "Activity session doesn't exist"
+ *               no_stations:
+ *                 value:
+ *                   message: "No more stations left"
+ *               station_not_found:
+ *                 value:
+ *                   message: "Current station not found"
+ */
+router.post('/station/arrived-at-stop', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
+    try {
+        const activitySessionId = req.query.id;
+
+        if (!activitySessionId || typeof activitySessionId !== "string") {
+            return res.status(400).json({ message: "Activity session ID is required" });
+        }
+
+        const activitySession = await AppDataSource.getRepository(ActivitySession).findOne({
+            where: {
+                id: activitySessionId
+            }, relations: {
+                instructorActivitySessions: true
+            }
+        })
+
+        if (!activitySession){
+            return res.status(404).json({ message: "Activity session doesn't exist" });
+        }
+
+        if (!(activitySession.instructorActivitySessions && activitySession.instructorActivitySessions.some(ias => ias.instructorId === req.user?.userId))) {
+            return res.status(400).json({ message: "Instructor is not assigned to this activity session" });
+        }
+
+        const allStationIdsLeft = await getAllStationsLeftIds(activitySessionId)
+
+        if (allStationIdsLeft.length === 0 || !allStationIdsLeft[0]){
+            return res.status(404).json({ message: "No more stations left" });
+        }
+
+        const currentStationId = allStationIdsLeft[0]
+
+        const currentStation = await AppDataSource.getRepository(Station).findOne({
+            where: {
+                id: allStationIdsLeft[0]
+            }
+        })
+
+        if (!currentStation){
+            return res.status(404).json({ message: "Current station not found" });
+        }
+
+        const isAlreadyInAStop = await AppDataSource.getRepository(StationActivitySession).findOne({
+            where: {
+                arrivedAt: Not(IsNull()),
+                leftAt: IsNull()
+            }
+        });
+
+        if(isAlreadyInAStop){
+            return res.status(404).json({ message: "Cannot move to next stop without leaving the current station" });
+        }
+
+
         type StationWithFlag = Station & { isLastStation: boolean };
 
-        const nextStationWithFlag: StationWithFlag = {
-            ...nextStation,
-            isLastStation: allStationIdsLeft.length === 2
+        const currentStationWithFlag: StationWithFlag = {
+            ...currentStation,
+            isLastStation: allStationIdsLeft.length === 1
         };
 
         await AppDataSource.getRepository(StationActivitySession).update(
@@ -785,7 +983,7 @@ router.post('/station/next-stop', authenticate, authorize(UserRole.INSTRUCTOR), 
             }
         )
 
-        return res.status(200).json(nextStationWithFlag)
+        return res.status(200).json(currentStationWithFlag)
         
     } catch (error) {
         console.error(error);
@@ -820,19 +1018,43 @@ router.post('/station/next-stop', authenticate, authorize(UserRole.INSTRUCTOR), 
  *             schema:
  *               type: object
  *               properties:
- *                 id: { type: string, example: "station-uuid-1" }
- *                 name: { type: string, example: "Estação Central" }
- *                 type: { type: string, enum: [regular, school], example: "regular" }
- *                 isLastStation: { type: boolean, example: false }
- *                 createdAt: { type: string, format: date-time, example: "2024-01-15T10:30:00.000Z" }
+ *                 id: 
+ *                   type: string
+ *                   example: "station-uuid-1"
+ *                 name: 
+ *                   type: string
+ *                   example: "Estação Central"
+ *                 type: 
+ *                   type: string
+ *                   enum: [regular, school]
+ *                   example: "regular"
+ *                 isInStation: 
+ *                   type: boolean
+ *                   example: true
+ *                   description: "Indicates if the instructor has arrived at the station"
+ *                 isLastStation: 
+ *                   type: boolean
+ *                   example: false
+ *                   description: "Indicates if this is the last station in the route"
+ *                 createdAt: 
+ *                   type: string
+ *                   format: date-time
+ *                   example: "2024-01-15T10:30:00.000Z"
+ *                 updatedAt: 
+ *                   type: string
+ *                   format: date-time
+ *                   nullable: true
+ *                   example: null
  *             examples:
  *               example:
  *                 value:
  *                   id: "station-uuid-1"
  *                   name: "Estação Central"
  *                   type: "regular"
+ *                   isInStation: true
  *                   isLastStation: false
  *                   createdAt: "2024-01-15T10:30:00.000Z"
+ *                   updatedAt: null
  *       201:
  *         description: Activity ready to be ended
  *         content:
@@ -872,6 +1094,22 @@ router.post('/station/next-stop', authenticate, authorize(UserRole.INSTRUCTOR), 
  *               not_started:
  *                 value:
  *                   message: "Activity not started yet"
+ *       400:
+ *         description: Bad request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               missing_id:
+ *                 value:
+ *                   message: "Activity session ID is required"
+ *               not_assigned:
+ *                 value:
+ *                   message: "Instructor is not assigned to this activity session"
  *       404:
  *         description: Current station not found
  *         content:
@@ -882,6 +1120,9 @@ router.post('/station/next-stop', authenticate, authorize(UserRole.INSTRUCTOR), 
  *                 message:
  *                   type: string
  *             examples:
+ *               activity_not_found:
+ *                 value:
+ *                   message: "Activity session doesn't exist"
  *               not_found:
  *                 value:
  *                   message: "Current station not found"
@@ -910,11 +1151,9 @@ router.post('/station/status', authenticate, authorize(UserRole.INSTRUCTOR), asy
             return res.status(400).json({ message: "Instructor is not assigned to this activity session" });
         }
 
-        const allStationIdsLeft = await getAllStationsLeft(activitySessionId)
-
+        const allStationIdsLeft = await getAllStationsLeftIds(activitySessionId)
          if (!activitySession.startedAt){
             return res.status(203).json({ message: "Activity not started yet" });
-
         }
 
         // Activity already ended or it is ready to end
@@ -926,24 +1165,31 @@ router.post('/station/status', authenticate, authorize(UserRole.INSTRUCTOR), asy
             return res.status(201).json({ message: "Activity ready to be ended" });
         }
 
-        const currentStation = await AppDataSource.getRepository(Station).findOne({
+        const currentStationActivity = await AppDataSource.getRepository(StationActivitySession).findOne({
             where: {
-                id: allStationIdsLeft[0]
+                stationId: allStationIdsLeft[0],
+                activitySessionId: activitySessionId
+            },
+            relations: {
+                station: true
             }
         })
 
-        if (!currentStation){
+        if (!currentStationActivity){
             return res.status(404).json({ message: "Current station not found" });
         }
 
-        type StationWithFlag = Station & { isLastStation: boolean };
+        const isInStation = currentStationActivity.arrivedAt !== null && currentStationActivity.leftAt === null
 
-        const currentStationWithFlag: StationWithFlag = {
-            ...currentStation,
+        type StationWithFlags = Station & { isInStation: boolean; isLastStation: boolean };
+
+        const currentStationWithFlags: StationWithFlags = {
+            ...currentStationActivity.station,
+            isInStation: isInStation,
             isLastStation: allStationIdsLeft.length === 1
         };
 
-        return res.status(200).json(currentStationWithFlag)
+        return res.status(200).json(currentStationWithFlags)
         
     } catch (error) {
         console.error(error);
@@ -1040,7 +1286,7 @@ router.post('/child/check-in', authenticate, authorize(UserRole.INSTRUCTOR), asy
                 message: "Child ID, Station ID and Activity Session ID are required" 
             });
         }
-        const stationId = await getCurrentStation(activitySessionId)
+        const stationId = await getCurrentStationId(activitySessionId)
         
         if (!stationId || typeof stationId !== "string"){
             return res.status(404).json({ message: "Activity session not found or no more stations left" });
@@ -1215,7 +1461,7 @@ router.post('/child/check-out', authenticate, authorize(UserRole.INSTRUCTOR), as
                 message: "Child ID, Station ID and Activity Session ID are required" 
             });
         }
-        const stationId = await getCurrentStation(activitySessionId)
+        const stationId = await getCurrentStationId(activitySessionId)
         
         if (!stationId || typeof stationId !== "string"){
             return res.status(404).json({ message: "Activity session not found or no more stations left" });
@@ -1385,7 +1631,7 @@ router.delete('/child/check-in', authenticate, authorize(UserRole.INSTRUCTOR), a
                 message: "Child ID, Station ID and Activity Session ID are required" 
             });
         }
-        const stationId = await getCurrentStation(activitySessionId)
+        const stationId = await getCurrentStationId(activitySessionId)
         
         if (!stationId || typeof stationId !== "string"){
             return res.status(404).json({ message: "Activity session not found or no more stations left" });
@@ -1552,7 +1798,7 @@ router.delete('/child/check-out', authenticate, authorize(UserRole.INSTRUCTOR), 
                 message: "Child ID, Station ID and Activity Session ID are required" 
             });
         }
-        const stationId = await getCurrentStation(activitySessionId)
+        const stationId = await getCurrentStationId(activitySessionId)
         
         if (!stationId || typeof stationId !== "string"){
             return res.status(404).json({ message: "Activity session not found or no more stations left" });

@@ -32,7 +32,7 @@ export class ActivitySession {
     mode!: ActivityMode;
 
     @Column({ type: "boolean", default: false })
-    isClosed!: boolean;
+    inLateRegistration!: boolean;
 
     @Column({ type: "timestamptz" })
     scheduledAt!: Date;

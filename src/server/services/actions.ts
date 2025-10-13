@@ -6,12 +6,12 @@ import { In, IsNull, Not } from "typeorm";
 import { ChildStation } from "@/db/entities/ChildStation";
 
 // Get current station id of an ongoing activity
-export async function getCurrentStation(activitySessionId: string): Promise<string|null>{
+export async function getCurrentStationId(activitySessionId: string): Promise<string|null>{
     const activitySession = await AppDataSource.getRepository(ActivitySession).findOne({
         where: { 
             id: activitySessionId,
             stationActivitySessions: {
-                arrivedAt: IsNull()
+                leftAt: IsNull()
             }
         },
         order: {
@@ -38,12 +38,12 @@ export async function getCurrentStation(activitySessionId: string): Promise<stri
 }
 
 // Get all station ids left an ongoing activity
-export async function getAllStationsLeft(activitySessionId: string): Promise<string[]>{
+export async function getAllStationsLeftIds(activitySessionId: string): Promise<string[]>{
     const activitySession = await AppDataSource.getRepository(ActivitySession).findOne({
         where: { 
             id: activitySessionId,
             stationActivitySessions: {
-                arrivedAt: IsNull()
+                leftAt: IsNull()
             }
         },
         order: {
@@ -62,7 +62,6 @@ export async function getAllStationsLeft(activitySessionId: string): Promise<str
     }
 
     const stationIds = activitySession.stationActivitySessions
-        .filter(sas => sas.arrivedAt === null)
         .map(sas => sas.stationId);            
 
     return stationIds

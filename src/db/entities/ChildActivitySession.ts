@@ -15,6 +15,9 @@ export class ChildActivitySession {
     @PrimaryColumn({ type: 'varchar' })
     parentId!: string;
 
+    @PrimaryColumn({ type: 'boolean' })
+    isLateRegistration!: boolean;
+
     @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
     registeredAt!: Date;
 
