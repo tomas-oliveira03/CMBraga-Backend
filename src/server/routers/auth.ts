@@ -2,9 +2,20 @@ import express, { Request, Response } from "express";
 import { z } from "zod";
 import { AuthenticationService } from "../services/auth";
 import { authenticate, authorize } from "../middleware/auth";
-import { UserRole } from "@/helpers/types";
-import { LoginSchema } from "../schemas/login";
+import { LoginSchema, RegisterSchema } from "../schemas/auth";
 import { envs } from "@/config";
+import { AppDataSource } from "@/db";
+import { User } from "@/db/entities/User";
+import informationHash from "@/lib/information-hash";
+import { checkIfEmailExists } from "../services/validator";
+import { CreateAdminSchema } from "../schemas/admin";
+import { Admin } from "@/db/entities/Admin";
+import { CreateInstructorSchema } from "../schemas/instructor";
+import { Instructor } from "@/db/entities/Instructor";
+import { CreateHealthProfessionalSchema } from "../schemas/healthProfessional";
+import { HealthProfessional } from "@/db/entities/HealthProfessional";
+import { CreateParentSchema } from "../schemas/parent";
+import { Parent } from "@/db/entities/Parent";
 
 const router = express.Router();
 
@@ -107,103 +118,397 @@ router.get('/profile', authenticate, (req: Request, res: Response) => {
     });
 });
 
-// Mock routes to test different permission levels
 /**
  * @swagger
- * /auth/test/admin-only:
- *   get:
- *     summary: Admin only test route
- *     description: Test route accessible only by admins
+ * /auth/register/admin:
+ *   post:
+ *     summary: Register a new admin
+ *     description: Creates a new admin user account
  *     tags:
- *       - Authentication Test
- *     security:
- *       - bearerAuth: []
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - password
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 minLength: 1
+ *                 example: "João Silva"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "joao.silva@cmbraga.pt"
+ *               password:
+ *                 type: string
+ *                 minLength: 6
+ *                 example: "SecurePassword123!"
+ *           example:
+ *             name: "Maria Santos"
+ *             email: "maria.santos@cmbraga.pt"
+ *             password: "AdminPass2024!"
  *     responses:
- *       200:
- *         description: Success - Admin access
- *       401:
- *         description: Authentication required - Invalid or missing token
- *       403:
- *         description: Insufficient permissions
+ *       201:
+ *         description: Admin created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Admin created successfully"
+ *       400:
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Validation error"
+ *                 errors:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *       409:
+ *         description: Email already exists
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Email already exists"
+ *       500:
+ *         description: Internal server error
  */
-router.get('/test/admin-only', authenticate, authorize(UserRole.ADMIN), (req: Request, res: Response) => {
-    return res.status(200).json({
-        message: "Welcome, Admin! You have full access.",
-        user: req.user
-    });
+router.post('/register/admin', async (req: Request, res: Response) => {
+    try {
+        const validatedData = CreateAdminSchema.parse(req.body);
+        
+        const emailExists = await checkIfEmailExists(validatedData.email)
+        if (emailExists){
+            return res.status(409).json({message: "Email already exists"});
+        }
+        validatedData.password = informationHash.encrypt(validatedData.password);
+
+        await AppDataSource.transaction(async tx => {
+
+            await tx.getRepository(User).insert({
+                email: validatedData.email,
+                name: validatedData.name,
+                admin: validatedData 
+            });
+
+            await tx.getRepository(Admin).insert(validatedData);
+        })
+        
+        return res.status(201).json({message: "Admin created successfully"});
+
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({
+                message: "Validation error",
+                errors: error.issues
+            });
+        }
+        
+        return res.status(500).json({ message: error });
+    }
 });
 
 /**
  * @swagger
- * /auth/test/instructor-parent:
- *   get:
- *     summary: Instructor and Parent test route
- *     description: Test route accessible by instructors and parents
+ * /auth/register/instructor:
+ *   post:
+ *     summary: Register a new instructor
+ *     description: Creates a new instructor user account
  *     tags:
- *       - Authentication Test
- *     security:
- *       - bearerAuth: []
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - password
+ *               - phone
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 minLength: 1
+ *                 example: "Carlos Pereira"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "carlos.pereira@cmbraga.pt"
+ *               password:
+ *                 type: string
+ *                 minLength: 6
+ *                 example: "InstructorPass123!"
+ *               phone:
+ *                 type: string
+ *                 example: "+351 912 345 678"
+ *           example:
+ *             name: "Ana Costa"
+ *             email: "ana.costa@cmbraga.pt"
+ *             password: "InstructorPass2024!"
+ *             phone: "+351 923 456 789"
  *     responses:
- *       200:
- *         description: Success - Instructor or Parent access
- *       401:
- *         description: Authentication required - Invalid or missing token
- *       403:
- *         description: Insufficient permissions
+ *       201:
+ *         description: Instructor created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Instructor created successfully"
+ *       400:
+ *         description: Validation error
+ *       409:
+ *         description: Email already exists
+ *       500:
+ *         description: Internal server error
  */
-router.get('/test/instructor-parent', authenticate, authorize(UserRole.INSTRUCTOR, UserRole.PARENT), (req: Request, res: Response) => {
-    return res.status(200).json({
-        message: "Welcome, Instructor or Parent! You have limited access.",
-        user: req.user
-    });
+router.post('/register/instructor', async (req: Request, res: Response) => {
+    try {
+        const validatedData = CreateInstructorSchema.parse(req.body);
+
+        const emailExists = await checkIfEmailExists(validatedData.email)
+        if (emailExists){
+            return res.status(409).json({message: "Email already exists"});
+        }
+        validatedData.password = informationHash.encrypt(validatedData.password);
+
+        await AppDataSource.transaction(async tx => {
+
+            await tx.getRepository(User).insert({
+                email: validatedData.email,
+                name: validatedData.name,
+                admin: validatedData 
+            });
+
+            await tx.getRepository(Instructor).insert(validatedData);
+        })
+        
+        return res.status(201).json({message: "Instructor created successfully"});
+
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({
+                message: "Validation error",
+                errors: error.issues
+            });
+        }
+        
+        return res.status(500).json({ message: error });
+    }
 });
 
 /**
  * @swagger
- * /auth/test/health-professional:
- *   get:
- *     summary: Health Professional test route
- *     description: Test route accessible only by health professionals
+ * /auth/register/health-professional:
+ *   post:
+ *     summary: Register a new health professional
+ *     description: Creates a new health professional user account
  *     tags:
- *       - Authentication Test
- *     security:
- *       - bearerAuth: []
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - password
+ *               - specialty
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 minLength: 1
+ *                 example: "Dr. Pedro Oliveira"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "pedro.oliveira@cmbraga.pt"
+ *               password:
+ *                 type: string
+ *                 minLength: 6
+ *                 example: "DoctorPass123!"
+ *               specialty:
+ *                 type: string
+ *                 enum: [pediatrician, nutritionist, general_practitioner]
+ *                 example: "pediatrician"
+ *           example:
+ *             name: "Dra. Sofia Mendes"
+ *             email: "sofia.mendes@cmbraga.pt"
+ *             password: "HealthProPass2024!"
+ *             specialty: "nutritionist"
  *     responses:
- *       200:
- *         description: Success - Health Professional access
- *       401:
- *         description: Authentication required - Invalid or missing token
- *       403:
- *         description: Insufficient permissions
+ *       201:
+ *         description: Health Professional created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Health Professional created successfully"
+ *       400:
+ *         description: Validation error
+ *       409:
+ *         description: Email already exists
+ *       500:
+ *         description: Internal server error
  */
-router.get('/test/health-professional', authenticate, authorize(UserRole.HEALTH_PROFESSIONAL), (req: Request, res: Response) => {
-    return res.status(200).json({
-        message: "Welcome, Health Professional! You can access medical data.",
-        user: req.user
-    });
+router.post('/register/health-professional', async (req: Request, res: Response) => {
+    try {
+        const validatedData = CreateHealthProfessionalSchema.parse(req.body);
+
+        const emailExists = await checkIfEmailExists(validatedData.email)
+        if (emailExists){
+            return res.status(409).json({message: "Email already exists"});
+        }
+        validatedData.password = informationHash.encrypt(validatedData.password);
+
+        await AppDataSource.transaction(async tx => {
+
+            await tx.getRepository(User).insert({
+                email: validatedData.email,
+                name: validatedData.name,
+                admin: validatedData 
+            });
+
+            await tx.getRepository(HealthProfessional).insert(validatedData);
+        })
+        
+        return res.status(201).json({message: "Health Professional created successfully"});
+
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({
+                message: "Validation error",
+                errors: error.issues
+            });
+        }
+        
+        return res.status(500).json({ message: error });
+    }
 });
 
 /**
  * @swagger
- * /auth/test/all-authenticated:
- *   get:
- *     summary: All authenticated users test route
- *     description: Test route accessible by any authenticated user
+ * /auth/register/parent:
+ *   post:
+ *     summary: Register a new parent
+ *     description: Creates a new parent user account
  *     tags:
- *       - Authentication Test
- *     security:
- *       - bearerAuth: []
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - password
+ *               - phone
+ *               - address
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 minLength: 1
+ *                 example: "Ricardo Mendes"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "ricardo.mendes@gmail.com"
+ *               password:
+ *                 type: string
+ *                 minLength: 6
+ *                 example: "ParentPass123!"
+ *               phone:
+ *                 type: string
+ *                 example: "+351 934 567 890"
+ *               address:
+ *                 type: string
+ *                 example: "Rua das Flores, 123 - Braga"
+ *           example:
+ *             name: "Isabel Costa"
+ *             email: "isabel.costa@gmail.com"
+ *             password: "ParentPass2024!"
+ *             phone: "+351 945 678 901"
+ *             address: "Avenida da Liberdade, 456 - Braga"
  *     responses:
- *       200:
- *         description: Success - Any authenticated user
- *       401:
- *         description: Authentication required
+ *       201:
+ *         description: Parent created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Parent created successfully"
+ *       400:
+ *         description: Validation error
+ *       409:
+ *         description: Email already exists
+ *       500:
+ *         description: Internal server error
  */
-router.get('/test/all-authenticated', authenticate, (req: Request, res: Response) => {
-    return res.status(200).json({
-        message: "Welcome, authenticated user! This is accessible to all logged-in users.",
-        user: req.user
-    });
+router.post('/register/parent', async (req: Request, res: Response) => {
+    try {
+        const validatedData = CreateParentSchema.parse(req.body);
+
+        const emailExists = await checkIfEmailExists(validatedData.email)
+        if (emailExists){
+            return res.status(409).json({message: "Email already exists"});
+        }
+        validatedData.password = informationHash.encrypt(validatedData.password);
+
+        await AppDataSource.transaction(async tx => {
+
+            await tx.getRepository(User).insert({
+                email: validatedData.email,
+                name: validatedData.name,
+                admin: validatedData 
+            });
+
+            await tx.getRepository(Parent).insert(validatedData);
+        })
+        
+        return res.status(201).json({message: "Parent created successfully"});
+
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({
+                message: "Validation error",
+                errors: error.issues
+            });
+        }
+        
+        return res.status(500).json({ message: error });
+    }
 });
 
 export default router;

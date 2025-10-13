@@ -74,7 +74,7 @@ async function seed() {
 
     console.log("Inserindo dados de teste para rota /stop...");
     
-    const encryptedPassword = informationHash.encrypt("1234");
+    const encryptedPassword = informationHash.encrypt("Person23!");
 
     // 5 postos
     const postos = [
