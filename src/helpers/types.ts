@@ -36,6 +36,15 @@ export enum HealthProfessionalSpecialty {
     GENERAL_PRACTITIONER = 'general_practitioner'
 }
 
+export enum BadgeCriteria {
+    STREAK = 'streak',
+    DISTANCE = 'distance',
+    CALORIES = 'calories',
+    WEATHER = 'weather',
+    POINTS = 'points',
+    SPECIAL = 'special'
+}
+
 // NON DB TYPES
 
 export enum UserRole {

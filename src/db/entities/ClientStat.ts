@@ -1,14 +1,14 @@
 import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from "typeorm"
-import { User } from "./User";
+import { Parent } from "./Parent";
 import { Child } from "./Child";
 
 @Entity()
-export class UserStat {
+export class ClientStat {
     @PrimaryGeneratedColumn("uuid")
     id!: string;
 
     @Column({ type: 'uuid', nullable: true })
-    parentid!: string;
+    parentId!: string;
 
     @Column({ type: 'uuid', nullable: true })
     childId!: string;
@@ -28,8 +28,8 @@ export class UserStat {
     @Column({ type: 'uuid' })
     activitySessionId!: string;
 
-    @OneToOne(() => User, {nullable: true})
-    user!: User | null;
+    @OneToOne(() => Parent, {nullable: true})
+    parent!: Parent | null;
 
     @OneToOne(() => Child, {nullable: true})
     child!: Child | null;

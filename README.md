@@ -121,6 +121,8 @@ http://localhost:3001/api/docs
 - **Health Check**: `GET /health`
 - **Get All Stations**: `GET /station`
 - **Create Parent**: `POST /parent`
+- **Get All Badges**: `GET /badge`
+- **Create Badge**: `POST /badge`
 
 ---
 
