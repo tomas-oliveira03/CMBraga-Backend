@@ -22,10 +22,11 @@ class AuthenticationService {
                 id: true,
                 name: true,
                 email: true,
-                password: true
+                password: true,
+                activatedAt: true
             }
         });
-        if (admin && this.verifyPassword(password, admin.password)) {
+        if (admin && admin.activatedAt && this.verifyPassword(password, admin.password)) {
             return this.createAuthResponse(admin, types_1.UserRole.ADMIN);
         }
         const instructor = await db_1.AppDataSource.getRepository(Instructor_1.Instructor).findOne({
@@ -34,10 +35,11 @@ class AuthenticationService {
                 id: true,
                 name: true,
                 email: true,
-                password: true
+                password: true,
+                activatedAt: true
             }
         });
-        if (instructor && this.verifyPassword(password, instructor.password)) {
+        if (instructor && instructor.activatedAt && this.verifyPassword(password, instructor.password)) {
             return this.createAuthResponse(instructor, types_1.UserRole.INSTRUCTOR);
         }
         const parent = await db_1.AppDataSource.getRepository(Parent_1.Parent).findOne({
@@ -46,10 +48,11 @@ class AuthenticationService {
                 id: true,
                 name: true,
                 email: true,
-                password: true
+                password: true,
+                activatedAt: true
             }
         });
-        if (parent && this.verifyPassword(password, parent.password)) {
+        if (parent && parent.activatedAt && this.verifyPassword(password, parent.password)) {
             return this.createAuthResponse(parent, types_1.UserRole.PARENT);
         }
         const healthProfessional = await db_1.AppDataSource.getRepository(HealthProfessional_1.HealthProfessional).findOne({
@@ -58,10 +61,11 @@ class AuthenticationService {
                 id: true,
                 name: true,
                 email: true,
-                password: true
+                password: true,
+                activatedAt: true
             }
         });
-        if (healthProfessional && this.verifyPassword(password, healthProfessional.password)) {
+        if (healthProfessional && healthProfessional.activatedAt && this.verifyPassword(password, healthProfessional.password)) {
             return this.createAuthResponse(healthProfessional, types_1.UserRole.HEALTH_PROFESSIONAL);
         }
         throw new Error('Invalid email or password');

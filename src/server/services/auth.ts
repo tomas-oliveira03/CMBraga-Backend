@@ -33,11 +33,12 @@ export class AuthenticationService {
                 id: true,
                 name: true,
                 email: true,
-                password: true
+                password: true,
+                activatedAt: true
             }
         });
         
-        if (admin && this.verifyPassword(password, admin.password)) {
+        if (admin && admin.activatedAt && this.verifyPassword(password, admin.password)) {
             return this.createAuthResponse(admin, UserRole.ADMIN);
         }
 
@@ -47,11 +48,12 @@ export class AuthenticationService {
                 id: true,
                 name: true,
                 email: true,
-                password: true
+                password: true,
+                activatedAt: true
             }
         });
-        
-        if (instructor && this.verifyPassword(password, instructor.password)) {
+
+        if (instructor && instructor.activatedAt && this.verifyPassword(password, instructor.password)) {
             return this.createAuthResponse(instructor, UserRole.INSTRUCTOR);
         }
 
@@ -61,11 +63,12 @@ export class AuthenticationService {
                 id: true,
                 name: true,
                 email: true,
-                password: true
+                password: true,
+                activatedAt: true
             }
         });
-        
-        if (parent && this.verifyPassword(password, parent.password)) {
+
+        if (parent && parent.activatedAt && this.verifyPassword(password, parent.password)) {
             return this.createAuthResponse(parent, UserRole.PARENT);
         }
 
@@ -75,11 +78,12 @@ export class AuthenticationService {
                 id: true,
                 name: true,
                 email: true,
-                password: true
+                password: true,
+                activatedAt: true
             }
         });
-        
-        if (healthProfessional && this.verifyPassword(password, healthProfessional.password)) {
+
+        if (healthProfessional && healthProfessional.activatedAt && this.verifyPassword(password, healthProfessional.password)) {
             return this.createAuthResponse(healthProfessional, UserRole.HEALTH_PROFESSIONAL);
         }
 

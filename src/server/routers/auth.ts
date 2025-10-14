@@ -79,6 +79,7 @@ const router = express.Router();
 router.post('/login', async (req: Request, res: Response) => {
     try {
         const validatedData = LoginSchema.parse(req.body);
+
         const result = await AuthenticationService.login(validatedData);
 
         const wsUrl = `${envs.WEBSOCKET_BASE_URL}/ws?token=${result.token}`;
@@ -558,57 +559,65 @@ router.post('/register/set-password', async (req: Request, res: Response) => {
 
         const hashedPassword = informationHash.encrypt(password);
 
-        await AppDataSource.transaction(async tx => {
-            const user = await tx.getRepository(User).findOne({
-                where: { id: email },
-                select: ['adminId', 'instructorId', 'parentId', 'healthProfessionalId']
-            });
-
-            if (!user) {
-                throw new Error('User not found');
-            }
-            
-            if (user.adminId) {
-                await tx.getRepository(Admin).update(
-                    { id: user.adminId },
-                    { 
-                        password: hashedPassword,
-                        activatedAt: new Date(),
-                        updatedAt: new Date()
-                    }
-                );
-            } else if (user.instructorId) {
-                await tx.getRepository(Instructor).update(
-                    { id: user.instructorId },
-                    { 
-                        password: hashedPassword,
-                        activatedAt: new Date(),
-                        updatedAt: new Date()
-                    }
-                );
-            } else if (user.parentId) {
-                await tx.getRepository(Parent).update(
-                    { id: user.parentId },
-                    { 
-                        password: hashedPassword,
-                        activatedAt: new Date(),
-                        updatedAt: new Date()
-                    }
-                );
-            } else if (user.healthProfessionalId) {
-                await tx.getRepository(HealthProfessional).update(
-                    { id: user.healthProfessionalId },
-                    { 
-                        password: hashedPassword,
-                        activatedAt: new Date(),
-                        updatedAt: new Date()
-                    }
-                );
-            } else {
-                throw new Error('User role not found');
+        const user = await AppDataSource.getRepository(User).findOne({
+            where: { id: email },
+            select: {
+                adminId: true,
+                parentId: true,
+                healthProfessionalId: true,
+                instructorId: true
             }
         });
 
+        if (!user) {
+            throw new Error('User not found');
+        }
+
+        
+        if (user.adminId) {
+            await AppDataSource.createQueryBuilder().update(Admin)
+            .set({
+                    password: hashedPassword,
+                    updatedAt: new Date(),
+                    activatedAt: () => `CASE WHEN "activated_at" IS NULL THEN NOW() ELSE "activated_at" END`,
+            })
+            .where("id = :id", { id: user.adminId })
+            .execute();
+            
+        } else if (user.instructorId) {
+            await AppDataSource.createQueryBuilder().update(Instructor)
+            .set({
+                    password: hashedPassword,
+                    updatedAt: new Date(),
+                    activatedAt: () => `CASE WHEN "activated_at" IS NULL THEN NOW() ELSE "activated_at" END`,
+            })
+            .where("id = :id", { id: user.instructorId })
+            .execute();
+
+        } else if (user.parentId) {
+            await AppDataSource.createQueryBuilder().update(Parent)
+                .set({
+                    password: hashedPassword,
+                    updatedAt: new Date(),
+                    activatedAt: () => `CASE WHEN "activated_at" IS NULL THEN NOW() ELSE "activated_at" END`,
+                })
+                .where("id = :id", { id: user.parentId })
+                .execute();
+
+        } else if (user.healthProfessionalId) {
+            await AppDataSource.createQueryBuilder().update(HealthProfessional)
+                .set({
+                    password: hashedPassword,
+                    updatedAt: new Date(),
+                    activatedAt: () => `CASE WHEN "activated_at" IS NULL THEN NOW() ELSE "activated_at" END`,
+                })
+                .where("id = :id", { id: user.healthProfessionalId })
+                .execute();
+
+        } else {
+            throw new Error('User role not found');
+        }
+    
         return res.status(200).json({ message: "Password set successfully" });
 
     } catch (error) {
