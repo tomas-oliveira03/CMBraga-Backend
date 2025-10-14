@@ -14,13 +14,14 @@ import { StationActivitySession } from "./StationActivitySession";
 import { ParentActivitySession } from "./ParentActivitySession";
 import { Issue } from "./Issue";
 import { ChildStation } from "./ChildStation";
-import { ActivityMode, ActivityType } from "@/helpers/types";
+import { ActivityMode, ActivityType, WeatherType } from "@/helpers/types";
 import { Instructor } from "./Instructor";
 import { ChildActivityRecord } from "./ChildActivityRecord";
 
 @Entity()
 @Check(`"type" IN ('pedibus', 'ciclo_expresso')`)
 @Check(`"mode" IN ('walk', 'bike')`)
+@Check(`"weather_type" IN ('thunderstorm', 'drizzle', 'rain', 'snow', 'atmosphere', 'clear', 'clouds')`)
 export class ActivitySession {
     @PrimaryGeneratedColumn("uuid")
     id!: string;
@@ -33,6 +34,12 @@ export class ActivitySession {
 
     @Column({ type: "boolean", default: false })
     inLateRegistration!: boolean;
+
+    @Column({ type: "int", nullable: true })
+    weatherTemperature!: number | null;
+
+    @Column({ type: "varchar", nullable: true })
+    weatherType!: WeatherType | null;
 
     @Column({ type: "timestamptz" })
     scheduledAt!: Date;

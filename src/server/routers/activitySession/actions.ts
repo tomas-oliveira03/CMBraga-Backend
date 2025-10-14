@@ -10,6 +10,7 @@ import { Child } from "@/db/entities/Child";
 import { ChildActivitySession } from "@/db/entities/ChildActivitySession";
 import { ChildStation } from "@/db/entities/ChildStation";
 import { IsNull, Not } from "typeorm";
+import { getWeatherFromCity } from "@/server/services/weather";
 
 const router = express.Router();
 
@@ -119,12 +120,15 @@ router.post('/start', authenticate, authorize(UserRole.INSTRUCTOR), async (req: 
         }
 
         const now = new Date();
+        const weatherData = await getWeatherFromCity("Braga")
+
         await AppDataSource.getRepository(ActivitySession).update(activitySession.id, { 
             startedAt: now, 
             updatedAt: now,
+            weatherTemperature: weatherData?.temperature ?? null,
+            weatherType: weatherData?.weatherType ?? null,
             startedById: req.user?.userId 
         });
-
 
         const firstStationId = await getCurrentStationId(activitySessionId)
         if (!firstStationId){

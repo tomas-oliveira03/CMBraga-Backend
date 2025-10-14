@@ -67,3 +67,16 @@ export enum NotificationType {
     MEDICAL_REPORT = 'medical_report',
     GENERAL = 'general'
 }
+
+
+// Weather
+
+export enum WeatherType {
+  Thunderstorm = "thunderstorm",
+  Drizzle = "drizzle",           
+  Rain = "rain",                 
+  Snow = "snow",                
+  Atmosphere = "atmosphere", 
+  Clear = "clear",              
+  Clouds = "clouds"           
+}

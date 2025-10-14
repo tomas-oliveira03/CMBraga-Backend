@@ -44,11 +44,11 @@ class Envs {
         "JWT_SECRET", 
         "your_secret"
     );
-
     public readonly LOGGER_SHOW_DATETIME: boolean = this.getBool(
         "LOGGER_SHOW_DATETIME", 
         false
     );
+    public readonly OPEN_WEATHER_API_KEY: string = this.getString("OPEN_WEATHER_API_KEY", "your_api_key");
 
     public readonly BASE_URL = this.isProd 
         ? `${this.HOST}`
