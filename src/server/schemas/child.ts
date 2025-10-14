@@ -21,10 +21,10 @@ export const ChildSchema = z.object({
   school: z.string(),
   schoolGrade: z.number(),
   dropOffStationId: z.string(),
-  dateOfBirth: z.coerce.date(),
+  dateOfBirth: z.date(),
   healthProblems: HealthProblemsSchema.optional(),
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date().nullable()
+  createdAt: z.date(),
+  updatedAt: z.date().nullable()
 });
 
 export const CreateChildSchema = ChildSchema.omit({

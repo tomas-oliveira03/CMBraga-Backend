@@ -5,20 +5,24 @@ export const AdminSchema = z.object({
     name: z.string(),
     email: z.string(),
     password: z.string(),
-    createdAt: z.coerce.date(),
-    updatedAt: z.coerce.date().nullable()
+    createdAt: z.date(),
+    activatedAt: z.date().nullable(),
+    updatedAt: z.date().nullable()
 });
 
 export const CreateAdminSchema = AdminSchema.omit({
     id: true,
     createdAt: true,
-    updatedAt: true
+    activatedAt: true,
+    updatedAt: true,
+    password: true
 });
 
 export const UpdateAdminSchema = AdminSchema.omit({
     id: true,
     email: true,
     createdAt: true,
+    activatedAt: true,
     updatedAt: true
 }).partial();
 

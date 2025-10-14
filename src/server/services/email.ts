@@ -43,7 +43,7 @@ export async function sendPasswordReset(email: string, name: string){
         subject: "Defina a sua palavra-passe",
         html: `
         <p>Olá ${name},</p>
-        <p>Foi registado como instrutor na nossa plataforma.</p>
+        <p>Foi registado na nossa plataforma.</p>
         <p>Clique no link abaixo para definir a sua palavra-passe:</p>
         <a href="${link}">${link}</a>
         <p>Este link é válido por 24 horas.</p>

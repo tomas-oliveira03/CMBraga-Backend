@@ -6,9 +6,9 @@ export const InstructorSchema = z.object({
     email: z.string(),
     password: z.string(),
     phone: z.string(),
-    createdAt: z.coerce.date(),
-    activatedAt: z.coerce.date().nullable(),
-    updatedAt: z.coerce.date().nullable()
+    createdAt: z.date(),
+    activatedAt: z.date().nullable(),
+    updatedAt: z.date().nullable()
 });
 
 export const CreateInstructorSchema = InstructorSchema.omit({

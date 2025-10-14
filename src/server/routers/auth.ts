@@ -140,7 +140,6 @@ router.get('/profile', authenticate, (req: Request, res: Response) => {
  *             required:
  *               - name
  *               - email
- *               - password
  *             properties:
  *               name:
  *                 type: string
@@ -150,14 +149,9 @@ router.get('/profile', authenticate, (req: Request, res: Response) => {
  *                 type: string
  *                 format: email
  *                 example: "joao.silva@cmbraga.pt"
- *               password:
- *                 type: string
- *                 minLength: 6
- *                 example: "SecurePassword123!"
  *           example:
  *             name: "Maria Santos"
  *             email: "maria.santos@cmbraga.pt"
- *             password: "AdminPass2024!"
  *     responses:
  *       201:
  *         description: Admin created successfully
@@ -204,8 +198,7 @@ router.post('/register/admin', async (req: Request, res: Response) => {
         if (emailExists){
             return res.status(409).json({message: "Email already exists"});
         }
-        validatedData.password = informationHash.encrypt(validatedData.password);
-
+        
         await AppDataSource.transaction(async tx => {
             
             const admin = await tx.getRepository(Admin).insert(validatedData);
@@ -218,6 +211,8 @@ router.post('/register/admin', async (req: Request, res: Response) => {
             });
         })
         
+        await sendPasswordReset(validatedData.email, validatedData.name);
+
         return res.status(201).json({message: "Admin created successfully"});
 
     } catch (error) {
@@ -321,7 +316,189 @@ router.post('/register/instructor', async (req: Request, res: Response) => {
     }
 });
 
+/**
+ * @swagger
+ * /auth/register/health-professional:
+ *   post:
+ *     summary: Register a new health professional
+ *     description: Creates a new health professional user account
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - specialty
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 minLength: 1
+ *                 example: "Dr. Pedro Oliveira"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "pedro.oliveira@cmbraga.pt"
+ *               specialty:
+ *                 type: string
+ *                 enum: [pediatrician, nutritionist, general_practitioner]
+ *                 example: "pediatrician"
+ *           example:
+ *             name: "Dra. Sofia Mendes"
+ *             email: "sofia.mendes@cmbraga.pt"
+ *             specialty: "nutritionist"
+ *     responses:
+ *       201:
+ *         description: Health Professional created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Health Professional created successfully"
+ *       400:
+ *         description: Validation error
+ *       409:
+ *         description: Email already exists
+ *       500:
+ *         description: Internal server error
+*/
+router.post('/register/health-professional', async (req: Request, res: Response) => {
+    try {
+        const validatedData = CreateHealthProfessionalSchema.parse(req.body);
+        
+        const emailExists = await checkIfEmailExists(validatedData.email)
+        if (emailExists){
+            return res.status(409).json({message: "Email already exists"});
+        }
 
+        await AppDataSource.transaction(async tx => {
+            
+            const healthProfessional = await tx.getRepository(HealthProfessional).insert(validatedData);
+            const healthProfessionalId = healthProfessional.identifiers[0]?.id
+            
+            await tx.getRepository(User).insert({
+                id: validatedData.email,
+                name: validatedData.name,
+                healthProfessionalId: healthProfessionalId
+            });
+        })
+
+        await sendPasswordReset(validatedData.email, validatedData.name);
+
+        return res.status(201).json({message: "Health Professional created successfully"});
+        
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({
+                message: "Validation error",
+                errors: error.issues
+            });
+        }
+        
+        return res.status(500).json({ message: error });
+    }
+});
+
+/**
+ * @swagger
+ * /auth/register/parent:
+ *   post:
+ *     summary: Register a new parent
+ *     description: Creates a new parent user account
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - phone
+ *               - address
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 minLength: 1
+ *                 example: "Ricardo Mendes"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "ricardo.mendes@gmail.com"
+ *               phone:
+ *                 type: string
+ *                 example: "+351 934 567 890"
+ *               address:
+ *                 type: string
+ *                 example: "Rua das Flores, 123 - Braga"
+ *           example:
+ *             name: "Isabel Costa"
+ *             email: "isabel.costa@gmail.com"
+ *             phone: "+351 945 678 901"
+ *             address: "Avenida da Liberdade, 456 - Braga"
+ *     responses:
+ *       201:
+ *         description: Parent created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Parent created successfully"
+ *       400:
+ *         description: Validation error
+ *       409:
+ *         description: Email already exists
+ *       500:
+ *         description: Internal server error
+*/
+router.post('/register/parent', async (req: Request, res: Response) => {
+    try {
+        const validatedData = CreateParentSchema.parse(req.body);
+
+        const emailExists = await checkIfEmailExists(validatedData.email)
+        if (emailExists){
+            return res.status(409).json({message: "Email already exists"});
+        }
+        
+        await AppDataSource.transaction(async tx => {
+            
+            const parent = await tx.getRepository(Parent).insert(validatedData);
+            const parentId = parent.identifiers[0]?.id
+            
+            await tx.getRepository(User).insert({
+                id: validatedData.email,
+                name: validatedData.name,
+                parentId: parentId
+            });
+        })
+        
+        await sendPasswordReset(validatedData.email, validatedData.name);
+
+        return res.status(201).json({message: "Parent created successfully"});
+
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({
+                message: "Validation error",
+                errors: error.issues
+            });
+        }
+        
+        return res.status(500).json({ message: error });
+    }
+});
 
 /**
  * @swagger
@@ -381,214 +558,61 @@ router.post('/register/set-password', async (req: Request, res: Response) => {
 
         const hashedPassword = informationHash.encrypt(password);
 
-        await AppDataSource.getRepository(Instructor).update(
-            { email: email },
-            { 
-                password: hashedPassword,
-                activatedAt: new Date(),
-                updatedAt: new Date()    
+        await AppDataSource.transaction(async tx => {
+            const user = await tx.getRepository(User).findOne({
+                where: { id: email },
+                select: ['adminId', 'instructorId', 'parentId', 'healthProfessionalId']
+            });
+
+            if (!user) {
+                throw new Error('User not found');
             }
-        );
+            
+            if (user.adminId) {
+                await tx.getRepository(Admin).update(
+                    { id: user.adminId },
+                    { 
+                        password: hashedPassword,
+                        activatedAt: new Date(),
+                        updatedAt: new Date()
+                    }
+                );
+            } else if (user.instructorId) {
+                await tx.getRepository(Instructor).update(
+                    { id: user.instructorId },
+                    { 
+                        password: hashedPassword,
+                        activatedAt: new Date(),
+                        updatedAt: new Date()
+                    }
+                );
+            } else if (user.parentId) {
+                await tx.getRepository(Parent).update(
+                    { id: user.parentId },
+                    { 
+                        password: hashedPassword,
+                        activatedAt: new Date(),
+                        updatedAt: new Date()
+                    }
+                );
+            } else if (user.healthProfessionalId) {
+                await tx.getRepository(HealthProfessional).update(
+                    { id: user.healthProfessionalId },
+                    { 
+                        password: hashedPassword,
+                        activatedAt: new Date(),
+                        updatedAt: new Date()
+                    }
+                );
+            } else {
+                throw new Error('User role not found');
+            }
+        });
 
         return res.status(200).json({ message: "Password set successfully" });
 
     } catch (error) {
         return res.status(400).json({ message: "Invalid or expired token" });
-    }
-});
-
-
-/**
- * @swagger
- * /auth/register/health-professional:
- *   post:
- *     summary: Register a new health professional
- *     description: Creates a new health professional user account
- *     tags:
- *       - Authentication
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - name
- *               - email
- *               - password
- *               - specialty
- *             properties:
- *               name:
- *                 type: string
- *                 minLength: 1
- *                 example: "Dr. Pedro Oliveira"
- *               email:
- *                 type: string
- *                 format: email
- *                 example: "pedro.oliveira@cmbraga.pt"
- *               password:
- *                 type: string
- *                 minLength: 6
- *                 example: "DoctorPass123!"
- *               specialty:
- *                 type: string
- *                 enum: [pediatrician, nutritionist, general_practitioner]
- *                 example: "pediatrician"
- *           example:
- *             name: "Dra. Sofia Mendes"
- *             email: "sofia.mendes@cmbraga.pt"
- *             password: "HealthProPass2024!"
- *             specialty: "nutritionist"
- *     responses:
- *       201:
- *         description: Health Professional created successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Health Professional created successfully"
- *       400:
- *         description: Validation error
- *       409:
- *         description: Email already exists
- *       500:
- *         description: Internal server error
- */
-router.post('/register/health-professional', async (req: Request, res: Response) => {
-    try {
-        const validatedData = CreateHealthProfessionalSchema.parse(req.body);
-
-        const emailExists = await checkIfEmailExists(validatedData.email)
-        if (emailExists){
-            return res.status(409).json({message: "Email already exists"});
-        }
-        validatedData.password = informationHash.encrypt(validatedData.password);
-
-        await AppDataSource.transaction(async tx => {
-
-            const healthProfessional = await tx.getRepository(HealthProfessional).insert(validatedData);
-            const healthProfessionalId = healthProfessional.identifiers[0]?.id
-
-            await tx.getRepository(User).insert({
-                id: validatedData.email,
-                name: validatedData.name,
-                healthProfessionalId: healthProfessionalId
-            });
-        })
-        
-        return res.status(201).json({message: "Health Professional created successfully"});
-
-    } catch (error) {
-        if (error instanceof z.ZodError) {
-            return res.status(400).json({
-                message: "Validation error",
-                errors: error.issues
-            });
-        }
-        
-        return res.status(500).json({ message: error });
-    }
-});
-
-/**
- * @swagger
- * /auth/register/parent:
- *   post:
- *     summary: Register a new parent
- *     description: Creates a new parent user account
- *     tags:
- *       - Authentication
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - name
- *               - email
- *               - password
- *               - phone
- *               - address
- *             properties:
- *               name:
- *                 type: string
- *                 minLength: 1
- *                 example: "Ricardo Mendes"
- *               email:
- *                 type: string
- *                 format: email
- *                 example: "ricardo.mendes@gmail.com"
- *               password:
- *                 type: string
- *                 minLength: 6
- *                 example: "ParentPass123!"
- *               phone:
- *                 type: string
- *                 example: "+351 934 567 890"
- *               address:
- *                 type: string
- *                 example: "Rua das Flores, 123 - Braga"
- *           example:
- *             name: "Isabel Costa"
- *             email: "isabel.costa@gmail.com"
- *             password: "ParentPass2024!"
- *             phone: "+351 945 678 901"
- *             address: "Avenida da Liberdade, 456 - Braga"
- *     responses:
- *       201:
- *         description: Parent created successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Parent created successfully"
- *       400:
- *         description: Validation error
- *       409:
- *         description: Email already exists
- *       500:
- *         description: Internal server error
- */
-router.post('/register/parent', async (req: Request, res: Response) => {
-    try {
-        const validatedData = CreateParentSchema.parse(req.body);
-
-        const emailExists = await checkIfEmailExists(validatedData.email)
-        if (emailExists){
-            return res.status(409).json({message: "Email already exists"});
-        }
-        validatedData.password = informationHash.encrypt(validatedData.password);
-
-        await AppDataSource.transaction(async tx => {
-
-            const parent = await tx.getRepository(Parent).insert(validatedData);
-            const parentId = parent.identifiers[0]?.id
-
-            await tx.getRepository(User).insert({
-                id: validatedData.email,
-                name: validatedData.name,
-                parentId: parentId
-            });
-        })
-        
-        return res.status(201).json({message: "Parent created successfully"});
-
-    } catch (error) {
-        if (error instanceof z.ZodError) {
-            return res.status(400).json({
-                message: "Validation error",
-                errors: error.issues
-            });
-        }
-        
-        return res.status(500).json({ message: error });
     }
 });
 

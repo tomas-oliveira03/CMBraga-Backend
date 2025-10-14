@@ -8,19 +8,23 @@ export const ParentSchema = z.object({
     phone: z.string(),
     address: z.string(),
     createdAt: z.date(),
+    activatedAt: z.date().nullable(),
     updatedAt: z.date().nullable()
 });
 
 export const CreateParentSchema = ParentSchema.omit({
     id: true,
     createdAt: true,
-    updatedAt: true
+    activatedAt: true,
+    updatedAt: true,
+    password: true
 });
 
 export const UpdateParentSchema = ParentSchema.omit({
     id: true,
     email: true,
     createdAt: true,
+    activatedAt: true,
     updatedAt: true
 }).partial();
 
