@@ -1,6 +1,9 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm"
+import { BadgeCriteria } from "@/helpers/types"
+import { Check, Column, Entity, PrimaryGeneratedColumn } from "typeorm"
+
 
 @Entity()
+@Check(`"criteria" IN ('streak', 'distance', 'calories', 'weather', 'points', 'special', 'leaderboard')`)
 export class Badge {
     @PrimaryGeneratedColumn("uuid")
     id!: string
@@ -15,7 +18,7 @@ export class Badge {
     imageUrl!: string
 
     @Column("varchar")
-    criteria!: string
+    criteria!: BadgeCriteria
 
     @Column({ type: "int", nullable: true })
     valueneeded!: number
