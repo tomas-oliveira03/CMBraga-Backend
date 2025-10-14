@@ -14,6 +14,7 @@ import { StationActivitySession } from "@/db/entities/StationActivitySession";
 import { ChildStation } from "@/db/entities/ChildStation";
 import { Issue } from "@/db/entities/Issue";
 import { MedicalReport } from "@/db/entities/MedicalReport";
+import { User } from "@/db/entities/User";
 import informationHash from "@/lib/information-hash";
 
 async function seed() {
@@ -36,6 +37,7 @@ async function seed() {
     const childStationRepo = dataSource.getRepository(ChildStation);
     const issueRepo = dataSource.getRepository(Issue);
     const reportRepo = dataSource.getRepository(MedicalReport);
+    const userRepo = dataSource.getRepository(User);
 
     console.log("Cleaning tables (dependents first)...");
     // Clear repositories in order, but ignore errors if the table doesn't exist yet
@@ -47,6 +49,7 @@ async function seed() {
       issueRepo,
       reportRepo,
       parentChildRepo,
+      userRepo,
       childRepo,
       parentRepo,
       instructorRepo,
@@ -95,12 +98,26 @@ async function seed() {
     });
     await hpRepo.save(hp1);
 
+    // Create corresponding User for health professional
+    await userRepo.save(userRepo.create({
+      id: hp1.email,
+      name: hp1.name,
+      healthProfessionalId: hp1.id
+    }));
+
     const admin = adminRepo.create({ 
       name: "Admin User", 
       email: "admin@cmbraga.pt", 
       password: encryptedPassword 
     });
     await adminRepo.save(admin);
+
+    // Create corresponding User for admin
+    await userRepo.save(userRepo.create({
+      id: admin.email,
+      name: admin.name,
+      adminId: admin.id
+    }));
 
     // 10 pais e 10 crianças
     const pais: Parent[] = [];
@@ -117,6 +134,15 @@ async function seed() {
       pais.push(parent);
     }
     await parentRepo.save(pais);
+
+    // Create corresponding Users for parents
+    for (const parent of pais) {
+      await userRepo.save(userRepo.create({
+        id: parent.email,
+        name: parent.name,
+        parentId: parent.id,
+      }));
+    }
 
     for (let i = 0; i < 10; i++) {
       const child = childRepo.create({
@@ -143,6 +169,15 @@ async function seed() {
       instructorRepo.create({ name: "Instrutor 2", email: "inst2@cmbraga.pt", password: encryptedPassword, phone: "922222222" }),
     ];
     await instructorRepo.save(instrutores);
+
+    // Create corresponding Users for instructors
+    for (const instructor of instrutores) {
+      await userRepo.save(userRepo.create({
+        id: instructor.email,
+        name: instructor.name,
+        instructorId: instructor.id
+      }));
+    }
 
     // Atividade principal
     const atividade = activityRepo.create({
@@ -238,6 +273,7 @@ async function seed() {
 
     console.log("\n=== HIDRATAÇÃO COMPLETA ===");
     console.log("✅ Criados 5 postos e 10 crianças (2 por posto)");
+    console.log("✅ Criados registros de usuário para Admin, Instrutores, Pais e Profissional de Saúde");
     console.log("🚌 Atividade iniciada, postos 1 e 2 já visitados");
     console.log("📍 Próximo posto: Biblioteca (posto 3)");
 
