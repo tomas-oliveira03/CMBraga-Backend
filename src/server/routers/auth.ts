@@ -66,6 +66,10 @@ const router = express.Router();
  *                     role:
  *                       type: string
  *                       enum: [admin, instructor, parent, health_professional]
+ *                 websocketURL:
+ *                   type: string
+ *                   description: WebSocket URL for real-time updates
+ *                   example: "ws://localhost:3001/ws?token=your_jwt_token"
  *       400:
  *         description: Validation error
  *       401:
@@ -207,7 +211,7 @@ router.post('/register/admin', async (req: Request, res: Response) => {
             const adminId = admin.identifiers[0]?.id
 
             await tx.getRepository(User).insert({
-                email: validatedData.email,
+                id: validatedData.email,
                 name: validatedData.name,
                 adminId: adminId
             });
@@ -301,7 +305,7 @@ router.post('/register/instructor', async (req: Request, res: Response) => {
             const instructorId = instructor.identifiers[0]?.id
 
             await tx.getRepository(User).insert({
-                email: validatedData.email,
+                id: validatedData.email,
                 name: validatedData.name,
                 instructorId: instructorId
             });
@@ -396,7 +400,7 @@ router.post('/register/health-professional', async (req: Request, res: Response)
             const healthProfessionalId = healthProfessional.identifiers[0]?.id
 
             await tx.getRepository(User).insert({
-                email: validatedData.email,
+                id: validatedData.email,
                 name: validatedData.name,
                 healthProfessionalId: healthProfessionalId
             });
@@ -495,7 +499,7 @@ router.post('/register/parent', async (req: Request, res: Response) => {
             const parentId = parent.identifiers[0]?.id
 
             await tx.getRepository(User).insert({
-                email: validatedData.email,
+                id: validatedData.email,
                 name: validatedData.name,
                 parentId: parentId
             });

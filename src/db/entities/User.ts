@@ -8,7 +8,7 @@ import { UserChat } from "./UserChat";
 @Entity()
 export class User {
     @PrimaryColumn({ type: 'varchar'})
-    email!: string;
+    id!: string;
 
     @Column({ type: 'varchar' })
     name!: string;

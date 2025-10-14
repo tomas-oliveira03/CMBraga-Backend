@@ -305,13 +305,17 @@ router.get("/:conversationId", async (req: Request, res: Response) => {
         if (!conversationId) {
             return res.status(400).json({ message: "Missing conversationId parameter" });
         }
-        const messages = await getMessagesFromChat(conversationId, jump);
+        const chatData = await getMessagesFromChat(conversationId, jump);
 
-        if (messages.length === 0) {
+        if (!chatData.messages || chatData.messages.length === 0) {
             return res.status(404).json({ message: "Communication not found" });
         }
 
-        return res.status(200).json({ messages });
+        if (jump === 0 && chatData.members) {
+            return res.status(200).json({ members: chatData.members, messages: chatData.messages });
+        }
+
+        return res.status(200).json({ messages: chatData.messages });
     } catch (error) {
         return res.status(500).json({ message: "Internal server error" });
     }
@@ -380,7 +384,7 @@ router.get("/chats/:userId", async (req: Request, res: Response) => {
         const page = parseInt(req.query.page as string) || 1;
         const limit = 10;
 
-        const userExists = await AppDataSource.getRepository(User).findOne({ where: { email: userId } });
+        const userExists = await AppDataSource.getRepository(User).findOne({ where: { id: userId } });
         if (!userExists) {
             return res.status(404).json({ message: "User not found" });
         }

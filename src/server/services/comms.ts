@@ -47,7 +47,7 @@ export async function checkIfUserInChat(email: string, chatId: string): Promise<
 export async function checkIfUserExists(userId: string): Promise<boolean> {
     try {
         const user = await AppDataSource.getRepository(User)
-            .findOne({ where: { email: userId } });
+            .findOne({ where: { id: userId } });
         return user !== null;
     } catch (error) {
         console.error("Error checking if user exists:", error);
@@ -66,7 +66,7 @@ export async function checkIfChatExists(chatId: string): Promise<boolean> {
     }
 }
 
-export async function getMessagesFromChat(chatId: string, page: number): Promise<Partial<Message>[]> {
+export async function getMessagesFromChat(chatId: string, page: number): Promise<{ messages: Partial<Message>[], members?: { name: string, email: string }[] }> {
     try {
         const query = AppDataSource.getRepository(Message)
             .createQueryBuilder("message")
@@ -82,11 +82,33 @@ export async function getMessagesFromChat(chatId: string, page: number): Promise
         const messages = await query.getMany();
 
         // Map messages to exclude senderId, chatId, and id
-        return messages.map(({ content, timestamp, senderName }) => ({
+        const mappedMessages = messages.map(({ content, timestamp, senderName }) => ({
             content,
             timestamp,
             senderName,
         }));
+
+        if (page === 0) {
+            const chat = await AppDataSource.getRepository(Chat)
+                .createQueryBuilder("chat")
+                .innerJoinAndSelect("chat.userChat", "userChat")
+                .innerJoinAndSelect("userChat.user", "user")
+                .where("chat.id = :chatId", { chatId })
+                .getOne();
+
+            if (!chat) {
+                throw new Error("Chat not found");
+            }
+
+            const members = chat.userChat.map(userChat => ({
+                name: userChat.user.name,
+                email: userChat.user.id,
+            }));
+
+            return { messages: mappedMessages, members };
+        }
+
+        return { messages: mappedMessages };
     } catch (error) {
         console.error("Error retrieving messages from chat:", error);
         throw new Error("Failed to retrieve messages from chat");
@@ -98,7 +120,7 @@ export async function searchSimilarUsers(query: string): Promise<User[] | null> 
         // Given a part of a name or email, find if it belongs to any user, even if in middle of name or email
         const users = await AppDataSource.getRepository(User)
             .createQueryBuilder("user")
-            .where("user.name LIKE :query OR user.email LIKE :query", { query: `%${query}%` })
+            .where("user.name LIKE :query OR user.id LIKE :query", { query: `%${query}%` })
             .getMany();
         return users;
     } catch (error) {

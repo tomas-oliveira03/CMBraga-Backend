@@ -48,6 +48,10 @@ const router = express.Router();
  *                   name:
  *                     type: string
  *                     description: The user's name
+ *                   role:
+ *                     type: string
+ *                     description: The user's role
+ *                     example: "admin"
  *       400:
  *         description: Missing or invalid query parameter
  *         content:
