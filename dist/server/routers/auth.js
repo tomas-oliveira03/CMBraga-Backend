@@ -204,7 +204,7 @@ router.post('/register/admin', async (req, res) => {
                 adminId: adminId
             });
         });
-        await (0, email_1.sendPasswordReset)(validatedData.email, validatedData.name);
+        await (0, email_1.createPassword)(validatedData.email, validatedData.name);
         return res.status(201).json({ message: "Admin created successfully" });
     }
     catch (error) {
@@ -286,7 +286,7 @@ router.post('/register/instructor', async (req, res) => {
                 instructorId: instructorId
             });
         });
-        await (0, email_1.sendPasswordReset)(validatedData.email, validatedData.name);
+        await (0, email_1.createPassword)(validatedData.email, validatedData.name);
         return res.status(201).json({ message: "Instructor created successfully" });
     }
     catch (error) {
@@ -368,7 +368,7 @@ router.post('/register/health-professional', async (req, res) => {
                 healthProfessionalId: healthProfessionalId
             });
         });
-        await (0, email_1.sendPasswordReset)(validatedData.email, validatedData.name);
+        await (0, email_1.createPassword)(validatedData.email, validatedData.name);
         return res.status(201).json({ message: "Health Professional created successfully" });
     }
     catch (error) {
@@ -454,7 +454,7 @@ router.post('/register/parent', async (req, res) => {
                 parentId: parentId
             });
         });
-        await (0, email_1.sendPasswordReset)(validatedData.email, validatedData.name);
+        await (0, email_1.createPassword)(validatedData.email, validatedData.name);
         return res.status(201).json({ message: "Parent created successfully" });
     }
     catch (error) {
@@ -581,6 +581,89 @@ router.post('/register/set-password', async (req, res) => {
     }
     catch (error) {
         return res.status(400).json({ message: "Invalid or expired token" });
+    }
+});
+/**
+ * @swagger
+ * /auth/register/recover-password:
+ *   post:
+ *     summary: Request password recovery
+ *     description: Sends a password reset email to the user
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: User's email address
+ *                 example: "user@cmbraga.pt"
+ *     responses:
+ *       200:
+ *         description: Password reset email sent successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Password reset email sent"
+ *       400:
+ *         description: Email is required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Email is required"
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "User not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
+router.post('/register/recover-password', async (req, res) => {
+    const { email } = req.body;
+    if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+    }
+    try {
+        const user = await db_1.AppDataSource.getRepository(User_1.User).findOne({
+            where: { id: email }
+        });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        await (0, email_1.resetPassword)(email, user.name);
+        return res.status(200).json({ message: "Password reset email sent" });
+    }
+    catch (error) {
+        return res.status(500).json({ message: "Internal server error" });
     }
 });
 exports.default = router;

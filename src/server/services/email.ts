@@ -33,7 +33,7 @@ export async function sendEmail({ to, subject, html }: { to: string, subject: st
 
 
 
-export async function sendPasswordReset(email: string, name: string){
+export async function createPassword(email: string, name: string){
     const token = generateToken( email );
     
     const link = `${envs.BASE_URL}/api/auth/register/set-password?token=${token}`;
@@ -49,7 +49,22 @@ export async function sendPasswordReset(email: string, name: string){
         <p>Este link é válido por 24 horas.</p>
         `
     });
-
 }
 
 
+export async function resetPassword(email: string, name: string){
+    const token = generateToken( email );
+    
+    const link = `${envs.BASE_URL}/api/auth/register/set-password?token=${token}`;
+    
+    await sendEmail({
+        to: email,
+        subject: "Altere a sua palavra-passe",
+        html: `
+        <p>Olá ${name},</p>
+        <p>Clique no link abaixo para alterar a sua palavra-passe:</p>
+        <a href="${link}">${link}</a>
+        <p>Este link é válido por 24 horas.</p>
+        `
+    });
+}

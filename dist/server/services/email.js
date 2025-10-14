@@ -6,7 +6,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.generateToken = generateToken;
 exports.verifyToken = verifyToken;
 exports.sendEmail = sendEmail;
-exports.sendPasswordReset = sendPasswordReset;
+exports.createPassword = createPassword;
+exports.resetPassword = resetPassword;
 const config_1 = require("../../config");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const nodemailer_1 = __importDefault(require("nodemailer"));
@@ -34,7 +35,7 @@ async function sendEmail({ to, subject, html }) {
         html,
     });
 }
-async function sendPasswordReset(email, name) {
+async function createPassword(email, name) {
     const token = generateToken(email);
     const link = `${config_1.envs.BASE_URL}/api/auth/register/set-password?token=${token}`;
     await sendEmail({
@@ -44,6 +45,20 @@ async function sendPasswordReset(email, name) {
         <p>Olá ${name},</p>
         <p>Foi registado na nossa plataforma.</p>
         <p>Clique no link abaixo para definir a sua palavra-passe:</p>
+        <a href="${link}">${link}</a>
+        <p>Este link é válido por 24 horas.</p>
+        `
+    });
+}
+async function resetPassword(email, name) {
+    const token = generateToken(email);
+    const link = `${config_1.envs.BASE_URL}/api/auth/register/set-password?token=${token}`;
+    await sendEmail({
+        to: email,
+        subject: "Altere a sua palavra-passe",
+        html: `
+        <p>Olá ${name},</p>
+        <p>Clique no link abaixo para alterar a sua palavra-passe:</p>
         <a href="${link}">${link}</a>
         <p>Este link é válido por 24 horas.</p>
         `
