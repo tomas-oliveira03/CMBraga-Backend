@@ -16,6 +16,7 @@ import { CreateHealthProfessionalSchema } from "../schemas/healthProfessional";
 import { HealthProfessional } from "@/db/entities/HealthProfessional";
 import { CreateParentSchema } from "../schemas/parent";
 import { Parent } from "@/db/entities/Parent";
+import { sendPasswordReset, verifyToken } from "../services/email";
 
 const router = express.Router();
 
@@ -259,17 +260,12 @@ router.post('/register/admin', async (req: Request, res: Response) => {
  *                 type: string
  *                 format: email
  *                 example: "carlos.pereira@cmbraga.pt"
- *               password:
- *                 type: string
- *                 minLength: 6
- *                 example: "InstructorPass123!"
  *               phone:
  *                 type: string
  *                 example: "+351 912 345 678"
  *           example:
  *             name: "Ana Costa"
  *             email: "ana.costa@cmbraga.pt"
- *             password: "InstructorPass2024!"
  *             phone: "+351 923 456 789"
  *     responses:
  *       201:
@@ -297,7 +293,6 @@ router.post('/register/instructor', async (req: Request, res: Response) => {
         if (emailExists){
             return res.status(409).json({message: "Email already exists"});
         }
-        validatedData.password = informationHash.encrypt(validatedData.password);
 
         await AppDataSource.transaction(async tx => {
 
@@ -310,6 +305,7 @@ router.post('/register/instructor', async (req: Request, res: Response) => {
                 instructorId: instructorId
             });
         })
+        await sendPasswordReset(validatedData.email, validatedData.name);
         
         return res.status(201).json({message: "Instructor created successfully"});
 
@@ -324,6 +320,83 @@ router.post('/register/instructor', async (req: Request, res: Response) => {
         return res.status(500).json({ message: error });
     }
 });
+
+
+
+/**
+ * @swagger
+ * /auth/register/set-password:
+ *   post:
+ *     summary: Set password for instructor after registration
+ *     description: Sets the password for an instructor using a token sent by email
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *               - password
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 description: Token received by email
+ *                 example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ *               password:
+ *                 type: string
+ *                 minLength: 6
+ *                 description: New password to set
+ *                 example: "NewSecurePassword123!"
+ *     responses:
+ *       200:
+ *         description: Password set successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Password set successfully"
+ *       400:
+ *         description: Invalid or expired token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Invalid or expired token"
+ */
+router.post('/register/set-password', async (req: Request, res: Response) => {
+    const { token, password } = req.body;
+
+    try {
+        const decoded = verifyToken(token);
+        const email = decoded.userEmail;
+
+        const hashedPassword = informationHash.encrypt(password);
+
+        await AppDataSource.getRepository(Instructor).update(
+            { email: email },
+            { 
+                password: hashedPassword,
+                activatedAt: new Date(),
+                updatedAt: new Date()    
+            }
+        );
+
+        return res.status(200).json({ message: "Password set successfully" });
+
+    } catch (error) {
+        return res.status(400).json({ message: "Invalid or expired token" });
+    }
+});
+
 
 /**
  * @swagger

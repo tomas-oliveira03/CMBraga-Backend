@@ -7,19 +7,23 @@ export const InstructorSchema = z.object({
     password: z.string(),
     phone: z.string(),
     createdAt: z.coerce.date(),
+    activatedAt: z.coerce.date().nullable(),
     updatedAt: z.coerce.date().nullable()
 });
 
 export const CreateInstructorSchema = InstructorSchema.omit({
     id: true,
     createdAt: true,
-    updatedAt: true
+    activatedAt: true,
+    updatedAt: true,
+    password: true
 });
 
 export const UpdateInstructorSchema = InstructorSchema.omit({
     id: true,
     email: true,
     createdAt: true,
+    activatedAt: true,
     updatedAt: true
 }).partial();
 
