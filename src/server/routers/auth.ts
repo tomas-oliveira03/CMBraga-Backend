@@ -202,14 +202,15 @@ router.post('/register/admin', async (req: Request, res: Response) => {
         validatedData.password = informationHash.encrypt(validatedData.password);
 
         await AppDataSource.transaction(async tx => {
+            
+            const admin = await tx.getRepository(Admin).insert(validatedData);
+            const adminId = admin.identifiers[0]?.id
 
             await tx.getRepository(User).insert({
                 email: validatedData.email,
                 name: validatedData.name,
-                admin: validatedData 
+                adminId: adminId
             });
-
-            await tx.getRepository(Admin).insert(validatedData);
         })
         
         return res.status(201).json({message: "Admin created successfully"});
@@ -296,13 +297,14 @@ router.post('/register/instructor', async (req: Request, res: Response) => {
 
         await AppDataSource.transaction(async tx => {
 
+            const instructor = await tx.getRepository(Instructor).insert(validatedData);
+            const instructorId = instructor.identifiers[0]?.id
+
             await tx.getRepository(User).insert({
                 email: validatedData.email,
                 name: validatedData.name,
-                admin: validatedData 
+                instructorId: instructorId
             });
-
-            await tx.getRepository(Instructor).insert(validatedData);
         })
         
         return res.status(201).json({message: "Instructor created successfully"});
@@ -390,13 +392,14 @@ router.post('/register/health-professional', async (req: Request, res: Response)
 
         await AppDataSource.transaction(async tx => {
 
+            const healthProfessional = await tx.getRepository(HealthProfessional).insert(validatedData);
+            const healthProfessionalId = healthProfessional.identifiers[0]?.id
+
             await tx.getRepository(User).insert({
                 email: validatedData.email,
                 name: validatedData.name,
-                admin: validatedData 
+                healthProfessionalId: healthProfessionalId
             });
-
-            await tx.getRepository(HealthProfessional).insert(validatedData);
         })
         
         return res.status(201).json({message: "Health Professional created successfully"});
@@ -488,13 +491,14 @@ router.post('/register/parent', async (req: Request, res: Response) => {
 
         await AppDataSource.transaction(async tx => {
 
+            const parent = await tx.getRepository(Parent).insert(validatedData);
+            const parentId = parent.identifiers[0]?.id
+
             await tx.getRepository(User).insert({
                 email: validatedData.email,
                 name: validatedData.name,
-                admin: validatedData 
+                parentId: parentId
             });
-
-            await tx.getRepository(Parent).insert(validatedData);
         })
         
         return res.status(201).json({message: "Parent created successfully"});
