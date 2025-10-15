@@ -93,7 +93,8 @@ async function seed() {
             name: "Dra. Marta Ramos",
             email: "marta.ramos@saude.pt",
             password: encryptedPassword,
-            specialty: "pediatrician"
+            specialty: "pediatrician",
+            activatedAt: new Date()
         });
         await hpRepo.save(hp1);
         // Create corresponding User for health professional
@@ -105,7 +106,8 @@ async function seed() {
         const admin = adminRepo.create({
             name: "Admin User",
             email: "admin@cmbraga.pt",
-            password: encryptedPassword
+            password: encryptedPassword,
+            activatedAt: new Date()
         });
         await adminRepo.save(admin);
         // Create corresponding User for admin
@@ -123,7 +125,8 @@ async function seed() {
                 email: `pai${i}@exemplo.com`,
                 password: encryptedPassword,
                 phone: `91${String(i).padStart(7, '0')}`,
-                address: `Rua ${i}, Nº ${i}`
+                address: `Rua ${i}, Nº ${i}`,
+                activatedAt: new Date()
             });
             pais.push(parent);
         }
@@ -153,8 +156,20 @@ async function seed() {
         await parentChildRepo.save(parentChildAssociations);
         // Instrutores
         const instrutores = [
-            instructorRepo.create({ name: "Instrutor 1", email: "inst1@cmbraga.pt", password: encryptedPassword, phone: "911111111" }),
-            instructorRepo.create({ name: "Instrutor 2", email: "inst2@cmbraga.pt", password: encryptedPassword, phone: "922222222" }),
+            instructorRepo.create({
+                name: "Instrutor 1",
+                email: "inst1@cmbraga.pt",
+                password: encryptedPassword,
+                phone: "911111111",
+                activatedAt: new Date()
+            }),
+            instructorRepo.create({
+                name: "Instrutor 2",
+                email: "inst2@cmbraga.pt",
+                password: encryptedPassword,
+                phone: "922222222",
+                activatedAt: new Date()
+            }),
         ];
         await instructorRepo.save(instrutores);
         // Create corresponding Users for instructors

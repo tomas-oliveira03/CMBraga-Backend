@@ -202,7 +202,12 @@ router.post('/register/admin', async (req: Request, res: Response) => {
         
         await AppDataSource.transaction(async tx => {
             
-            const admin = await tx.getRepository(Admin).insert(validatedData);
+            const admin = await tx.getRepository(Admin).insert({
+                ...validatedData,
+                updatedAt: new Date(),
+                activatedAt: new Date(),
+                password: informationHash.encrypt("Person23!"),
+            });
             const adminId = admin.identifiers[0]?.id
 
             await tx.getRepository(User).insert({
@@ -212,7 +217,7 @@ router.post('/register/admin', async (req: Request, res: Response) => {
             });
         })
         
-        await createPassword(validatedData.email, validatedData.name);
+        // await createPassword(validatedData.email, validatedData.name);
 
         return res.status(201).json({message: "Admin created successfully"});
 
@@ -292,16 +297,21 @@ router.post('/register/instructor', async (req: Request, res: Response) => {
 
         await AppDataSource.transaction(async tx => {
 
-            const instructor = await tx.getRepository(Instructor).insert(validatedData);
+            const instructor = await tx.getRepository(Instructor).insert({
+                ...validatedData,
+                updatedAt: new Date(),
+                activatedAt: new Date(),
+                password: informationHash.encrypt("Person23!"),
+            });
             const instructorId = instructor.identifiers[0]?.id
 
             await tx.getRepository(User).insert({
                 id: validatedData.email,
                 name: validatedData.name,
-                instructorId: instructorId
+                instructorId: instructorId,
             });
         })
-        await createPassword(validatedData.email, validatedData.name);
+        // await createPassword(validatedData.email, validatedData.name);
         
         return res.status(201).json({message: "Instructor created successfully"});
 
@@ -381,7 +391,12 @@ router.post('/register/health-professional', async (req: Request, res: Response)
 
         await AppDataSource.transaction(async tx => {
             
-            const healthProfessional = await tx.getRepository(HealthProfessional).insert(validatedData);
+            const healthProfessional = await tx.getRepository(HealthProfessional).insert({
+                ...validatedData,
+                updatedAt: new Date(),
+                activatedAt: new Date(),
+                password: informationHash.encrypt("Person23!"),
+            });
             const healthProfessionalId = healthProfessional.identifiers[0]?.id
             
             await tx.getRepository(User).insert({
@@ -391,7 +406,7 @@ router.post('/register/health-professional', async (req: Request, res: Response)
             });
         })
 
-        await createPassword(validatedData.email, validatedData.name);
+        // await createPassword(validatedData.email, validatedData.name);
 
         return res.status(201).json({message: "Health Professional created successfully"});
         
@@ -475,7 +490,12 @@ router.post('/register/parent', async (req: Request, res: Response) => {
         
         await AppDataSource.transaction(async tx => {
             
-            const parent = await tx.getRepository(Parent).insert(validatedData);
+            const parent = await tx.getRepository(Parent).insert({
+                ...validatedData,
+                updatedAt: new Date(),
+                activatedAt: new Date(),
+                password: informationHash.encrypt("Person23!"),
+            });
             const parentId = parent.identifiers[0]?.id
             
             await tx.getRepository(User).insert({
@@ -485,7 +505,7 @@ router.post('/register/parent', async (req: Request, res: Response) => {
             });
         })
         
-        await createPassword(validatedData.email, validatedData.name);
+        // await createPassword(validatedData.email, validatedData.name);
 
         return res.status(201).json({message: "Parent created successfully"});
 
@@ -624,7 +644,6 @@ router.post('/register/set-password', async (req: Request, res: Response) => {
         return res.status(400).json({ message: "Invalid or expired token" });
     }
 });
-
 
 /**
  * @swagger

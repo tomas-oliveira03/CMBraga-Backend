@@ -196,7 +196,12 @@ router.post('/register/admin', async (req, res) => {
             return res.status(409).json({ message: "Email already exists" });
         }
         await db_1.AppDataSource.transaction(async (tx) => {
-            const admin = await tx.getRepository(Admin_1.Admin).insert(validatedData);
+            const admin = await tx.getRepository(Admin_1.Admin).insert({
+                ...validatedData,
+                updatedAt: new Date(),
+                activatedAt: new Date(),
+                password: information_hash_1.default.encrypt("Person23!"),
+            });
             const adminId = admin.identifiers[0]?.id;
             await tx.getRepository(User_1.User).insert({
                 id: validatedData.email,
@@ -204,7 +209,7 @@ router.post('/register/admin', async (req, res) => {
                 adminId: adminId
             });
         });
-        await (0, email_1.createPassword)(validatedData.email, validatedData.name);
+        // await createPassword(validatedData.email, validatedData.name);
         return res.status(201).json({ message: "Admin created successfully" });
     }
     catch (error) {
@@ -278,15 +283,20 @@ router.post('/register/instructor', async (req, res) => {
             return res.status(409).json({ message: "Email already exists" });
         }
         await db_1.AppDataSource.transaction(async (tx) => {
-            const instructor = await tx.getRepository(Instructor_1.Instructor).insert(validatedData);
+            const instructor = await tx.getRepository(Instructor_1.Instructor).insert({
+                ...validatedData,
+                updatedAt: new Date(),
+                activatedAt: new Date(),
+                password: information_hash_1.default.encrypt("Person23!"),
+            });
             const instructorId = instructor.identifiers[0]?.id;
             await tx.getRepository(User_1.User).insert({
                 id: validatedData.email,
                 name: validatedData.name,
-                instructorId: instructorId
+                instructorId: instructorId,
             });
         });
-        await (0, email_1.createPassword)(validatedData.email, validatedData.name);
+        // await createPassword(validatedData.email, validatedData.name);
         return res.status(201).json({ message: "Instructor created successfully" });
     }
     catch (error) {
@@ -360,7 +370,12 @@ router.post('/register/health-professional', async (req, res) => {
             return res.status(409).json({ message: "Email already exists" });
         }
         await db_1.AppDataSource.transaction(async (tx) => {
-            const healthProfessional = await tx.getRepository(HealthProfessional_1.HealthProfessional).insert(validatedData);
+            const healthProfessional = await tx.getRepository(HealthProfessional_1.HealthProfessional).insert({
+                ...validatedData,
+                updatedAt: new Date(),
+                activatedAt: new Date(),
+                password: information_hash_1.default.encrypt("Person23!"),
+            });
             const healthProfessionalId = healthProfessional.identifiers[0]?.id;
             await tx.getRepository(User_1.User).insert({
                 id: validatedData.email,
@@ -368,7 +383,7 @@ router.post('/register/health-professional', async (req, res) => {
                 healthProfessionalId: healthProfessionalId
             });
         });
-        await (0, email_1.createPassword)(validatedData.email, validatedData.name);
+        // await createPassword(validatedData.email, validatedData.name);
         return res.status(201).json({ message: "Health Professional created successfully" });
     }
     catch (error) {
@@ -446,7 +461,12 @@ router.post('/register/parent', async (req, res) => {
             return res.status(409).json({ message: "Email already exists" });
         }
         await db_1.AppDataSource.transaction(async (tx) => {
-            const parent = await tx.getRepository(Parent_1.Parent).insert(validatedData);
+            const parent = await tx.getRepository(Parent_1.Parent).insert({
+                ...validatedData,
+                updatedAt: new Date(),
+                activatedAt: new Date(),
+                password: information_hash_1.default.encrypt("Person23!"),
+            });
             const parentId = parent.identifiers[0]?.id;
             await tx.getRepository(User_1.User).insert({
                 id: validatedData.email,
@@ -454,7 +474,7 @@ router.post('/register/parent', async (req, res) => {
                 parentId: parentId
             });
         });
-        await (0, email_1.createPassword)(validatedData.email, validatedData.name);
+        // await createPassword(validatedData.email, validatedData.name);
         return res.status(201).json({ message: "Parent created successfully" });
     }
     catch (error) {
