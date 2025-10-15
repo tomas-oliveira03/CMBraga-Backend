@@ -5,6 +5,9 @@ import { z } from "zod";
 import { ActivitySession } from "@/db/entities/ActivitySession";
 import { authenticate, authorize } from "../middleware/auth";
 import { ActivityMode, ActivityType, UserRole } from "@/helpers/types";
+import { Route } from "@/db/entities/Route";
+import { StationActivitySession } from "@/db/entities/StationActivitySession";
+import { calculateScheduledTime } from "../services/activity";
 
 const router = express.Router();
 
@@ -217,13 +220,41 @@ router.get('/:id', async (req: Request, res: Response) => {
 router.post('/', async (req: Request, res: Response) => {
   try {
     const validatedData = CreateActivitySessionSchema.parse(req.body);
-    
-    await AppDataSource.getRepository(ActivitySession).insert({
-        ...validatedData,
-        mode: validatedData.type === ActivityType.PEDIBUS ? ActivityMode.WALK : ActivityMode.BIKE
+
+    const route = await AppDataSource.getRepository(Route).findOne({
+        where: {
+            id: validatedData.routeId 
+        },
+        relations: {
+            routeStations: true
+        }
     });
+    if (!route) {
+        return res.status(404).json({ message: "Route not found" });
+    }
+
+    await AppDataSource.transaction(async tx => {
+
+        const activityMode = validatedData.type === ActivityType.PEDIBUS ? ActivityMode.WALK : ActivityMode.BIKE;
+
+        const activitySession = await tx.getRepository(ActivitySession).insert({
+            ...validatedData,
+            mode: activityMode
+        });
+        const activitySessionId = activitySession.identifiers[0]?.id;
+
+        const stationsActivitySession = route.routeStations.map(station => ({
+            stationId: station.stationId,
+            activitySessionId: activitySessionId,
+            stopNumber: station.stopNumber,
+            scheduledAt: calculateScheduledTime(station.distanceFromStartMeters, validatedData.scheduledAt, activityMode, station.stopNumber)
+        }));
+
+        await tx.getRepository(StationActivitySession).insert(stationsActivitySession);
+    });
+
             
-    return res.status(201).json({message: "Session created successfully"});
+    return res.status(201).json({message: "Activity session created successfully"});
 
   } catch (error) {
     if (error instanceof z.ZodError) {
