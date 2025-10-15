@@ -178,6 +178,7 @@ router.get('/:id', async (req: Request, res: Response) => {
  *             type: object
  *             required:
  *               - type
+ *               - routeId
  *               - scheduledAt
  *             properties:
  *               type:
@@ -185,12 +186,17 @@ router.get('/:id', async (req: Request, res: Response) => {
  *                 enum: [pedibus, ciclo_expresso]
  *                 example: "pedibus"
  *                 description: "Activity type (mode will be auto-set: pedibus=walk, ciclo_expresso=bike)"
+ *               routeId:
+ *                 type: string
+ *                 example: "b2c3d4e5-f6g7-8901-bcde-f23456789012"
+ *                 description: "Associated route ID (UUID)"
  *               scheduledAt:
  *                 type: string
  *                 format: date-time
  *                 example: "2024-01-25T08:00:00.000Z"
  *           example:
  *             type: "pedibus"
+ *             routeId: "b2c3d4e5-f6g7-8901-bcde-f23456789012"
  *             scheduledAt: "2024-01-25T08:00:00.000Z"
  *     responses:
  *       201:
@@ -260,6 +266,10 @@ router.post('/', async (req: Request, res: Response) => {
  *                 enum: [pedibus, ciclo_expresso]
  *                 example: "ciclo_expresso"
  *                 description: "Activity type (mode will be auto-updated: pedibus=walk, ciclo_expresso=bike)"
+ *               routeId:
+ *                 type: string
+ *                 example: "c3d4e5f6-g7h8-9012-cdef-34567890123a"
+ *                 description: "Associated route ID (UUID)"
  *               scheduledAt:
  *                 type: string
  *                 format: date-time
@@ -276,6 +286,7 @@ router.post('/', async (req: Request, res: Response) => {
  *                 example: "2024-01-25T10:00:00.000Z"
  *           example:
  *             type: "ciclo_expresso"
+ *             routeId: "c3d4e5f6-g7h8-9012-cdef-34567890123a"
  *             startedAt: "2024-01-25T08:05:00.000Z"
  *     responses:
  *       200:
