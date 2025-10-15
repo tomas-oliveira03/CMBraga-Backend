@@ -9,6 +9,9 @@ export class Chat {
     @PrimaryGeneratedColumn("uuid")
     id!: string;
 
+    @Column({ type: 'varchar', nullable: true })
+    chatName!: string | null;
+
     @Column({ type: 'varchar'})
     chatType!: TypeOfChat;
 

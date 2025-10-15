@@ -47,12 +47,17 @@ const router = express.Router();
  *                     name:
  *                       type: string
  *                       example: "John Doe"
+ *               chat_name:
+ *                 type: string
+ *                 example: "Project Team"
+ *                 description: The name of the chat (required for group chats).
  *           example:
  *             members:
  *               - email: "user1@example.com"
  *                 name: "John Doe"
  *               - email: "user2@example.com"
  *                 name: "Jane Doe"
+ *             chat_name: "Project Team"
  *     responses:
  *       201:
  *         description: Conversation created successfully.
@@ -67,6 +72,9 @@ const router = express.Router();
  *                 conversation_id:
  *                   type: string
  *                   example: "conversation-uuid"
+ *                 chatType:
+ *                   type: string
+ *                   example: "GROUP_CHAT"
  *       400:
  *         description: Validation error or conversation already exists.
  *       500:
@@ -76,14 +84,19 @@ router.post("/", async (req: Request, res: Response) => {
     try {
         const parsed = CommunicationSchema.parse(req.body);
 
-        // Check if there is atleast 2 members
+        // Check if there is at least 2 members
         if (parsed.members.length < 2) {
             return res.status(400).json({ message: "At least two members are required to create a conversation" });
         }
 
+        // Ensure chat_name is provided for group chats
+        if (parsed.members.length > 2 && !parsed.chat_name) {
+            return res.status(400).json({ message: "A chat name must be provided for group chats" });
+        }
+
         const exists = await checkIfChatAlreadyExists(parsed.members.map(m => m.email));
         if (exists !== null) {
-            return res.status(400).json({ message: "Conversation already exists" });
+            return res.status(400).json({ message: "Conversation already exists", chatId: exists.id });
         }
 
         const num_members = parsed.members.length;
@@ -91,6 +104,7 @@ router.post("/", async (req: Request, res: Response) => {
         const newChat = {
             chatType: num_members > 2 ? TypeOfChat.GROUP_CHAT : TypeOfChat.INDIVIDUAL_CHAT,
             destinatairePhoto: "default-photo-url",
+            chatName: num_members > 2 ? parsed.chat_name : null,
             messages: [],
         };
 
@@ -415,7 +429,8 @@ router.get("/chats/:userId", async (req: Request, res: Response) => {
 
                 return {
                     chatId: chat.id,
-                    chatType: chat.chatType, // Add chatType to the response
+                    chatType: chat.chatType,
+                    chatName: chat.chatName, // Include chat name
                     messageContent: mostRecentMessage?.content || null,
                     sender: mostRecentMessage?.senderName || null,
                     timestamp: mostRecentMessage?.timestamp || null,

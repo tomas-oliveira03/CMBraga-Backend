@@ -8,16 +8,20 @@ const MESSAGES_PER_PAGE = 20;
 
 export async function checkIfChatAlreadyExists(usersIDs: string[]): Promise<Chat | null> {
     try {
-        const chats = await AppDataSource.getRepository(Chat)
-            .createQueryBuilder("chat")
-            .innerJoinAndSelect("chat.userChat", "userChat")
-            .where("userChat.userId IN (:...usersIDs)", { usersIDs })
+        const starting_user = usersIDs[0];
+        const chatUserChats = await AppDataSource.getRepository(UserChat)
+            .createQueryBuilder("userChat")
+            .innerJoinAndSelect("userChat.chat", "chat")
+            .where("userChat.userId = :starting_user", { starting_user })
             .getMany();
 
-        for (const chat of chats) {
-            const chatUserIds = chat.userChat.map(userChat => userChat.userId).sort();
-            if (chatUserIds.length === usersIDs.length && chatUserIds.every((id, index) => id === usersIDs.sort()[index])) {
-                return chat;
+        for (const userChat of chatUserChats) {
+            const chatId = userChat.chatId;
+            const members = await AppDataSource.getRepository(UserChat)
+                .find({ where: { chatId } });
+            const memberIds = members.map(m => m.userId);
+            if (memberIds.length === usersIDs.length && usersIDs.every(id => memberIds.includes(id))) {
+                return userChat.chat;
             }
         }
 
@@ -66,7 +70,7 @@ export async function checkIfChatExists(chatId: string): Promise<boolean> {
     }
 }
 
-export async function getMessagesFromChat(chatId: string, page: number): Promise<{ messages: Partial<Message>[], members?: { name: string, email: string }[] }> {
+export async function getMessagesFromChat(chatId: string, page: number): Promise<{ messages: Partial<Message>[], members?: { name: string, email: string }[], chatName?: string }> {
     try {
         const query = AppDataSource.getRepository(Message)
             .createQueryBuilder("message")
@@ -105,7 +109,7 @@ export async function getMessagesFromChat(chatId: string, page: number): Promise
                 email: userChat.user.id,
             }));
 
-            return { messages: mappedMessages, members };
+            return { messages: mappedMessages, members, chatName: chat.chatName ?? undefined };
         }
 
         return { messages: mappedMessages };
