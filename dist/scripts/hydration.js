@@ -20,6 +20,7 @@ const ChildStation_1 = require("../db/entities/ChildStation");
 const Issue_1 = require("../db/entities/Issue");
 const MedicalReport_1 = require("../db/entities/MedicalReport");
 const User_1 = require("../db/entities/User");
+const ParentActivitySession_1 = require("../db/entities/ParentActivitySession");
 const information_hash_1 = __importDefault(require("../lib/information-hash"));
 async function seed() {
     console.log("Initializing data source...");
@@ -41,6 +42,7 @@ async function seed() {
         const issueRepo = dataSource.getRepository(Issue_1.Issue);
         const reportRepo = dataSource.getRepository(MedicalReport_1.MedicalReport);
         const userRepo = dataSource.getRepository(User_1.User);
+        const parentActivityRepo = dataSource.getRepository(ParentActivitySession_1.ParentActivitySession);
         console.log("Cleaning tables (dependents first)...");
         // Clear repositories in order, but ignore errors if the table doesn't exist yet
         const reposToClear = [
@@ -59,6 +61,7 @@ async function seed() {
             stationRepo,
             activityRepo,
             adminRepo,
+            parentActivityRepo,
         ];
         for (const repo of reposToClear) {
             const table = repo.metadata.tableName;
@@ -184,9 +187,7 @@ async function seed() {
         const atividade = activityRepo.create({
             type: "pedibus",
             mode: "walk",
-            scheduledAt: new Date("2024-04-01T08:00:00.000Z"),
-            startedAt: new Date("2024-04-01T08:05:00.000Z"),
-            startedById: instrutores[0].id
+            scheduledAt: new Date(),
         });
         await activityRepo.save(atividade);
         // Instrutores na atividade
@@ -201,8 +202,7 @@ async function seed() {
                 stationId: postos[i].id,
                 activitySessionId: atividade.id,
                 stopNumber: i + 1,
-                scheduledAt: new Date(`2024-04-01T08:${String(10 + i * 10).padStart(2, '0')}:00.000Z`),
-                arrivedAt: i < 2 ? new Date(`2024-04-01T08:${String(12 + i * 10).padStart(2, '0')}:00.000Z`) : null // primeiras 2 já visitadas
+                scheduledAt: new Date(Date.now() - 24 * 60 * 60 * 1000 + (20 + i * 5) * 60 * 1000),
             }));
         }
         await stationActivityRepo.save(paradas);
@@ -215,33 +215,18 @@ async function seed() {
                 activitySessionId: atividade.id,
                 pickUpStationId: postos[postoIndex].id,
                 parentId: pais[i].id,
-                isLateRegistration: false
+                isLateRegistration: false,
+                registeredAt: new Date(Date.now() - 24 * 60 * 60 * 1000)
             }));
         }
         await childActivityRepo.save(childActivityRegistrations);
-        // Check-in das crianças dos 2 primeiros postos (4 crianças)
-        const childStationRecords = [];
-        for (let i = 0; i < 4; i++) {
-            const postoIndex = Math.floor(i / 2);
-            childStationRecords.push(childStationRepo.create({
-                childId: criancas[i].id,
-                stationId: postos[postoIndex].id,
-                instructorId: instrutores[0].id,
-                activitySessionId: atividade.id,
-                type: "in",
-                registeredAt: new Date(`2024-04-01T08:${String(12 + postoIndex * 10).padStart(2, '0')}:00.000Z`)
-            }));
-        }
-        await childStationRepo.save(childStationRecords);
-        // Um dos 4 já saiu (para testar childrenOut)
-        await childStationRepo.save(childStationRepo.create({
-            childId: criancas[3].id,
-            stationId: postos[1].id,
-            instructorId: instrutores[1].id,
+        // Add parent to activity session - register the first parent for the activity
+        const parentActivityRegistration = parentActivityRepo.create({
+            parentId: pais[0].id,
             activitySessionId: atividade.id,
-            type: "out",
-            registeredAt: new Date("2024-04-01T08:23:00.000Z")
-        }));
+            registeredAt: new Date(Date.now() - 24 * 60 * 60 * 1000)
+        });
+        await parentActivityRepo.save(parentActivityRegistration);
         // Issues
         const issue1 = issueRepo.create({
             description: "Criança com dificuldade respiratória durante o percurso",

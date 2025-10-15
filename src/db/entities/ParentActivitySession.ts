@@ -11,7 +11,7 @@ export class ParentActivitySession {
     activitySessionId!: string;
 
     @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
-    assignedAt!: Date;
+    registeredAt!: Date;
 
     @ManyToOne(() => Parent)
     parent!: Parent;

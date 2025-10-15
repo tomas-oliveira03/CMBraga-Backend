@@ -16,7 +16,7 @@ const ActivitySession_1 = require("./ActivitySession");
 let ParentActivitySession = class ParentActivitySession {
     parentId;
     activitySessionId;
-    assignedAt;
+    registeredAt;
     parent;
     activitySession;
 };
@@ -32,7 +32,7 @@ __decorate([
 __decorate([
     (0, typeorm_1.Column)({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' }),
     __metadata("design:type", Date)
-], ParentActivitySession.prototype, "assignedAt", void 0);
+], ParentActivitySession.prototype, "registeredAt", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => Parent_1.Parent),
     __metadata("design:type", Parent_1.Parent)

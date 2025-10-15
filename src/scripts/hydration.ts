@@ -15,6 +15,7 @@ import { ChildStation } from "@/db/entities/ChildStation";
 import { Issue } from "@/db/entities/Issue";
 import { MedicalReport } from "@/db/entities/MedicalReport";
 import { User } from "@/db/entities/User";
+import { ParentActivitySession } from "@/db/entities/ParentActivitySession";
 import informationHash from "@/lib/information-hash";
 
 async function seed() {
@@ -38,6 +39,7 @@ async function seed() {
     const issueRepo = dataSource.getRepository(Issue);
     const reportRepo = dataSource.getRepository(MedicalReport);
     const userRepo = dataSource.getRepository(User);
+    const parentActivityRepo = dataSource.getRepository(ParentActivitySession);
 
     console.log("Cleaning tables (dependents first)...");
     // Clear repositories in order, but ignore errors if the table doesn't exist yet
@@ -57,6 +59,7 @@ async function seed() {
       stationRepo,
       activityRepo,
       adminRepo,
+      parentActivityRepo,
     ];
 
     for (const repo of reposToClear) {
@@ -198,9 +201,7 @@ async function seed() {
     const atividade = activityRepo.create({
       type: "pedibus" as any,
       mode: "walk" as any,
-      scheduledAt: new Date("2024-04-01T08:00:00.000Z"),
-      startedAt: new Date("2024-04-01T08:05:00.000Z"),
-      startedById: instrutores[0]!.id
+      scheduledAt: new Date(),
     });
     await activityRepo.save(atividade);
 
@@ -218,8 +219,7 @@ async function seed() {
           stationId: postos[i]!.id,
           activitySessionId: atividade.id,
           stopNumber: i + 1,
-          scheduledAt: new Date(`2024-04-01T08:${String(10 + i * 10).padStart(2, '0')}:00.000Z`),
-          arrivedAt: i < 2 ? new Date(`2024-04-01T08:${String(12 + i * 10).padStart(2, '0')}:00.000Z`) : null // primeiras 2 já visitadas
+          scheduledAt: new Date(Date.now() - 24 * 60 * 60 * 1000 + (20 + i * 5) * 60 * 1000),
         })
       );
     }
@@ -235,38 +235,20 @@ async function seed() {
           activitySessionId: atividade.id,
           pickUpStationId: postos[postoIndex]!.id,
           parentId: pais[i]!.id,
-          isLateRegistration: false
+          isLateRegistration: false,
+          registeredAt: new Date(Date.now() - 24 * 60 * 60 * 1000)
         })
       );
     }
     await childActivityRepo.save(childActivityRegistrations);
 
-    // Check-in das crianças dos 2 primeiros postos (4 crianças)
-    const childStationRecords = [];
-    for (let i = 0; i < 4; i++) {
-      const postoIndex = Math.floor(i / 2);
-      childStationRecords.push(
-        childStationRepo.create({
-          childId: criancas[i]!.id,
-          stationId: postos[postoIndex]!.id,
-          instructorId: instrutores[0]!.id,
-          activitySessionId: atividade.id,
-          type: "in" as any,
-          registeredAt: new Date(`2024-04-01T08:${String(12 + postoIndex * 10).padStart(2, '0')}:00.000Z`)
-        })
-      );
-    }
-    await childStationRepo.save(childStationRecords);
-
-    // Um dos 4 já saiu (para testar childrenOut)
-    await childStationRepo.save(childStationRepo.create({
-      childId: criancas[3]!.id,
-      stationId: postos[1]!.id,
-      instructorId: instrutores[1]!.id,
+    // Add parent to activity session - register the first parent for the activity
+    const parentActivityRegistration = parentActivityRepo.create({
+      parentId: pais[0]!.id,
       activitySessionId: atividade.id,
-      type: "out" as any,
-      registeredAt: new Date("2024-04-01T08:23:00.000Z")
-    }));
+      registeredAt: new Date(Date.now() - 24 * 60 * 60 * 1000)
+    });
+    await parentActivityRepo.save(parentActivityRegistration);
 
     // Issues
     const issue1 = issueRepo.create({ 

@@ -28,7 +28,7 @@ router.get('/', async (req: Request, res: Response) => {
         },
         select: {
             parentActivitySessions: {
-                assignedAt: true,
+                registeredAt: true,
                 parent: {
                     id: true,
                     name: true
