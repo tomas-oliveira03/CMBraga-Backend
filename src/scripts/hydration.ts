@@ -17,8 +17,12 @@ import { MedicalReport } from "@/db/entities/MedicalReport";
 import { User } from "@/db/entities/User";
 import { ParentActivitySession } from "@/db/entities/ParentActivitySession";
 import { Badge } from "@/db/entities/Badge";
-import { BadgeCriteria } from "@/helpers/types";
+import { BadgeCriteria, StationType } from "@/helpers/types";
 import informationHash from "@/lib/information-hash";
+import { Route } from "@/db/entities/Route";
+import { RouteStation } from "@/db/entities/RouteStation";
+import fs from "fs";
+import path from "path";
 
 // Helper function to create dates in Lisbon timezone
 function createLisbonDate(dateString?: string): Date {
@@ -51,6 +55,8 @@ async function seed() {
     const userRepo = dataSource.getRepository(User);
     const parentActivityRepo = dataSource.getRepository(ParentActivitySession);
     const badgeRepo = dataSource.getRepository(Badge);
+    const routeRepo = dataSource.getRepository(Route);
+    const routeStationRepo = dataSource.getRepository(RouteStation);
 
     console.log("Cleaning tables (dependents first)...");
     // Clear repositories in order, but ignore errors if the table doesn't exist yet
@@ -67,11 +73,13 @@ async function seed() {
       parentRepo,
       instructorRepo,
       hpRepo,
-      stationRepo,
       activityRepo,
       adminRepo,
       parentActivityRepo,
       badgeRepo,
+      routeStationRepo,
+      stationRepo,
+      routeRepo,
     ];
 
     for (const repo of reposToClear) {
@@ -94,15 +102,51 @@ async function seed() {
     
     const encryptedPassword = informationHash.encrypt("Person23!");
 
-    // 5 postos
-    const postos = [
-      stationRepo.create({ name: "Estação Central", type: "regular" as any }),
-      stationRepo.create({ name: "Parque Municipal", type: "regular" as any }),
-      stationRepo.create({ name: "Biblioteca", type: "regular" as any }),
-      stationRepo.create({ name: "Centro Comercial", type: "regular" as any }),
-      stationRepo.create({ name: "Escola Básica", type: "school" as any }),
-    ];
+    // Read route data from JSON
+    const routeJsonPath = path.join(__dirname, "mock_route.json");
+    const routeJsonData = fs.readFileSync(routeJsonPath, "utf-8");
+    const routeData = JSON.parse(routeJsonData);
+
+    // Create stations from route stops
+    const postos: Station[] = [];
+    
+    for (let i = 0; i < routeData.stops.length; i++) {
+      const stop = routeData.stops[i];
+      const isLastStop = i === routeData.stops.length - 1;
+      
+      const station = stationRepo.create({
+        name: stop.name,
+        type: isLastStop ? StationType.SCHOOL : StationType.REGULAR,
+        longitude: stop.lon,
+        latitude: stop.lat
+      });
+      postos.push(station);
+    }
     await stationRepo.save(postos);
+
+    // Create Route
+    const route = routeRepo.create({
+      name: "Rota Pedibus Centro",
+      distanceMeters: 3,
+      boundsNorth: routeData.bounds.north,
+      boundsSouth: routeData.bounds.south,
+      boundsEast: routeData.bounds.east,
+      boundsWest: routeData.bounds.west,
+      metadata: routeData.route
+    });
+    await routeRepo.save(route);
+
+    // Create RouteStations
+    const routeStations = routeData.stops.map((stop: any, index: number) => 
+      routeStationRepo.create({
+        routeId: route.id,
+        stationId: postos[index]!.id,
+        stopNumber: index + 1,
+        distanceFromStartMeters: 1,
+        distanceFromPreviousStationMeters: 1
+      })
+    );
+    await routeStationRepo.save(routeStations);
 
     // Create health professional first
     const hp1 = hpRepo.create({ 
@@ -168,7 +212,7 @@ async function seed() {
         gender: i % 2 === 0 ? "male" as any : "female" as any,
         school: "Escola Básica",
         schoolGrade: (i % 6) + 1,
-        dropOffStationId: postos[4]!.id,
+        dropOffStationId: postos[postos.length - 1]!.id, // Last station (school)
         dateOfBirth: createLisbonDate(`2015-0${(i % 9) + 1}-15`)
       });
       criancas.push(child);
@@ -214,6 +258,7 @@ async function seed() {
       type: "pedibus" as any,
       mode: "walk" as any,
       scheduledAt: createLisbonDate(),
+      routeId: route.id,
     });
     await activityRepo.save(atividade);
 
@@ -223,12 +268,12 @@ async function seed() {
       instructorActivityRepo.create({ instructorId: instrutores[1]!.id, activitySessionId: atividade.id }),
     ]);
 
-    // 5 paradas na atividade
+    // paradas na atividade (from route stations)
     const paradas = [];
     const now = createLisbonDate();
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < postos.length; i++) {
       paradas.push(
         stationActivityRepo.create({
           stationId: postos[i]!.id,
@@ -240,10 +285,10 @@ async function seed() {
     }
     await stationActivityRepo.save(paradas);
 
-    // Distribuir 10 crianças entre os 5 postos (2 por posto)
+    // Distribuir 10 crianças entre os postos (equally distributed)
     const childActivityRegistrations = [];
     for (let i = 0; i < criancas.length; i++) {
-      const postoIndex = Math.floor(i / 2);
+      const postoIndex = Math.floor(i / Math.ceil(criancas.length / (postos.length - 1))) % (postos.length - 1);
       childActivityRegistrations.push(
         childActivityRepo.create({
           childId: criancas[i]!.id,
@@ -352,10 +397,12 @@ async function seed() {
 
 
     console.log("\n=== HIDRATAÇÃO COMPLETA ===");
-    console.log("✅ Criados 5 postos e 10 crianças (2 por posto)");
+    console.log("✅ Criados " + postos.length + " postos a partir do ficheiro JSON");
+    console.log("✅ Criada 1 rota com " + postos.length + " estações");
+    console.log("✅ Criadas 10 crianças (distribuídas entre os postos)");
     console.log("✅ Criados registros de usuário para Admin, Instrutores, Pais e Profissional de Saúde");
-    console.log("🚌 Atividade iniciada, postos 1 e 2 já visitados");
-    console.log("📍 Próximo posto: Biblioteca (posto 3)");
+    console.log("🚌 Atividade iniciada com a rota importada");
+    console.log("📍 Total de distância da rota: " + routeData.totalDistance + " metros");
     console.log("🏅 Criadas 8 medalhas");
 
     console.log("Seeding finished.");

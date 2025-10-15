@@ -82,3 +82,9 @@ export enum WeatherType {
   Clear = "clear",              
   Clouds = "clouds"           
 }
+
+// Route
+export interface RoutePoint {
+    lat: number;
+    lon: number;
+}

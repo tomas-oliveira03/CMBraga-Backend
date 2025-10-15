@@ -17,6 +17,7 @@ import { ChildStation } from "./ChildStation";
 import { ActivityMode, ActivityType, WeatherType } from "@/helpers/types";
 import { Instructor } from "./Instructor";
 import { ChildActivityRecord } from "./ChildActivityRecord";
+import { Route } from "./Route";
 
 @Entity()
 @Check(`"type" IN ('pedibus', 'ciclo_expresso')`)
@@ -34,6 +35,9 @@ export class ActivitySession {
 
     @Column({ type: "boolean", default: false })
     inLateRegistration!: boolean;
+
+    @Column({ type: "varchar" })
+    routeId!: string;
 
     @Column({ type: "int", nullable: true })
     weatherTemperature!: number | null;
@@ -89,4 +93,7 @@ export class ActivitySession {
 
     @ManyToOne(() => Instructor, { nullable: true })
     finishedBy!: Instructor | null;
+
+    @ManyToOne(() => Route)
+    route!: Route;
 }

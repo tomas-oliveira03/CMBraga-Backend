@@ -19,6 +19,7 @@ import activitySessionStationInstructor from "./activitySession/instructor"
 import activitySessionStationActions from "./activitySession/actions"
 import activitySessionStationParent from "./activitySession/parent"
 import badgeRouter from "./badge";
+import routeRouter from "./route";
 
 const router = express.Router();
 
@@ -43,5 +44,6 @@ router.use("/activity-session/parent", activitySessionStationParent);
 router.use("/activity-session", activitySessionRouter);
 router.use("/user", userRouter);
 router.use("/badge", badgeRouter);
+router.use("/route", routeRouter);
 
 export default router;

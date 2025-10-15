@@ -8,6 +8,7 @@ export const ActivitySessionSchema = z.object({
     id: z.string(),
     type: ActivityTypeEnum,
     mode: ActivityModeEnum,
+    routeId: z.string(),
     inLateRegistration: z.boolean(),
     scheduledAt: z.coerce.date(),
     startedAt: z.coerce.date(),

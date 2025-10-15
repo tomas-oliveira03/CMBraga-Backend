@@ -1,9 +1,10 @@
-import { Check, Column, Entity, OneToMany, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm"
+import { Check, Column, Entity, Index, OneToMany, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm"
 import { StationActivitySession } from "./StationActivitySession"
 import { ChildStation } from "./ChildStation"
 import { StationType } from "@/helpers/types";
 import { Child } from "./Child";
 import { ChildActivitySession } from "./ChildActivitySession";
+import { RouteStation } from "./RouteStation";
 
 @Entity()
 @Check(`"type" IN ('regular', 'school')`)
@@ -16,6 +17,14 @@ export class Station {
 
     @Column({ type: 'varchar' })
     type!: StationType;
+
+    @Index()
+    @Column({ type: 'float' })
+    latitude!: number;
+
+    @Index()
+    @Column({ type: 'float' })
+    longitude!: number;
 
     @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
 	createdAt!: Date;
@@ -34,4 +43,7 @@ export class Station {
 
     @OneToMany(() => ChildActivitySession, childActivitySession => childActivitySession.pickUpStation)
 	pickUpchildActivitySessions!: ChildActivitySession[];
+
+    @OneToMany(() => RouteStation, (routeStation) => routeStation.route)
+    routeStations!: RouteStation[];
 }

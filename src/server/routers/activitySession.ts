@@ -39,6 +39,11 @@ const router = express.Router();
  *                     enum: [walk, bike]
  *                     example: "walk"
  *                     description: "Transportation mode (walk for pedibus, bike for ciclo_expresso)"
+ *                   routeId:
+ *                     type: string
+ *                     nullable: true
+ *                     example: "b2c3d4e5-f6g7-8901-bcde-f23456789012"
+ *                     description: "Associated route ID (UUID)"
  *                   scheduledAt:
  *                     type: string
  *                     format: date-time
@@ -103,6 +108,11 @@ router.get('/', async (req: Request, res: Response) => {
  *                   enum: [walk, bike]
  *                   example: "bike"
  *                   description: "Transportation mode (automatically set based on type)"
+ *                 routeId:
+ *                   type: string
+ *                   nullable: true
+ *                   example: "c3d4e5f6-g7h8-9012-cdef-34567890123a"
+ *                   description: "Associated route ID (UUID)"
  *                 scheduledAt:
  *                   type: string
  *                   format: date-time
