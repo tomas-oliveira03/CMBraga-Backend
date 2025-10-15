@@ -3,7 +3,7 @@ import { Check, Column, Entity, PrimaryGeneratedColumn } from "typeorm"
 
 
 @Entity()
-@Check(`"criteria" IN ('streak', 'distance', 'calories', 'weather', 'points', 'special', 'leaderboard')`)
+@Check(`"criteria" IN ('streak', 'distance', 'calories', 'weather', 'points', 'special', 'leaderboard', 'participation')`)
 export class Badge {
     @PrimaryGeneratedColumn("uuid")
     id!: string

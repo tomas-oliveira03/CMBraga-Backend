@@ -16,6 +16,8 @@ import { Issue } from "@/db/entities/Issue";
 import { MedicalReport } from "@/db/entities/MedicalReport";
 import { User } from "@/db/entities/User";
 import { ParentActivitySession } from "@/db/entities/ParentActivitySession";
+import { Badge } from "@/db/entities/Badge";
+import { BadgeCriteria } from "@/helpers/types";
 import informationHash from "@/lib/information-hash";
 
 // Helper function to create dates in Lisbon timezone
@@ -48,6 +50,7 @@ async function seed() {
     const reportRepo = dataSource.getRepository(MedicalReport);
     const userRepo = dataSource.getRepository(User);
     const parentActivityRepo = dataSource.getRepository(ParentActivitySession);
+    const badgeRepo = dataSource.getRepository(Badge);
 
     console.log("Cleaning tables (dependents first)...");
     // Clear repositories in order, but ignore errors if the table doesn't exist yet
@@ -68,6 +71,7 @@ async function seed() {
       activityRepo,
       adminRepo,
       parentActivityRepo,
+      badgeRepo,
     ];
 
     for (const repo of reposToClear) {
@@ -279,11 +283,80 @@ async function seed() {
     });
     await reportRepo.save(report1);
 
+    const badge1 = badgeRepo.create({
+      name: "Primeira Participação",
+      description: "Concluiu a primeira participação com sucesso!",
+      imageUrl: "https://example.com/images/badge1.png",
+      criteria: BadgeCriteria.PARTICIPATION,
+      valueneeded: 1
+    });
+
+    const badge2 = badgeRepo.create({
+      name: "Explorador Urbano",
+      description: "Concluiu 5 caminhadas consecutivas.",
+      imageUrl: "https://example.com/images/badge2.png",
+      criteria: BadgeCriteria.STREAK,
+      valueneeded: 5
+    });
+
+    const badge3 = badgeRepo.create({
+      name: "Cidadão Ativo",
+      description: "Percorreu 20 km no total.",
+      imageUrl: "https://example.com/images/badge3.png",
+      criteria: BadgeCriteria.DISTANCE,
+      valueneeded: 20
+    });
+
+    const badge4 = badgeRepo.create({
+      name: "Queimador de Calorias",
+      description: "Queimou 2000 calorias no total.",
+      imageUrl: "https://example.com/images/badge4.png",
+      criteria: BadgeCriteria.CALORIES,
+      valueneeded: 2000
+    });
+
+    const badge5 = badgeRepo.create({
+      name: "Amante do Clima",
+      description: "Participou em atividades sob diferentes condições climáticas.",
+      imageUrl: "https://example.com/images/badge5.png",
+      criteria: BadgeCriteria.WEATHER,
+      valueneeded: 3
+    });
+
+    const badge6 = badgeRepo.create({
+      name: "Pontuador",
+      description: "Acumulou 1000 pontos de atividade.",
+      imageUrl: "https://example.com/images/badge6.png",
+      criteria: BadgeCriteria.POINTS,
+      valueneeded: 1000
+    });
+
+    const badge7 = badgeRepo.create({
+      name: "Top do Ranking",
+      description: "Alcançou o top 1 no quadro de líderes mensal.",
+      imageUrl: "https://example.com/images/badge7.png",
+      criteria: BadgeCriteria.LEADERBOARD,
+      valueneeded: 1
+    });
+
+    const badge8 = badgeRepo.create({
+      name: "Participante Solidário",
+      description: "Foi solidário.",
+      imageUrl: "https://example.com/images/badge8.png",
+      criteria: BadgeCriteria.SPECIAL,
+      valueneeded: 1
+    });
+
+
+    await badgeRepo.save([badge1, badge2, badge3, badge4, badge5, badge6, badge7, badge8]);
+
+
     console.log("\n=== HIDRATAÇÃO COMPLETA ===");
     console.log("✅ Criados 5 postos e 10 crianças (2 por posto)");
     console.log("✅ Criados registros de usuário para Admin, Instrutores, Pais e Profissional de Saúde");
     console.log("🚌 Atividade iniciada, postos 1 e 2 já visitados");
     console.log("📍 Próximo posto: Biblioteca (posto 3)");
+    console.log("🏅 Criadas 8 medalhas");
 
     console.log("Seeding finished.");
   } catch (err) {

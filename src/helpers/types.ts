@@ -43,6 +43,7 @@ export enum BadgeCriteria {
     WEATHER = 'weather',
     POINTS = 'points',
     LEADERBOARD = 'leaderboard',
+    PARTICIPATION = 'participation',
     SPECIAL = 'special'
 }
 
