@@ -16,6 +16,7 @@ const Message_1 = require("./Message");
 const UserChat_1 = require("./UserChat");
 let Chat = class Chat {
     id;
+    chatName;
     chatType;
     destinatairePhoto;
     messages;
@@ -26,6 +27,10 @@ __decorate([
     (0, typeorm_1.PrimaryGeneratedColumn)("uuid"),
     __metadata("design:type", String)
 ], Chat.prototype, "id", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
+], Chat.prototype, "chatName", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'varchar' }),
     __metadata("design:type", String)

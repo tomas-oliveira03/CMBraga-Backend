@@ -22,6 +22,13 @@ const MedicalReport_1 = require("../db/entities/MedicalReport");
 const User_1 = require("../db/entities/User");
 const ParentActivitySession_1 = require("../db/entities/ParentActivitySession");
 const information_hash_1 = __importDefault(require("../lib/information-hash"));
+// Helper function to create dates in Lisbon timezone
+function createLisbonDate(dateString) {
+    const date = dateString ? new Date(dateString) : new Date();
+    // Convert to Lisbon timezone (UTC+1 or UTC+2 depending on daylight saving)
+    const lisbonOffset = -date.getTimezoneOffset() + 60; // Assuming UTC+1 for simplicity
+    return new Date(date.getTime() + (lisbonOffset * 60 * 1000));
+}
 async function seed() {
     console.log("Initializing data source...");
     const dataSource = await db_1.AppDataSource.initialize();
@@ -97,7 +104,7 @@ async function seed() {
             email: "marta.ramos@saude.pt",
             password: encryptedPassword,
             specialty: "pediatrician",
-            activatedAt: new Date()
+            activatedAt: createLisbonDate()
         });
         await hpRepo.save(hp1);
         // Create corresponding User for health professional
@@ -110,7 +117,7 @@ async function seed() {
             name: "Admin User",
             email: "admin@cmbraga.pt",
             password: encryptedPassword,
-            activatedAt: new Date()
+            activatedAt: createLisbonDate()
         });
         await adminRepo.save(admin);
         // Create corresponding User for admin
@@ -129,7 +136,7 @@ async function seed() {
                 password: encryptedPassword,
                 phone: `91${String(i).padStart(7, '0')}`,
                 address: `Rua ${i}, Nº ${i}`,
-                activatedAt: new Date()
+                activatedAt: createLisbonDate()
             });
             pais.push(parent);
         }
@@ -149,7 +156,7 @@ async function seed() {
                 school: "Escola Básica",
                 schoolGrade: (i % 6) + 1,
                 dropOffStationId: postos[4].id,
-                dateOfBirth: new Date(`2015-0${(i % 9) + 1}-15`)
+                dateOfBirth: createLisbonDate(`2015-0${(i % 9) + 1}-15`)
             });
             criancas.push(child);
         }
@@ -164,14 +171,14 @@ async function seed() {
                 email: "inst1@cmbraga.pt",
                 password: encryptedPassword,
                 phone: "911111111",
-                activatedAt: new Date()
+                activatedAt: createLisbonDate()
             }),
             instructorRepo.create({
                 name: "Instrutor 2",
                 email: "inst2@cmbraga.pt",
                 password: encryptedPassword,
                 phone: "922222222",
-                activatedAt: new Date()
+                activatedAt: createLisbonDate()
             }),
         ];
         await instructorRepo.save(instrutores);
@@ -187,7 +194,7 @@ async function seed() {
         const atividade = activityRepo.create({
             type: "pedibus",
             mode: "walk",
-            scheduledAt: new Date(),
+            scheduledAt: createLisbonDate(),
         });
         await activityRepo.save(atividade);
         // Instrutores na atividade
@@ -197,12 +204,14 @@ async function seed() {
         ]);
         // 5 paradas na atividade
         const paradas = [];
+        const now = createLisbonDate();
+        const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
         for (let i = 0; i < 5; i++) {
             paradas.push(stationActivityRepo.create({
                 stationId: postos[i].id,
                 activitySessionId: atividade.id,
                 stopNumber: i + 1,
-                scheduledAt: new Date(Date.now() - 24 * 60 * 60 * 1000 + (20 + i * 5) * 60 * 1000),
+                scheduledAt: new Date(yesterday.getTime() + (20 + i * 5) * 60 * 1000),
             }));
         }
         await stationActivityRepo.save(paradas);
@@ -216,7 +225,7 @@ async function seed() {
                 pickUpStationId: postos[postoIndex].id,
                 parentId: pais[i].id,
                 isLateRegistration: false,
-                registeredAt: new Date(Date.now() - 24 * 60 * 60 * 1000)
+                registeredAt: yesterday
             }));
         }
         await childActivityRepo.save(childActivityRegistrations);
@@ -224,7 +233,7 @@ async function seed() {
         const parentActivityRegistration = parentActivityRepo.create({
             parentId: pais[0].id,
             activitySessionId: atividade.id,
-            registeredAt: new Date(Date.now() - 24 * 60 * 60 * 1000)
+            registeredAt: yesterday
         });
         await parentActivityRepo.save(parentActivityRegistration);
         // Issues

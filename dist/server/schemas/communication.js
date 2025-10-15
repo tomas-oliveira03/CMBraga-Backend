@@ -5,6 +5,7 @@ const zod_1 = require("zod");
 exports.CommunicationSchema = zod_1.z.object({
     conversation_id: zod_1.z.string().optional(),
     members: zod_1.z.array(zod_1.z.object({ email: zod_1.z.string(), name: zod_1.z.string() })),
+    chat_name: zod_1.z.string().optional(), // chat_name remains optional in the schema
     messages: zod_1.z.array(zod_1.z.object({
         sender_id: zod_1.z.string(),
         timestamp: zod_1.z.string(),

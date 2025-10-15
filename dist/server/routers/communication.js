@@ -43,12 +43,17 @@ const router = express_1.default.Router();
  *                     name:
  *                       type: string
  *                       example: "John Doe"
+ *               chat_name:
+ *                 type: string
+ *                 example: "Project Team"
+ *                 description: The name of the chat (required for group chats).
  *           example:
  *             members:
  *               - email: "user1@example.com"
  *                 name: "John Doe"
  *               - email: "user2@example.com"
  *                 name: "Jane Doe"
+ *             chat_name: "Project Team"
  *     responses:
  *       201:
  *         description: Conversation created successfully.
@@ -63,6 +68,9 @@ const router = express_1.default.Router();
  *                 conversation_id:
  *                   type: string
  *                   example: "conversation-uuid"
+ *                 chatType:
+ *                   type: string
+ *                   example: "GROUP_CHAT"
  *       400:
  *         description: Validation error or conversation already exists.
  *       500:
@@ -71,18 +79,23 @@ const router = express_1.default.Router();
 router.post("/", async (req, res) => {
     try {
         const parsed = communication_1.CommunicationSchema.parse(req.body);
-        // Check if there is atleast 2 members
+        // Check if there is at least 2 members
         if (parsed.members.length < 2) {
             return res.status(400).json({ message: "At least two members are required to create a conversation" });
         }
+        // Ensure chat_name is provided for group chats
+        if (parsed.members.length > 2 && !parsed.chat_name) {
+            return res.status(400).json({ message: "A chat name must be provided for group chats" });
+        }
         const exists = await (0, comms_1.checkIfChatAlreadyExists)(parsed.members.map(m => m.email));
         if (exists !== null) {
-            return res.status(400).json({ message: "Conversation already exists" });
+            return res.status(400).json({ message: "Conversation already exists", chatId: exists.id });
         }
         const num_members = parsed.members.length;
         const newChat = {
             chatType: num_members > 2 ? types_1.TypeOfChat.GROUP_CHAT : types_1.TypeOfChat.INDIVIDUAL_CHAT,
             destinatairePhoto: "default-photo-url",
+            chatName: num_members > 2 ? parsed.chat_name : null,
             messages: [],
         };
         // Save the new chat and let the database generate the ID
@@ -371,16 +384,29 @@ router.get("/chats/:userId", async (req, res) => {
             .orderBy("message.timestamp", "DESC")
             .addOrderBy("chat.id", "ASC")
             .getMany();
-        const sortedChats = chats
-            .map(chat => {
+        const sortedChats = await Promise.all(chats.map(async (chat) => {
             const mostRecentMessage = chat.messages?.[0];
+            const members = await db_1.AppDataSource.getRepository(UserChat_1.UserChat)
+                .createQueryBuilder("userChat")
+                .innerJoinAndSelect("userChat.user", "user")
+                .where("userChat.chatId = :chatId", { chatId: chat.id })
+                .andWhere("userChat.userId != :userId", { userId })
+                .getMany();
+            const memberDetails = members.map(member => ({
+                name: member.user.name,
+                email: member.user.id,
+            }));
             return {
                 chatId: chat.id,
+                chatType: chat.chatType,
+                chatName: chat.chatName, // Include chat name
                 messageContent: mostRecentMessage?.content || null,
                 sender: mostRecentMessage?.senderName || null,
                 timestamp: mostRecentMessage?.timestamp || null,
+                members: memberDetails,
             };
-        })
+        }));
+        const paginatedChats = sortedChats
             .sort((a, b) => {
             if (a.timestamp && b.timestamp) {
                 return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
@@ -392,7 +418,7 @@ router.get("/chats/:userId", async (req, res) => {
             return 0;
         })
             .slice((page - 1) * limit, page * limit);
-        return res.status(200).json({ chats: sortedChats, page });
+        return res.status(200).json({ chats: paginatedChats, page });
     }
     catch (error) {
         console.error("Error fetching user chats:", error);
