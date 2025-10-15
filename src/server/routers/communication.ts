@@ -398,16 +398,33 @@ router.get("/chats/:userId", async (req: Request, res: Response) => {
             .addOrderBy("chat.id", "ASC")
             .getMany();
 
-        const sortedChats = chats
-            .map(chat => {
+        const sortedChats = await Promise.all(
+            chats.map(async chat => {
                 const mostRecentMessage = chat.messages?.[0];
+                const members = await AppDataSource.getRepository(UserChat)
+                    .createQueryBuilder("userChat")
+                    .innerJoinAndSelect("userChat.user", "user")
+                    .where("userChat.chatId = :chatId", { chatId: chat.id })
+                    .andWhere("userChat.userId != :userId", { userId })
+                    .getMany();
+
+                const memberDetails = members.map(member => ({
+                    name: member.user.name,
+                    email: member.user.id,
+                }));
+
                 return {
                     chatId: chat.id,
+                    chatType: chat.chatType, // Add chatType to the response
                     messageContent: mostRecentMessage?.content || null,
                     sender: mostRecentMessage?.senderName || null,
                     timestamp: mostRecentMessage?.timestamp || null,
+                    members: memberDetails,
                 };
             })
+        );
+
+        const paginatedChats = sortedChats
             .sort((a, b) => {
                 if (a.timestamp && b.timestamp) {
                     return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
@@ -418,7 +435,7 @@ router.get("/chats/:userId", async (req: Request, res: Response) => {
             })
             .slice((page - 1) * limit, page * limit);
 
-        return res.status(200).json({ chats: sortedChats, page });
+        return res.status(200).json({ chats: paginatedChats, page });
     } catch (error) {
         console.error("Error fetching user chats:", error);
         return res.status(500).json({ message: "Internal server error" });
