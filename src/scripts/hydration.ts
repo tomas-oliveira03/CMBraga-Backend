@@ -98,17 +98,15 @@ async function seed() {
       }
     }
 
-    console.log("Inserindo dados de teste para rota /stop...");
+    console.log("Creating route and stations from mock_route.json...");
     
-    const encryptedPassword = informationHash.encrypt("Person23!");
-
     // Read route data from JSON
     const routeJsonPath = path.join(__dirname, "mock_route.json");
     const routeJsonData = fs.readFileSync(routeJsonPath, "utf-8");
     const routeData = JSON.parse(routeJsonData);
 
-    // Create stations from route stops
-    const postos: Station[] = [];
+    // 1. Create stations from route stops FIRST
+    const stations: Station[] = [];
     
     for (let i = 0; i < routeData.stops.length; i++) {
       const stop = routeData.stops[i];
@@ -120,14 +118,15 @@ async function seed() {
         longitude: stop.lon,
         latitude: stop.lat
       });
-      postos.push(station);
+      stations.push(station);
     }
-    await stationRepo.save(postos);
+    await stationRepo.save(stations);
+    console.log(`✅ Created ${stations.length} stations`);
 
-    // Create Route
+    // 2. Create Route
     const route = routeRepo.create({
       name: "Rota Pedibus Centro",
-      distanceMeters: 3,
+      distanceMeters: Math.round(routeData.totalDistance * 1000), // Convert km to meters
       boundsNorth: routeData.bounds.north,
       boundsSouth: routeData.bounds.south,
       boundsEast: routeData.bounds.east,
@@ -135,20 +134,52 @@ async function seed() {
       metadata: routeData.route
     });
     await routeRepo.save(route);
+    console.log(`✅ Created route: ${route.name}`);
 
-    // Create RouteStations
+    // 3. Create RouteStations relationships
     const routeStations = routeData.stops.map((stop: any, index: number) => 
       routeStationRepo.create({
         routeId: route.id,
-        stationId: postos[index]!.id,
+        stationId: stations[index]!.id,
         stopNumber: index + 1,
-        distanceFromStartMeters: 1,
-        distanceFromPreviousStationMeters: 1
+        distanceFromStartMeters: stop.distanceFromStart * 1000, // Convert km to meters
+        distanceFromPreviousStationMeters: stop.distanceFromPrevious ? Math.round(stop.distanceFromPrevious * 1000) : 0
       })
     );
     await routeStationRepo.save(routeStations);
+    console.log(`✅ Created ${routeStations.length} route-station relationships`);
 
-    // Create health professional first
+    // 4. Create Activity Session based on the route
+    const atividade = activityRepo.create({
+      type: "pedibus" as any,
+      mode: "walk" as any,
+      scheduledAt: createLisbonDate(),
+      routeId: route.id,
+    });
+    await activityRepo.save(atividade);
+    console.log(`✅ Created activity session: ${atividade.id}`);
+
+    // 5. Create station-activity sessions (from route stations)
+    const stationActivitySessions = [];
+    const now = createLisbonDate();
+    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    
+    for (let i = 0; i < stations.length; i++) {
+      stationActivitySessions.push(
+        stationActivityRepo.create({
+          stationId: stations[i]!.id,
+          activitySessionId: atividade.id,
+          stopNumber: i + 1,
+          scheduledAt: new Date(yesterday.getTime() + (20 + i * 5) * 60 * 1000),
+        })
+      );
+    }
+    await stationActivityRepo.save(stationActivitySessions);
+    console.log(`✅ Created ${stationActivitySessions.length} station-activity sessions`);
+
+    // 6. Create health professional and admin
+    const encryptedPassword = informationHash.encrypt("Person23!");
+
     const hp1 = hpRepo.create({ 
       name: "Dra. Marta Ramos", 
       email: "marta.ramos@saude.pt", 
@@ -158,7 +189,6 @@ async function seed() {
     });
     await hpRepo.save(hp1);
 
-    // Create corresponding User for health professional
     await userRepo.save(userRepo.create({
       id: hp1.email,
       name: hp1.name,
@@ -173,16 +203,14 @@ async function seed() {
     });
     await adminRepo.save(admin);
 
-    // Create corresponding User for admin
     await userRepo.save(userRepo.create({
       id: admin.email,
       name: admin.name,
       adminId: admin.id
     }));
 
-    // 10 pais e 10 crianças
+    // 7. Create parents
     const pais: Parent[] = [];
-    const criancas: Child[] = [];
     
     for (let i = 1; i <= 10; i++) {
       const parent = parentRepo.create({
@@ -196,6 +224,7 @@ async function seed() {
       pais.push(parent);
     }
     await parentRepo.save(pais);
+    console.log(`✅ Created ${pais.length} parents`);
 
     // Create corresponding Users for parents
     for (const parent of pais) {
@@ -206,26 +235,32 @@ async function seed() {
       }));
     }
 
+    // 8. Create children with drop-off at school station (last station)
+    const criancas: Child[] = [];
+    const schoolStation = stations[stations.length - 1]; // Last station is school
+
     for (let i = 0; i < 10; i++) {
       const child = childRepo.create({
         name: `Criança ${i + 1}`,
         gender: i % 2 === 0 ? "male" as any : "female" as any,
         school: "Escola Básica",
         schoolGrade: (i % 6) + 1,
-        dropOffStationId: postos[postos.length - 1]!.id, // Last station (school)
+        dropOffStationId: schoolStation!.id,
         dateOfBirth: createLisbonDate(`2015-0${(i % 9) + 1}-15`)
       });
       criancas.push(child);
     }
     await childRepo.save(criancas);
+    console.log(`✅ Created ${criancas.length} children`);
 
-    // Relacionamento pai-filho
+    // 9. Create parent-child relationships
     const parentChildAssociations = criancas.map((c, i) =>
       parentChildRepo.create({ parentId: pais[i]!.id, childId: c.id })
     );
     await parentChildRepo.save(parentChildAssociations);
+    console.log(`✅ Created ${parentChildAssociations.length} parent-child associations`);
 
-    // Instrutores
+    // 10. Create instructors
     const instrutores = [
       instructorRepo.create({ 
         name: "Instrutor 1", 
@@ -243,6 +278,7 @@ async function seed() {
       }),
     ];
     await instructorRepo.save(instrutores);
+    console.log(`✅ Created ${instrutores.length} instructors`);
 
     // Create corresponding Users for instructors
     for (const instructor of instrutores) {
@@ -253,47 +289,24 @@ async function seed() {
       }));
     }
 
-    // Atividade principal
-    const atividade = activityRepo.create({
-      type: "pedibus" as any,
-      mode: "walk" as any,
-      scheduledAt: createLisbonDate(),
-      routeId: route.id,
-    });
-    await activityRepo.save(atividade);
-
-    // Instrutores na atividade
+    // 11. Assign instructors to the activity
     await instructorActivityRepo.save([
       instructorActivityRepo.create({ instructorId: instrutores[0]!.id, activitySessionId: atividade.id }),
       instructorActivityRepo.create({ instructorId: instrutores[1]!.id, activitySessionId: atividade.id }),
     ]);
+    console.log(`✅ Assigned instructors to activity session`);
 
-    // paradas na atividade (from route stations)
-    const paradas = [];
-    const now = createLisbonDate();
-    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    
-    for (let i = 0; i < postos.length; i++) {
-      paradas.push(
-        stationActivityRepo.create({
-          stationId: postos[i]!.id,
-          activitySessionId: atividade.id,
-          stopNumber: i + 1,
-          scheduledAt: new Date(yesterday.getTime() + (20 + i * 5) * 60 * 1000),
-        })
-      );
-    }
-    await stationActivityRepo.save(paradas);
-
-    // Distribuir 10 crianças entre os postos (equally distributed)
+    // 12. Register children to the activity (distributed among pickup stations, excluding school)
+    const pickupStations = stations.slice(0, -1); // All stations except the last one (school)
     const childActivityRegistrations = [];
+    
     for (let i = 0; i < criancas.length; i++) {
-      const postoIndex = Math.floor(i / Math.ceil(criancas.length / (postos.length - 1))) % (postos.length - 1);
+      const pickupStationIndex = i % pickupStations.length;
       childActivityRegistrations.push(
         childActivityRepo.create({
           childId: criancas[i]!.id,
           activitySessionId: atividade.id,
-          pickUpStationId: postos[postoIndex]!.id,
+          pickUpStationId: pickupStations[pickupStationIndex]!.id,
           parentId: pais[i]!.id,
           isLateRegistration: false,
           registeredAt: yesterday
@@ -301,8 +314,9 @@ async function seed() {
       );
     }
     await childActivityRepo.save(childActivityRegistrations);
+    console.log(`✅ Registered ${childActivityRegistrations.length} children to activity session`);
 
-    // Add parent to activity session - register the first parent for the activity
+    // 13. Register first parent to activity session
     const parentActivityRegistration = parentActivityRepo.create({
       parentId: pais[0]!.id,
       activitySessionId: atividade.id,
@@ -310,7 +324,7 @@ async function seed() {
     });
     await parentActivityRepo.save(parentActivityRegistration);
 
-    // Issues
+    // 14. Create sample issues and medical reports
     const issue1 = issueRepo.create({ 
       description: "Criança com dificuldade respiratória durante o percurso", 
       images: ["img1.jpg"], 
@@ -319,7 +333,6 @@ async function seed() {
     });
     await issueRepo.save(issue1);
 
-    // Medical Reports
     const report1 = reportRepo.create({ 
       childId: criancas[0]!.id, 
       healthProfessionalId: hp1.id, 
@@ -328,6 +341,7 @@ async function seed() {
     });
     await reportRepo.save(report1);
 
+    // 15. Create badges
     const badge1 = badgeRepo.create({
       name: "Primeira Participação",
       description: "Concluiu a primeira participação com sucesso!",
@@ -392,17 +406,19 @@ async function seed() {
       valueneeded: 1
     });
 
-
     await badgeRepo.save([badge1, badge2, badge3, badge4, badge5, badge6, badge7, badge8]);
 
-
     console.log("\n=== HIDRATAÇÃO COMPLETA ===");
-    console.log("✅ Criados " + postos.length + " postos a partir do ficheiro JSON");
-    console.log("✅ Criada 1 rota com " + postos.length + " estações");
-    console.log("✅ Criadas 10 crianças (distribuídas entre os postos)");
-    console.log("✅ Criados registros de usuário para Admin, Instrutores, Pais e Profissional de Saúde");
-    console.log("🚌 Atividade iniciada com a rota importada");
-    console.log("📍 Total de distância da rota: " + routeData.totalDistance + " metros");
+    console.log("✅ 1. Criadas " + stations.length + " estações a partir do ficheiro JSON");
+    console.log("✅ 2. Criada rota '" + route.name + "' com " + stations.length + " estações");
+    console.log("✅ 3. Criadas " + routeStations.length + " relações rota-estação");
+    console.log("✅ 4. Criada atividade baseada na rota");
+    console.log("✅ 5. Criados 10 pais e 10 crianças");
+    console.log("✅ 6. Criados 2 instrutores");
+    console.log("✅ 7. Instrutores e crianças registados na atividade");
+    console.log("✅ 8. Crianças distribuídas entre " + pickupStations.length + " estações de recolha");
+    console.log("✅ 9. Todas as crianças têm drop-off na escola (última estação)");
+    console.log("📍 Distância total da rota: " + route.distanceMeters + " metros");
     console.log("🏅 Criadas 8 medalhas");
 
     console.log("Seeding finished.");
