@@ -232,7 +232,8 @@ router.get('/:id', async (req: Request, res: Response) => {
  */
 router.post('/', upload.single('file'), async (req: Request, res: Response) => {
     try {
-        // Check if .kmz file was sent
+        const validatedData = CreateRouteSchema.parse(req.body);
+        
         if (!req.file) {
             return res.status(400).json({ message: "KMZ file is required" });
         }
@@ -240,8 +241,6 @@ router.post('/', upload.single('file'), async (req: Request, res: Response) => {
         if (req.file.mimetype !== 'application/vnd.google-earth.kmz') {
             return res.status(400).json({ message: "File must be a KMZ file" });
         }
-
-        const validatedData = CreateRouteSchema.parse(req.body);
 
         const route = await AppDataSource.getRepository(Route).findOne({
             where: { name: validatedData.name }
@@ -252,16 +251,16 @@ router.post('/', upload.single('file'), async (req: Request, res: Response) => {
         }
 
         // Upload buffer directly to cloud
-        const cloudinaryUrl = await uploadFileBuffer(
+        const cloudStoredFileURL = await uploadFileBuffer(
             req.file.buffer, 
             validatedData.name.replace(/\s+/g, '-')
         );
 
         // Process KMZ from cloud URL
-        const routeData = await processKMZFromURL(cloudinaryUrl);
+        const routeData = await processKMZFromURL(cloudStoredFileURL);
 
         // Delete file from cloud
-        await deleteFile(cloudinaryUrl)
+        await deleteFile(cloudStoredFileURL)
 
         await AppDataSource.transaction(async tx => {
 

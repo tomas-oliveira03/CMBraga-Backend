@@ -11,7 +11,7 @@ export class Issue {
     description!: string;
 
     @Column({ type: 'varchar', array: true, default: [] })
-    images!: string[];
+    imageURLs!: string[];
 
     @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
 	createdAt!: Date;

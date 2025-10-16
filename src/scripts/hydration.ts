@@ -327,7 +327,7 @@ async function seed() {
     // 14. Create sample issues and medical reports
     const issue1 = issueRepo.create({ 
       description: "Criança com dificuldade respiratória durante o percurso", 
-      images: ["img1.jpg"], 
+      imageURLs: ["img1.jpg"], 
       instructorId: instrutores[0]!.id, 
       activitySessionId: atividade.id 
     });

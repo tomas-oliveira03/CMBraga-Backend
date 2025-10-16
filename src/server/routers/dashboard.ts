@@ -66,7 +66,7 @@ const router = express.Router();
  *                       description:
  *                         type: string
  *                         example: "Criança com dificuldade respiratória durante o percurso"
- *                       images:
+ *                       imageURLs:
  *                         type: array
  *                         items:
  *                           type: string
@@ -118,7 +118,7 @@ router.get('/issue/activity/:id', async (req: Request, res : Response) => {
             issues:{
                 id: true,
                 description: true,
-                images: true,
+                imageURLs: true,
                 createdAt: true,
                 updatedAt: true,
                 resolvedAt: true,

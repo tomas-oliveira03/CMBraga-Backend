@@ -3,7 +3,6 @@ import { z } from "zod";
 export const IssueSchema = z.object({
     id: z.string(),
     description: z.string(),
-    images: z.array(z.string()),
     createdAt: z.coerce.date(),
     updatedAt: z.coerce.date().nullable(),
     instructorId: z.string(),

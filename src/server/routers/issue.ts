@@ -2,12 +2,14 @@ import { AppDataSource } from "@/db";
 import { Issue } from "@/db/entities/Issue";
 import express, { Request, Response } from "express";
 import { CreateIssueSchema, UpdateIssueSchema } from "../schemas/issue";
-import { z } from "zod";
+import { map, z } from "zod";
 import { ActivitySession } from "@/db/entities/ActivitySession";
 import { Instructor } from "@/db/entities/Instructor";
+import multer from 'multer';
+import { uploadImagesBuffer } from "../services/cloud";
 
 const router = express.Router();
-
+const upload = multer({ storage: multer.memoryStorage() });
 
 /**
  * @swagger
@@ -39,7 +41,7 @@ const router = express.Router();
  *                   description:
  *                     type: string
  *                     example: "Criança com dificuldade respiratória durante o percurso"
- *                   images:
+ *                   imageURLs:
  *                     type: array
  *                     items:
  *                       type: string
@@ -95,7 +97,7 @@ router.get('/', async (req: Request, res: Response) => {
  *                 description:
  *                   type: string
  *                   example: "Bicicleta com pneu furado"
- *                 images:
+ *                 imageURLs:
  *                   type: array
  *                   items:
  *                     type: string
@@ -139,13 +141,13 @@ router.get('/:id', async (req: Request, res: Response) => {
  * /issue:
  *   post:
  *     summary: Create a new issue
- *     description: Creates a new issue report for an activity session
+ *     description: Creates a new issue report for an activity session with optional image uploads
  *     tags:
  *       - Issue
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
@@ -156,22 +158,25 @@ router.get('/:id', async (req: Request, res: Response) => {
  *               activitySessionId:
  *                 type: string
  *                 example: "s1t2u3v4-w5x6-7890-yz12-ab1234567890"
+ *                 description: "Activity session ID where the issue occurred"
  *               instructorId:
  *                 type: string
  *                 example: "i1j2k3l4-m5n6-7890-opqr-st1234567890"
+ *                 description: "ID of the instructor reporting the issue"
  *               description:
  *                 type: string
  *                 example: "Criança caiu e apresenta escoriação no joelho"
- *               images:
+ *                 description: "Detailed description of the issue"
+ *               files:
  *                 type: array
  *                 items:
  *                   type: string
- *                 example: ["injury_photo.jpg"]
+ *                   format: binary
+ *                 description: "Optional image files (JPEG, JPG, PNG, WEBP). Can upload none, one, or multiple images."
  *           example:
  *             activitySessionId: "s1t2u3v4-w5x6-7890-yz12-ab1234567890"
  *             instructorId: "i1j2k3l4-m5n6-7890-opqr-st1234567890"
  *             description: "Problema técnico com bicicleta - corrente solta"
- *             images: ["bike_chain.jpg"]
  *     responses:
  *       201:
  *         description: Issue created successfully
@@ -184,15 +189,52 @@ router.get('/:id', async (req: Request, res: Response) => {
  *                   type: string
  *                   example: "Issue created successfully"
  *       400:
- *         description: Validation error
+ *         description: Validation error or invalid file type
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *               examples:
+ *                 validation_error:
+ *                   value:
+ *                     message: "Validation error"
+ *                     errors: [{"code": "required", "path": ["description"], "message": "Required"}]
+ *                 invalid_file:
+ *                   value:
+ *                     message: "File must be a valid image type (JPEG, JPG, PNG, WEBP)"
  *       404:
  *         description: Activity session or instructor not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *               examples:
+ *                 activity_not_found:
+ *                   value:
+ *                     message: "Activity session not found"
+ *                 instructor_not_found:
+ *                   value:
+ *                     message: "Instructor not found"
  *       500:
  *         description: Internal server error
  */
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', upload.array('files'), async (req: Request, res: Response) => {
     try {
         const validatedData = CreateIssueSchema.parse(req.body);
+
+        const files = (req.files as Express.Multer.File[]);
+        const allowedImageTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+        const invalidFiles = files.filter(file => !allowedImageTypes.includes(file.mimetype));
+
+        if(invalidFiles.length > 0){
+            return res.status(400).json({ message: "File must be a valid image type (JPEG, JPG, PNG, WEBP)" });
+        }
 
         const activitySession = await AppDataSource.getRepository(ActivitySession).findOne({
             where: { id: validatedData.activitySessionId }
@@ -209,8 +251,28 @@ router.post('/', async (req: Request, res: Response) => {
         if (!instructor) {
             return res.status(404).json({ message: "Instructor not found" });
         }
+        
+        await AppDataSource.transaction(async tx => {
 
-        await AppDataSource.getRepository(Issue).insert(validatedData);
+            const issue = await tx.getRepository(Issue).insert(validatedData);
+            const issueId = issue.identifiers[0]?.id
+            
+            const imagesToUploadData = files.map((file, index) => ({
+                buffer: file.buffer,
+                fileName: `${issueId}-${index + 1}`
+            }));
+
+            const cloudStoredImagesURLs = await uploadImagesBuffer(imagesToUploadData, "issues");
+
+            await tx.getRepository(Issue).update(
+                { id: issueId },
+                { 
+                    imageURLs: cloudStoredImagesURLs,
+                    updatedAt: new Date()
+                }
+            )
+        });
+        
         
         return res.status(201).json({ message: "Issue created successfully" });
 
@@ -252,14 +314,14 @@ router.post('/', async (req: Request, res: Response) => {
  *               description:
  *                 type: string
  *                 example: "Criança recuperou e voltou para casa com os pais"
- *               images:
+ *               imageURLs:
  *                 type: array
  *                 items:
  *                   type: string
  *                 example: ["updated_photo.jpg"]
  *           example:
  *             description: "Situação resolvida - bicicleta reparada"
- *             images: ["bike_fixed.jpg"]
+ *             imageURLs: ["bike_fixed.jpg"]
  *     responses:
  *       200:
  *         description: Issue updated successfully
