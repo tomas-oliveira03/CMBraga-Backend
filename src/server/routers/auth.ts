@@ -229,7 +229,7 @@ router.post('/register/admin', async (req: Request, res: Response) => {
             });
         }
         
-        return res.status(500).json({ message: error });
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 
@@ -323,7 +323,7 @@ router.post('/register/instructor', async (req: Request, res: Response) => {
             });
         }
         
-        return res.status(500).json({ message: error });
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 
@@ -418,7 +418,7 @@ router.post('/register/health-professional', async (req: Request, res: Response)
             });
         }
         
-        return res.status(500).json({ message: error });
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 
@@ -517,7 +517,7 @@ router.post('/register/parent', async (req: Request, res: Response) => {
             });
         }
         
-        return res.status(500).json({ message: error });
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 
@@ -728,7 +728,7 @@ router.post('/register/recover-password', async (req: Request, res: Response) =>
 
         return res.status(200).json({ message: "Password reset email sent" });
     } catch (error) {
-        return res.status(500).json({ message: "Internal server error" });
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 

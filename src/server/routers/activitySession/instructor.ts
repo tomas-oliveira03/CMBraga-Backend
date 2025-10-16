@@ -196,8 +196,7 @@ router.post('/:id', authenticate, authorize(UserRole.ADMIN), async (req: Request
         return res.status(201).json({ message: "Instructor assigned to activity session successfully" });
 
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: error });
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 
@@ -296,8 +295,7 @@ router.delete('/:id', authenticate, authorize(UserRole.ADMIN), async (req: Reque
         return res.status(200).json({ message: "Instructor removed from activity session successfully" });
 
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: error });
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 

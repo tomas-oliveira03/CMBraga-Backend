@@ -146,8 +146,7 @@ router.post('/start', authenticate, authorize(UserRole.INSTRUCTOR), async (req: 
 
         return res.status(200).json(firstStation);
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: error });
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 
@@ -301,8 +300,7 @@ router.post('/end', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Re
 
         return res.status(200).json({ message: "Activity finished successfully" });
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: error });
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 
@@ -415,8 +413,7 @@ router.get('/station/pick-up', authenticate, authorize(UserRole.INSTRUCTOR), asy
         })
 
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: error });
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 
@@ -541,8 +538,7 @@ router.get('/station/still-in', authenticate, authorize(UserRole.INSTRUCTOR), as
         })
 
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: error });
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 
@@ -650,8 +646,7 @@ router.get('/station/drop-off', authenticate, authorize(UserRole.INSTRUCTOR),asy
         })
 
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: error });
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 
@@ -816,8 +811,7 @@ router.post('/station/next-stop', authenticate, authorize(UserRole.INSTRUCTOR), 
         return res.status(200).json(nextStation)
         
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: error });
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 
@@ -990,8 +984,7 @@ router.post('/station/arrived-at-stop', authenticate, authorize(UserRole.INSTRUC
         return res.status(200).json(currentStationWithFlag)
         
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: error });
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 
@@ -1196,8 +1189,7 @@ router.post('/station/status', authenticate, authorize(UserRole.INSTRUCTOR), asy
         return res.status(200).json(currentStationWithFlags)
         
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: error });
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 
@@ -1374,8 +1366,7 @@ router.post('/child/check-in', authenticate, authorize(UserRole.INSTRUCTOR), asy
         return res.status(200).json({message: "Child checked-in successfully"});
 
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: "Internal server error" });
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 
@@ -1550,8 +1541,7 @@ router.post('/child/check-out', authenticate, authorize(UserRole.INSTRUCTOR), as
         return res.status(200).json({message: "Child checked-out successfully"});
 
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: "Internal server error" });
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 
@@ -1717,8 +1707,7 @@ router.delete('/child/check-in', authenticate, authorize(UserRole.INSTRUCTOR), a
         return res.status(200).json({message: "Child uncheked-in sucessfully"});
 
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: "Internal server error" });
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 
@@ -1884,8 +1873,7 @@ router.delete('/child/check-out', authenticate, authorize(UserRole.INSTRUCTOR), 
         return res.status(200).json({message: "Child unchecked-out successfully"});
 
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: "Internal server error" });
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 

@@ -83,8 +83,7 @@ router.post('/', authenticate, authorize(UserRole.ADMIN), async (req: Request, r
         return res.status(201).json({ message: "Parent assigned to activity session successfully" });
 
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: error });
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 
@@ -138,8 +137,7 @@ router.delete('/', authenticate, authorize(UserRole.ADMIN), async (req: Request,
         return res.status(200).json({ message: "Parent removed from activity session successfully" });
 
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: error });
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 

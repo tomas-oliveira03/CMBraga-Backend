@@ -75,9 +75,19 @@ function findClosestPointIndex(target: Point, line: Point[]): number {
 	return minIdx;
 }
 
-export async function processKMZ(kmzPath: string): Promise<RouteData> {
-	// Extrair .kml
-	const kmzData = fs.readFileSync(kmzPath);
+export async function processKMZFromURL(kmzUrl: string): Promise<RouteData> {
+	// Fetch KMZ file from URL
+	const response = await fetch(kmzUrl);
+	if (!response.ok) {
+		throw new Error(`Failed to fetch KMZ file from URL: ${response.statusText}`);
+	}
+	
+	const arrayBuffer = await response.arrayBuffer();
+	const kmzData = Buffer.from(arrayBuffer);
+	return await processKMZData(kmzData);
+}
+
+async function processKMZData(kmzData: Buffer): Promise<RouteData> {
 	const zip = await JSZip.loadAsync(kmzData);
 	const kmlFile = Object.keys(zip.files).find(f => f.toLowerCase().endsWith(".kml"));
 	if (!kmlFile) throw new Error("Nenhum ficheiro .kml encontrado dentro do .kmz!");
@@ -181,6 +191,6 @@ export async function processKMZ(kmzPath: string): Promise<RouteData> {
 		}
 	};
 
-	return routeData
+	return routeData;
 }
 

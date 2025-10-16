@@ -48,12 +48,17 @@ class Envs {
         "LOGGER_SHOW_DATETIME", 
         false
     );
+    
     public readonly OPEN_WEATHER_API_KEY: string = this.getString("OPEN_WEATHER_API_KEY", "your_api_key");
+    
     public readonly GMAIL_USERNAME: string = this.getString("GMAIL_USERNAME", "your_secret");
     public readonly GMAIL_PASSWORD_SMTP: string = this.getString("GMAIL_PASSWORD_SMTP", "your_secret");
     public readonly SMTP_SERVER: string = this.getString("SMTP_SERVER", "smtp.gmail.com");
     public readonly SMTP_PORT: number = this.getInt("SMTP_PORT", 587);
 
+    public readonly CLOUD_NAME: string = this.getString("CLOUD_NAME", "your_secret");
+    public readonly CLOUD_API_KEY: string = this.getString("CLOUD_API_KEY", "your_secret");
+    public readonly CLOUD_API_SECRET: string = this.getString("CLOUD_API_SECRET", "your_secret");
 
     public readonly BASE_URL = this.isProd 
         ? `${this.HOST}`

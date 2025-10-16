@@ -222,7 +222,7 @@ router.post('/', async (req: Request, res: Response) => {
             });
         }
         
-        return res.status(500).json({ message: error });
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 
@@ -307,7 +307,7 @@ router.put('/:id', async (req: Request, res: Response) => {
             });
         }
         
-        return res.status(500).json({ message: error });
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 
@@ -376,7 +376,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
         return res.status(200).json({ message: "Issue deleted successfully" });
 
     } catch (error) {
-        return res.status(500).json({ message: error });
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 

@@ -276,8 +276,7 @@ router.post('/:id', authenticate, authorize(UserRole.PARENT), async (req: Reques
         return res.status(201).json({ message: "Child added to activity session successfully" });
 
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: error });
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 
@@ -389,8 +388,7 @@ router.delete('/:id', authenticate, authorize(UserRole.PARENT), async (req: Requ
         return res.status(200).json({ message: "Child removed from activity session successfully" });
 
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: error });
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 

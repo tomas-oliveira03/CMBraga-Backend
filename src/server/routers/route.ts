@@ -3,12 +3,15 @@ import { Route } from "@/db/entities/Route";
 import express, { Request, Response } from "express";
 import { CreateRouteSchema } from "../schemas/route";
 import z from "zod";
-import { processKMZ } from "../services/kmzParser";
+import { processKMZFromURL } from "../services/kmzParser";
 import { Station } from "@/db/entities/Station";
 import { StationType } from "@/helpers/types";
 import { RouteStation } from "@/db/entities/RouteStation";
+import multer from 'multer';
+import { deleteFile, uploadFileBuffer } from "../services/cloud";
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
 /**
  * @swagger
@@ -227,8 +230,17 @@ router.get('/:id', async (req: Request, res: Response) => {
  *                   type: string
  *                   example: "Internal server error"
  */
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', upload.single('file'), async (req: Request, res: Response) => {
     try {
+        // Check if .kmz file was sent
+        if (!req.file) {
+            return res.status(400).json({ message: "KMZ file is required" });
+        }
+
+        if (req.file.mimetype !== 'application/vnd.google-earth.kmz') {
+            return res.status(400).json({ message: "File must be a KMZ file" });
+        }
+
         const validatedData = CreateRouteSchema.parse(req.body);
 
         const route = await AppDataSource.getRepository(Route).findOne({
@@ -239,7 +251,17 @@ router.post('/', async (req: Request, res: Response) => {
             return res.status(404).json({ message: "Route name already exists" });
         }
 
-        const routeData = await processKMZ("a.kmz")
+        // Upload buffer directly to cloud
+        const cloudinaryUrl = await uploadFileBuffer(
+            req.file.buffer, 
+            validatedData.name.replace(/\s+/g, '-')
+        );
+
+        // Process KMZ from cloud URL
+        const routeData = await processKMZFromURL(cloudinaryUrl);
+
+        // Delete file from cloud
+        await deleteFile(cloudinaryUrl)
 
         await AppDataSource.transaction(async tx => {
 
@@ -298,7 +320,7 @@ router.post('/', async (req: Request, res: Response) => {
             });
         }
         
-        return res.status(500).json({ message: error });
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 

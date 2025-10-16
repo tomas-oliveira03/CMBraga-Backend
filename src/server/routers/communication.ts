@@ -124,7 +124,7 @@ router.post("/", async (req: Request, res: Response) => {
         if (error instanceof z.ZodError) {
             return res.status(400).json({ message: "Validation error", errors: error.issues });
         }
-        return res.status(500).json({ error: error });
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 
@@ -252,7 +252,7 @@ router.post("/messages/:conversationId", async (req: Request, res: Response) => 
 
         return res.status(201).json({ message: "Message sent successfully" });
     } catch (error) {
-        return res.status(500).json({ message: "Internal server error" });
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 
@@ -331,7 +331,7 @@ router.get("/:conversationId", async (req: Request, res: Response) => {
 
         return res.status(200).json({ messages: chatData.messages });
     } catch (error) {
-        return res.status(500).json({ message: "Internal server error" });
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 
@@ -452,8 +452,7 @@ router.get("/chats/:userId", async (req: Request, res: Response) => {
 
         return res.status(200).json({ chats: paginatedChats, page });
     } catch (error) {
-        console.error("Error fetching user chats:", error);
-        return res.status(500).json({ message: "Internal server error" });
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 

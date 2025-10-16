@@ -111,7 +111,7 @@ router.post('/', async (req: Request, res: Response) => {
         if (error instanceof z.ZodError) {
             return res.status(400).json({ message: "Validation error", errors: error.issues });
         }
-        return res.status(500).json({ message: "Internal server error" + error });
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 
@@ -176,7 +176,7 @@ router.put('/:id', async (req: Request, res: Response) => {
         if (error instanceof z.ZodError) {
             return res.status(400).json({ message: "Validation error", errors: error.issues });
         }
-        return res.status(500).json({ message: "Internal server error"});
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 

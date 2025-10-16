@@ -33,6 +33,7 @@
     "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/mongodb": "^4.0.6",
+    "@types/multer": "^2.0.0",
     "@types/node": "^22.9.1",
     "@types/nodemailer": "^7.0.2",
     "@types/swagger-jsdoc": "^6.0.4",
@@ -48,6 +49,7 @@
   "dependencies": {
     "@logdna/logger": "^2.6.11",
     "chalk": "^4.1.2",
+    "cloudinary": "^2.7.0",
     "csv-writer": "^1.6.0",
     "express": "^5.1.0",
     "haversine-distance": "^1.2.4",
@@ -55,6 +57,7 @@
     "jsonwebtoken": "^9.0.2",
     "jszip": "^3.10.1",
     "mongodb": "^6.20.0",
+    "multer": "^2.0.2",
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.9",
     "pg": "^8.13.1",
