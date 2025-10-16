@@ -1,8 +1,8 @@
-import { Column, Entity, Index, OneToMany, OneToOne, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm"
-import { Child } from "./Child";
+import { Column, Entity, Index, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm"
 import { ParentChild } from "./ParentChild";
 import { ChildActivitySession } from "./ChildActivitySession";
 import { User } from "./User";
+import { Feedback } from "./Feedback";
 
 @Entity()
 export class Parent {
@@ -39,6 +39,9 @@ export class Parent {
 
     @OneToMany(() => ChildActivitySession, childActivitySession => childActivitySession.parent)
     parentChildActivitySession!: ChildActivitySession[];
+
+    @OneToMany(() => Feedback, (feedback) => feedback.parent)
+    feedbacks!: Feedback[];
 
     @OneToOne(() => User)
     user!: User;

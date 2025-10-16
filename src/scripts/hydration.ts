@@ -15,6 +15,7 @@ import { ChildStation } from "@/db/entities/ChildStation";
 import { Issue } from "@/db/entities/Issue";
 import { MedicalReport } from "@/db/entities/MedicalReport";
 import { User } from "@/db/entities/User";
+import { Feedback } from "@/db/entities/Feedback";
 import { ParentActivitySession } from "@/db/entities/ParentActivitySession";
 import { Badge } from "@/db/entities/Badge";
 import { BadgeCriteria, StationType } from "@/helpers/types";
@@ -57,6 +58,7 @@ async function seed() {
     const badgeRepo = dataSource.getRepository(Badge);
     const routeRepo = dataSource.getRepository(Route);
     const routeStationRepo = dataSource.getRepository(RouteStation);
+    const feedbackRepo = dataSource.getRepository(Feedback);
 
     console.log("Cleaning tables (dependents first)...");
     // Clear repositories in order, but ignore errors if the table doesn't exist yet
@@ -67,6 +69,7 @@ async function seed() {
       childStationRepo,
       issueRepo,
       reportRepo,
+      feedbackRepo,
       parentChildRepo,
       userRepo,
       childRepo,
@@ -408,6 +411,79 @@ async function seed() {
 
     await badgeRepo.save([badge1, badge2, badge3, badge4, badge5, badge6, badge7, badge8]);
 
+    // 16. Create feedbacks
+    const feedback1 = feedbackRepo.create({
+      evaluation1: 5,
+      evaluation2: 5,
+      evaluation3: 4,
+      evaluation4: 5,
+      evaluation5: 5,
+      textFeedback: "Excelente atividade! O meu filho adorou a experiência e chegou a casa muito entusiasmado.",
+      overallRating: 5,
+      activitySessionId: atividade.id,
+      childId: criancas[0]!.id,
+      parentId: pais[0]!.id,
+      submitedAt: new Date("2024-04-01T20:00:00.000Z")
+    });
+
+    const feedback2 = feedbackRepo.create({
+      evaluation1: 4,
+      evaluation2: 4,
+      evaluation3: 5,
+      evaluation4: 4,
+      evaluation5: 4,
+      textFeedback: "Muito boa organização. Os instrutores foram muito atenciosos e cuidadosos.",
+      overallRating: 4,
+      activitySessionId: atividade.id,
+      childId: criancas[1]!.id,
+      parentId: pais[1]!.id,
+      submitedAt: new Date("2024-04-01T20:30:00.000Z")
+    });
+
+    const feedback3 = feedbackRepo.create({
+      evaluation1: 5,
+      evaluation2: 4,
+      evaluation3: 4,
+      evaluation4: 5,
+      evaluation5: 5,
+      textFeedback: "Ótima iniciativa! A criança fez exercício e ainda aprendeu sobre a cidade.",
+      overallRating: 5,
+      activitySessionId: atividade.id,
+      childId: criancas[2]!.id,
+      parentId: pais[2]!.id,
+      submitedAt: new Date("2024-04-01T21:00:00.000Z")
+    });
+
+    const feedback4 = feedbackRepo.create({
+      evaluation1: 3,
+      evaluation2: 4,
+      evaluation3: 3,
+      evaluation4: 4,
+      evaluation5: 3,
+      textFeedback: "Foi bom, mas o percurso podia ser um pouco mais curto para crianças mais novas.",
+      overallRating: 3,
+      activitySessionId: atividade.id,
+      childId: criancas[3]!.id,
+      parentId: pais[3]!.id,
+      submitedAt: new Date("2024-04-01T21:30:00.000Z")
+    });
+
+    const feedback5 = feedbackRepo.create({
+      evaluation1: 5,
+      evaluation2: 5,
+      evaluation3: 5,
+      evaluation4: 5,
+      evaluation5: 5,
+      textFeedback: "Perfeito! Seguro, divertido e educativo. Recomendo a todos os pais!",
+      overallRating: 5,
+      activitySessionId: atividade.id,
+      childId: criancas[4]!.id,
+      parentId: pais[4]!.id,
+      submitedAt: new Date("2024-04-02T08:00:00.000Z")
+    });
+
+    await feedbackRepo.save([feedback1, feedback2, feedback3, feedback4, feedback5]);
+
     console.log("\n=== HIDRATAÇÃO COMPLETA ===");
     console.log("✅ 1. Criadas " + stations.length + " estações a partir do ficheiro JSON");
     console.log("✅ 2. Criada rota '" + route.name + "' com " + stations.length + " estações");
@@ -420,6 +496,7 @@ async function seed() {
     console.log("✅ 9. Todas as crianças têm drop-off na escola (última estação)");
     console.log("📍 Distância total da rota: " + route.distanceMeters + " metros");
     console.log("🏅 Criadas 8 medalhas");
+    console.log("💬 Criados 5 feedbacks de pais sobre a atividade");
 
     console.log("Seeding finished.");
   } catch (err) {

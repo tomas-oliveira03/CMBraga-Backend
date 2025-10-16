@@ -17,6 +17,7 @@ import { ChildStation } from "./ChildStation";
 import { ActivityMode, ActivityType, WeatherType } from "@/helpers/types";
 import { Instructor } from "./Instructor";
 import { ChildActivityRecord } from "./ChildActivityRecord";
+import { Feedback } from "./Feedback";
 import { Route } from "./Route";
 
 @Entity()
@@ -87,6 +88,9 @@ export class ActivitySession {
 
     @OneToMany(() => ChildActivityRecord, childActivityRecord => childActivityRecord.child)
     childActivityRecords!: ChildActivitySession[];
+
+    @OneToMany(() => Feedback, (feedback) => feedback.activitySession)
+    feedbacks!: Feedback[];
 
     @ManyToOne(() => Instructor, { nullable: true })
     startedBy!: Instructor | null;

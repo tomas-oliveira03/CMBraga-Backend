@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class AddMigration1760620901687 implements MigrationInterface {
-    name = 'AddMigration1760620901687'
+export class AddMigrations1760629673789 implements MigrationInterface {
+    name = 'AddMigrations1760629673789'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`CREATE TABLE "admin" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "email" character varying NOT NULL, "password" character varying, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "activated_at" TIMESTAMP WITH TIME ZONE, "updated_at" TIMESTAMP WITH TIME ZONE, CONSTRAINT "UQ_de87485f6489f5d0995f5841952" UNIQUE ("email"), CONSTRAINT "PK_e032310bcef831fb83101899b10" PRIMARY KEY ("id"))`);
@@ -16,6 +16,7 @@ export class AddMigration1760620901687 implements MigrationInterface {
         await queryRunner.query(`CREATE TABLE "health_professional" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "email" character varying NOT NULL, "password" character varying, "specialty" character varying NOT NULL, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "activated_at" TIMESTAMP WITH TIME ZONE, "updated_at" TIMESTAMP WITH TIME ZONE, CONSTRAINT "UQ_22d25f3882c416e2ad6d5c6ab08" UNIQUE ("email"), CONSTRAINT "CHK_7c3d0d467324d1531ae2f003b2" CHECK ("specialty" IN ('pediatrician', 'nutritionist', 'general_practitioner')), CONSTRAINT "PK_a64d31c39d2af6daa453ea9f98e" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE INDEX "IDX_22d25f3882c416e2ad6d5c6ab0" ON "health_professional" ("email") `);
         await queryRunner.query(`CREATE TABLE "medical_report" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "child_id" uuid NOT NULL, "health_professional_id" uuid NOT NULL, "diagnosis" text NOT NULL, "recommendations" text, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE, CONSTRAINT "PK_3646662064ed9dbbe82e1efd19f" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "feedback" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "evaluation1" integer NOT NULL, "evaluation2" integer NOT NULL, "evaluation3" integer NOT NULL, "evaluation4" integer NOT NULL, "evaluation5" integer NOT NULL, "text_feedback" character varying NOT NULL, "overall_rating" integer NOT NULL, "activity_session_id" uuid NOT NULL, "child_id" uuid NOT NULL, "parent_id" uuid NOT NULL, "submited_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_8389f9e087a57689cd5be8b2b13" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "parent" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "email" character varying NOT NULL, "password" character varying, "phone" character varying NOT NULL, "address" character varying NOT NULL, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "activated_at" TIMESTAMP WITH TIME ZONE, "updated_at" TIMESTAMP WITH TIME ZONE, CONSTRAINT "UQ_9158391af7b8ca4911efaad8a73" UNIQUE ("email"), CONSTRAINT "PK_bf93c41ee1ae1649869ebd05617" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE INDEX "IDX_9158391af7b8ca4911efaad8a7" ON "parent" ("email") `);
         await queryRunner.query(`CREATE TABLE "parent_child" ("parent_id" uuid NOT NULL, "child_id" uuid NOT NULL, "associated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_0b884bd66a60bc2ae117fc0bb09" PRIMARY KEY ("parent_id", "child_id"))`);
@@ -32,9 +33,9 @@ export class AddMigration1760620901687 implements MigrationInterface {
         await queryRunner.query(`CREATE TABLE "message" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "content" text NOT NULL, "timestamp" TIMESTAMP NOT NULL, "chat_id" uuid NOT NULL, "sender_id" character varying NOT NULL, "sender_name" character varying NOT NULL, CONSTRAINT "PK_ba01f0a3e0123651915008bc578" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "chat" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "chat_name" character varying, "chat_type" character varying NOT NULL, "destinataire_photo" character varying NOT NULL, CONSTRAINT "CHK_da8a040f3fee38a8681e9c969d" CHECK ("chat_type" IN ('group_chat', 'individual_chat')), CONSTRAINT "PK_9d0b2ba74336710fd31154738a5" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "user_chat" ("user_id" character varying NOT NULL, "chat_id" uuid NOT NULL, CONSTRAINT "PK_1a0006be82337a8768d40250893" PRIMARY KEY ("user_id", "chat_id"))`);
+        await queryRunner.query(`CREATE TABLE "client_stat" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "parent_id" uuid, "child_id" uuid, "meters_walked" integer NOT NULL DEFAULT '0', "co2_saved" integer NOT NULL DEFAULT '0', "calories_burned" integer NOT NULL DEFAULT '0', "date" date NOT NULL, "activity_session_id" uuid NOT NULL, CONSTRAINT "PK_42311d46b67da5fc71f32dc3cc3" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "badge" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "description" character varying NOT NULL, "image_url" character varying NOT NULL, "criteria" character varying NOT NULL, "valueneeded" integer, CONSTRAINT "UQ_35ed068bad78456ff543323916d" UNIQUE ("name"), CONSTRAINT "CHK_f38312b1d6073aeb048abae24a" CHECK ("criteria" IN ('streak', 'distance', 'calories', 'weather', 'points', 'special', 'leaderboard', 'participation')), CONSTRAINT "PK_76b7011c864d4521a14a5196c49" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "client_badge" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "parent_id" uuid, "child_id" uuid, "badge_id" uuid NOT NULL, CONSTRAINT "PK_5c99c874b9c97ca4c30b35f5ea5" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "client_stat" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "parent_id" uuid, "child_id" uuid, "meters_walked" integer NOT NULL DEFAULT '0', "co2_saved" integer NOT NULL DEFAULT '0', "calories_burned" integer NOT NULL DEFAULT '0', "date" date NOT NULL, "activity_session_id" uuid NOT NULL, CONSTRAINT "PK_42311d46b67da5fc71f32dc3cc3" PRIMARY KEY ("id"))`);
         await queryRunner.query(`ALTER TABLE "station_activity_session" ADD CONSTRAINT "FK_48139306c10b136f8e99513536e" FOREIGN KEY ("station_id") REFERENCES "station"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "station_activity_session" ADD CONSTRAINT "FK_18b72a4646c8cd18e3dca0525ca" FOREIGN KEY ("activity_session_id") REFERENCES "activity_session"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "route_station" ADD CONSTRAINT "FK_3ebd2550b3f583061f276c8569d" FOREIGN KEY ("route_id") REFERENCES "route"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
@@ -45,6 +46,9 @@ export class AddMigration1760620901687 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "child_station" ADD CONSTRAINT "FK_f87d8bec6ad18475aaf1e630411" FOREIGN KEY ("activity_session_id") REFERENCES "activity_session"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "medical_report" ADD CONSTRAINT "FK_15750768b5712417a550e8ad986" FOREIGN KEY ("child_id") REFERENCES "child"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "medical_report" ADD CONSTRAINT "FK_7b070ad0050b941833fcb184678" FOREIGN KEY ("health_professional_id") REFERENCES "health_professional"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "feedback" ADD CONSTRAINT "FK_9f4d758077600e7e6f5ae8d6a52" FOREIGN KEY ("activity_session_id") REFERENCES "activity_session"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "feedback" ADD CONSTRAINT "FK_2f83712f5cc35e4d02be7b83471" FOREIGN KEY ("child_id") REFERENCES "child"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "feedback" ADD CONSTRAINT "FK_83e404d59c4d53cc7d4df25c506" FOREIGN KEY ("parent_id") REFERENCES "parent"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "parent_child" ADD CONSTRAINT "FK_583007013543f31bbce2c15a976" FOREIGN KEY ("parent_id") REFERENCES "parent"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "parent_child" ADD CONSTRAINT "FK_9f61ce787dc165b3185b5f5d47f" FOREIGN KEY ("child_id") REFERENCES "child"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "child_activity_record" ADD CONSTRAINT "FK_bd07eb52538d4f09d764557bcb1" FOREIGN KEY ("child_id") REFERENCES "child"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
@@ -104,6 +108,9 @@ export class AddMigration1760620901687 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "child_activity_record" DROP CONSTRAINT "FK_bd07eb52538d4f09d764557bcb1"`);
         await queryRunner.query(`ALTER TABLE "parent_child" DROP CONSTRAINT "FK_9f61ce787dc165b3185b5f5d47f"`);
         await queryRunner.query(`ALTER TABLE "parent_child" DROP CONSTRAINT "FK_583007013543f31bbce2c15a976"`);
+        await queryRunner.query(`ALTER TABLE "feedback" DROP CONSTRAINT "FK_83e404d59c4d53cc7d4df25c506"`);
+        await queryRunner.query(`ALTER TABLE "feedback" DROP CONSTRAINT "FK_2f83712f5cc35e4d02be7b83471"`);
+        await queryRunner.query(`ALTER TABLE "feedback" DROP CONSTRAINT "FK_9f4d758077600e7e6f5ae8d6a52"`);
         await queryRunner.query(`ALTER TABLE "medical_report" DROP CONSTRAINT "FK_7b070ad0050b941833fcb184678"`);
         await queryRunner.query(`ALTER TABLE "medical_report" DROP CONSTRAINT "FK_15750768b5712417a550e8ad986"`);
         await queryRunner.query(`ALTER TABLE "child_station" DROP CONSTRAINT "FK_f87d8bec6ad18475aaf1e630411"`);
@@ -114,9 +121,9 @@ export class AddMigration1760620901687 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "route_station" DROP CONSTRAINT "FK_3ebd2550b3f583061f276c8569d"`);
         await queryRunner.query(`ALTER TABLE "station_activity_session" DROP CONSTRAINT "FK_18b72a4646c8cd18e3dca0525ca"`);
         await queryRunner.query(`ALTER TABLE "station_activity_session" DROP CONSTRAINT "FK_48139306c10b136f8e99513536e"`);
-        await queryRunner.query(`DROP TABLE "client_stat"`);
         await queryRunner.query(`DROP TABLE "client_badge"`);
         await queryRunner.query(`DROP TABLE "badge"`);
+        await queryRunner.query(`DROP TABLE "client_stat"`);
         await queryRunner.query(`DROP TABLE "user_chat"`);
         await queryRunner.query(`DROP TABLE "chat"`);
         await queryRunner.query(`DROP TABLE "message"`);
@@ -133,6 +140,7 @@ export class AddMigration1760620901687 implements MigrationInterface {
         await queryRunner.query(`DROP TABLE "parent_child"`);
         await queryRunner.query(`DROP INDEX "public"."IDX_9158391af7b8ca4911efaad8a7"`);
         await queryRunner.query(`DROP TABLE "parent"`);
+        await queryRunner.query(`DROP TABLE "feedback"`);
         await queryRunner.query(`DROP TABLE "medical_report"`);
         await queryRunner.query(`DROP INDEX "public"."IDX_22d25f3882c416e2ad6d5c6ab0"`);
         await queryRunner.query(`DROP TABLE "health_professional"`);

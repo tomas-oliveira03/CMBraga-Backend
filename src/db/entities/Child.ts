@@ -6,6 +6,7 @@ import { ParentChild } from "./ParentChild";
 import { ChildGender, ChildHealthProblems } from "@/helpers/types";
 import { Station } from "./Station";
 import { ChildActivityRecord } from "./ChildActivityRecord";
+import { Feedback } from "./Feedback";
 
 @Entity()
 @Check(`"gender" IN ('male', 'female')`)
@@ -55,6 +56,9 @@ export class Child {
 
 	@OneToMany(() => ParentChild, parentChild => parentChild.child)
 	parentChildren!: ParentChild[];
+
+	@OneToMany(() => Feedback, (feedback) => feedback.child)
+	feedbacks!: Feedback[];
 
 	@ManyToOne(() => Station)
 	dropOffStation!: Station;
