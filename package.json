@@ -30,6 +30,7 @@
   "license": "ISC",
   "devDependencies": {
     "@types/chalk": "^2.2.0",
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/mongodb": "^4.0.6",
@@ -50,6 +51,7 @@
     "@logdna/logger": "^2.6.11",
     "chalk": "^4.1.2",
     "cloudinary": "^2.7.0",
+    "cors": "^2.8.5",
     "csv-writer": "^1.6.0",
     "express": "^5.1.0",
     "haversine-distance": "^1.2.4",

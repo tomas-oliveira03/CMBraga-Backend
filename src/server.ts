@@ -11,6 +11,7 @@ import { webSocketManager } from "./server/services/websocket";
 import { AuthService } from "./lib/auth";
 import url from "url";
 import { initCronJobs, stopCronJobs } from "./cron";
+import cors from 'cors';
 
 const app = express();
 const server = createServer(app);
@@ -123,6 +124,12 @@ const startServer = async () => {
         // Middleware to parse JSON
         app.use(express.json());
         
+        // CORS configuration
+        app.use(cors({
+            origin: 'http://localhost:8081',
+            credentials: true
+        }));
+
         // Swagger documentation
         app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
         
