@@ -125,10 +125,7 @@ const startServer = async () => {
         app.use(express.json());
         
         // CORS configuration
-        app.use(cors({
-            origin: 'http://localhost:8081',
-            credentials: true
-        }));
+        app.use(cors());
 
         // Swagger documentation
         app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
