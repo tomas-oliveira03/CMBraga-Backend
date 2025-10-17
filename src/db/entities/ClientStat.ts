@@ -1,36 +1,40 @@
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from "typeorm"
+import { Column, Entity, ManyToOne, OneToOne, PrimaryGeneratedColumn } from "typeorm"
 import { Parent } from "./Parent";
 import { Child } from "./Child";
+import { ActivitySession } from "./ActivitySession";
 
 @Entity()
 export class ClientStat {
     @PrimaryGeneratedColumn("uuid")
     id!: string;
 
-    @Column({ type: 'uuid', nullable: true })
-    parentId!: string;
+    @Column({ type: 'int' })
+    distanceMeters!: number;
 
-    @Column({ type: 'uuid', nullable: true })
-    childId!: string;
-
-    @Column({ type: 'int', default: 0 })
-    metersWalked!: number;
-
-    @Column({ type: 'int', default: 0 })
+    @Column({ type: 'int' })
     co2Saved!: number;
 
-    @Column({ type: 'int', default: 0 })
+    @Column({ type: 'int' })
     caloriesBurned!: number;
 
-    @Column({ type: 'date' })
-    date!: string;
+    @Column({ type: 'timestamptz' })
+    activityDate!: Date;
 
-    @Column({ type: 'uuid' })
+    @Column({ type: 'varchar', nullable: true })
+    parentId!: string | null;
+
+    @Column({ type: 'varchar', nullable: true })
+    childId!: string | null;
+
+    @Column({ type: 'varchar' })
     activitySessionId!: string;
 
-    @OneToOne(() => Parent, {nullable: true})
+    @ManyToOne(() => Parent, { nullable: true })
     parent!: Parent | null;
 
-    @OneToOne(() => Child, {nullable: true})
+    @ManyToOne(() => Child, { nullable: true })
     child!: Child | null;
+
+    @ManyToOne(() => ActivitySession)
+    activitySession!: ActivitySession;
 }

@@ -187,6 +187,7 @@ async function seed() {
       name: "Dra. Marta Ramos", 
       email: "marta.ramos@saude.pt", 
       password: encryptedPassword, 
+      phone: "912345678",
       specialty: "pediatrician" as any,
       activatedAt: createLisbonDate()
     });
@@ -202,6 +203,7 @@ async function seed() {
       name: "Admin User", 
       email: "admin@cmbraga.pt", 
       password: encryptedPassword,
+      phone: "900000000",
       activatedAt: createLisbonDate()
     });
     await adminRepo.save(admin);

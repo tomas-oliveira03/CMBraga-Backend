@@ -141,6 +141,7 @@ router.get('/profile', authenticate, (req: Request, res: Response) => {
  *             required:
  *               - name
  *               - email
+ *               - phone
  *             properties:
  *               name:
  *                 type: string
@@ -150,9 +151,13 @@ router.get('/profile', authenticate, (req: Request, res: Response) => {
  *                 type: string
  *                 format: email
  *                 example: "joao.silva@cmbraga.pt"
+ *               phone:
+ *                 type: string
+ *                 example: "912345678"
  *           example:
  *             name: "Maria Santos"
  *             email: "maria.santos@cmbraga.pt"
+ *             phone: "963852741"
  *     responses:
  *       201:
  *         description: Admin created successfully
@@ -344,6 +349,7 @@ router.post('/register/instructor', async (req: Request, res: Response) => {
  *             required:
  *               - name
  *               - email
+ *               - phone
  *               - specialty
  *             properties:
  *               name:
@@ -354,6 +360,9 @@ router.post('/register/instructor', async (req: Request, res: Response) => {
  *                 type: string
  *                 format: email
  *                 example: "pedro.oliveira@cmbraga.pt"
+ *               phone:
+ *                 type: string
+ *                 example: "987654321"
  *               specialty:
  *                 type: string
  *                 enum: [pediatrician, nutritionist, general_practitioner]
@@ -361,6 +370,7 @@ router.post('/register/instructor', async (req: Request, res: Response) => {
  *           example:
  *             name: "Dra. Sofia Mendes"
  *             email: "sofia.mendes@cmbraga.pt"
+ *             phone: "951753468"
  *             specialty: "nutritionist"
  *     responses:
  *       201:

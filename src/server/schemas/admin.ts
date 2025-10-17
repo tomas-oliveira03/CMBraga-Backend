@@ -4,6 +4,7 @@ export const AdminSchema = z.object({
     id: z.string(),
     name: z.string(),
     email: z.string(),
+    phone: z.string(),
     password: z.string(),
     createdAt: z.date(),
     activatedAt: z.date().nullable(),

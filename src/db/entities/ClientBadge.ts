@@ -10,20 +10,23 @@ export class ClientBadge {
     id!: string;
 
     @Column({ type: 'varchar', nullable: true })
-    parentId!: string;
+    parentId!: string | null;
 
     @Column({ type: 'varchar', nullable: true })
-    childId!: string;
+    childId!: string | null;
 
     @Column({ type: 'varchar' })
     badgeId!: string;
+
+    @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
+    assignedAt!: Date;
     
-    @ManyToOne(() => Parent)
+    @ManyToOne(() => Parent, { nullable: true })
     parent!: Parent | null;
 
-    @ManyToOne(() => Child)
+    @ManyToOne(() => Child, { nullable: true })
     child!: Child | null;
 
     @ManyToOne(() => Badge)
-    badge!: Badge | null;
+    badge!: Badge;
 }

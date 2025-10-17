@@ -10,7 +10,7 @@ export class Message {
     @Column({ type: 'text' })
     content!: string;
 
-    @Column({ type: 'timestamp' })
+    @Column({ type: 'timestamptz' })
     timestamp!: Date;
 
     @Column({ type: 'varchar' })

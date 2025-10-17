@@ -36,6 +36,9 @@ const router = express.Router();
  *                   email:
  *                     type: string
  *                     example: "joao.silva@cmbraga.pt"
+ *                   phone:
+ *                     type: string
+ *                     example: "912345678"
  *                   createdAt:
  *                     type: string
  *                     format: date-time
@@ -84,6 +87,9 @@ router.get('/', async (req: Request, res: Response) => {
  *                 email:
  *                   type: string
  *                   example: "maria.santos@cmbraga.pt"
+ *                 phone:
+ *                   type: string
+ *                   example: "963852741"
  *                 createdAt:
  *                   type: string
  *                   format: date-time
@@ -151,6 +157,9 @@ router.get('/:id', async (req: Request, res: Response) => {
  *                 type: string
  *                 format: email
  *                 example: "pedro.oliveira@cmbraga.pt"
+ *               phone:
+ *                 type: string
+ *                 example: "987654321"
  *               password:
  *                 type: string
  *                 minLength: 6
@@ -158,6 +167,7 @@ router.get('/:id', async (req: Request, res: Response) => {
  *           example:
  *             name: "Sofia Mendes"
  *             email: "sofia.mendes@cmbraga.pt"
+ *             phone: "951753468"
  *     responses:
  *       200:
  *         description: Admin updated successfully

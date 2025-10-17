@@ -16,6 +16,9 @@ export class HealthProfessional {
     @Column({ type: 'varchar', unique: true })
     email!: string;
 
+    @Column({ type: 'varchar' })
+    phone!: string;
+
     @Column({ type: 'varchar', nullable: true, select: false })
     password!: string;
 

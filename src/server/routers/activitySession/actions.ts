@@ -11,6 +11,7 @@ import { ChildActivitySession } from "@/db/entities/ChildActivitySession";
 import { ChildStation } from "@/db/entities/ChildStation";
 import { IsNull, Not } from "typeorm";
 import { getWeatherFromCity } from "@/server/services/weather";
+import { setActivityStats } from "@/server/services/activityStats";
 
 const router = express.Router();
 
@@ -263,9 +264,9 @@ router.post('/end', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Re
         const hasIncomplete = Array.from(childCount.values()).some(count => count !== 2);
 
         if (hasIncomplete) {
-        return res.status(400).json({
-            message: "Cannot finish activity: some children have incomplete check-out records"
-        });
+            return res.status(400).json({
+                message: "Cannot finish activity: some children have incomplete check-out records"
+            });
         }
 
         const allStationsInActivity = await AppDataSource.getRepository(StationActivitySession).find({
@@ -297,6 +298,8 @@ router.post('/end', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Re
             updatedAt: now,
             finishedById: req.user?.userId
         });
+
+        setActivityStats(activitySessionId)
 
         return res.status(200).json({ message: "Activity finished successfully" });
     } catch (error) {
