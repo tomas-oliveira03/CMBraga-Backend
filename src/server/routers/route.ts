@@ -171,19 +171,22 @@ router.get('/:id', async (req: Request, res: Response) => {
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
  *               - name
+ *               - file
  *             properties:
  *               name:
  *                 type: string
  *                 minLength: 1
  *                 example: "Rota Pedibus Norte"
  *                 description: "Unique name for the route"
- *           example:
- *             name: "Rota Pedibus Sul"
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *                 description: "KMZ file containing route and station data"
  *     responses:
  *       201:
  *         description: Route created successfully
@@ -196,7 +199,7 @@ router.get('/:id', async (req: Request, res: Response) => {
  *                   type: string
  *                   example: "Route created successfully"
  *       400:
- *         description: Validation error
+ *         description: Validation error or missing/invalid file
  *         content:
  *           application/json:
  *             schema:
@@ -204,11 +207,7 @@ router.get('/:id', async (req: Request, res: Response) => {
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "Validation error"
- *                 errors:
- *                   type: array
- *                   items:
- *                     type: object
+ *                   example: "KMZ file is required"
  *       404:
  *         description: Route name already exists
  *         content:

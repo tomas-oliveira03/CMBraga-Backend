@@ -189,14 +189,15 @@ async function seed() {
       password: encryptedPassword, 
       phone: "912345678",
       specialty: "pediatrician" as any,
-      activatedAt: createLisbonDate()
+      activatedAt: createLisbonDate(),
+      profilePictureURL: "https://res.cloudinary.com/dwffdkytm/image/upload/v1760796584/default-profile-pic1_qxz6rf.jpg"
     });
     await hpRepo.save(hp1);
 
     await userRepo.save(userRepo.create({
       id: hp1.email,
       name: hp1.name,
-      healthProfessionalId: hp1.id
+      healthProfessionalId: hp1.id,
     }));
 
     const admin = adminRepo.create({ 
@@ -204,14 +205,15 @@ async function seed() {
       email: "admin@cmbraga.pt", 
       password: encryptedPassword,
       phone: "900000000",
-      activatedAt: createLisbonDate()
+      activatedAt: createLisbonDate(),
+      profilePictureURL: "https://res.cloudinary.com/dwffdkytm/image/upload/v1760796584/default-profile-pic1_qxz6rf.jpg"
     });
     await adminRepo.save(admin);
 
     await userRepo.save(userRepo.create({
       id: admin.email,
       name: admin.name,
-      adminId: admin.id
+      adminId: admin.id,
     }));
 
     // 7. Create parents
@@ -224,7 +226,8 @@ async function seed() {
         password: encryptedPassword,
         phone: `91${String(i).padStart(7, '0')}`,
         address: `Rua ${i}, Nº ${i}`,
-        activatedAt: createLisbonDate()
+        activatedAt: createLisbonDate(),
+        profilePictureURL: "https://res.cloudinary.com/dwffdkytm/image/upload/v1760796584/default-profile-pic1_qxz6rf.jpg"
       });
       pais.push(parent);
     }
@@ -251,7 +254,8 @@ async function seed() {
         school: "Escola Básica",
         schoolGrade: (i % 6) + 1,
         dropOffStationId: schoolStation!.id,
-        dateOfBirth: createLisbonDate(`2015-0${(i % 9) + 1}-15`)
+        dateOfBirth: createLisbonDate(`2015-0${(i % 9) + 1}-15`),
+        profilePictureURL: "https://res.cloudinary.com/dwffdkytm/image/upload/v1760796584/default-profile-pic1_qxz6rf.jpg"
       });
       criancas.push(child);
     }
@@ -272,14 +276,16 @@ async function seed() {
         email: "inst1@cmbraga.pt", 
         password: encryptedPassword, 
         phone: "911111111",
-        activatedAt: createLisbonDate()
+        activatedAt: createLisbonDate(),
+        profilePictureURL: "https://res.cloudinary.com/dwffdkytm/image/upload/v1760796584/default-profile-pic1_qxz6rf.jpg"
       }),
       instructorRepo.create({ 
         name: "Instrutor 2", 
         email: "inst2@cmbraga.pt", 
         password: encryptedPassword, 
         phone: "922222222",
-        activatedAt: createLisbonDate()
+        activatedAt: createLisbonDate(),
+        profilePictureURL: "https://res.cloudinary.com/dwffdkytm/image/upload/v1760796584/default-profile-pic1_qxz6rf.jpg"
       }),
     ];
     await instructorRepo.save(instrutores);
@@ -290,7 +296,7 @@ async function seed() {
       await userRepo.save(userRepo.create({
         id: instructor.email,
         name: instructor.name,
-        instructorId: instructor.id
+        instructorId: instructor.id,
       }));
     }
 

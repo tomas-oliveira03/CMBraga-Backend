@@ -12,12 +12,15 @@ export class Admin {
     @Index()
     @Column({ type: 'varchar', unique: true })
     email!: string;
+    
+    @Column({ type: 'varchar', nullable: true, select: false })
+    password!: string;
+
+    @Column({ type: 'varchar' })
+    profilePictureURL!: string;
 
     @Column({ type: 'varchar' })
     phone!: string;
-
-    @Column({ type: 'varchar', nullable: true, select: false })
-    password!: string;
 
     @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
     createdAt!: Date;

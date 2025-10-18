@@ -1,4 +1,5 @@
 import { envs } from '@/config';
+import { logger } from '@/lib/logger';
 import { v2 as cloudinary } from 'cloudinary';
 
 cloudinary.config({
@@ -84,5 +85,39 @@ export async function deleteFile(fileURL: string) {
 		return result;
 	} catch (error) {
 		throw new Error('Failed to delete file from cloud storage');
+	}
+}
+
+
+export async function deleteImageSafe(imageUrl: string) {
+	try {
+		if (!imageUrl) {
+			throw new Error("No image URL provided");
+		}
+
+		const urlParts = imageUrl.split("/");
+
+		const uploadIndex = urlParts.findIndex(part => part === "upload");
+		if (uploadIndex === -1) {
+			throw new Error('Invalid Cloudinary URL: "upload" segment not found');
+		}
+
+		const relevantParts = urlParts.slice(uploadIndex + 1);
+		const versionPart = relevantParts[0]?.startsWith("v") ? relevantParts[0] : null;
+		const publicIdParts = versionPart
+			? relevantParts.slice(1)
+			: relevantParts;
+
+		const lastPart = publicIdParts.pop();
+		const publicIdWithoutExt = lastPart?.split(".")[0];
+		const publicId = [...publicIdParts, publicIdWithoutExt].join("/");
+
+		const result = await cloudinary.uploader.destroy(publicId, {
+			resource_type: "image",
+		});
+
+		return result;
+	} catch (error) {
+		logger.error("Failed to delete image from Cloudinary:", (error as Error).message);
 	}
 }

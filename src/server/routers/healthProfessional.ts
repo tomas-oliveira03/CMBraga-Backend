@@ -6,8 +6,12 @@ import { CreateHealthProfessionalSchema, UpdateHealthProfessionalSchema } from "
 import informationHash from "@/lib/information-hash";
 import { checkIfEmailExists } from "../services/validator";
 import { User } from "@/db/entities/User";
+import multer from "multer";
+import { isValidImageFile } from "@/helpers/storage";
+import { updateProfilePicture } from "../services/user";
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
 /**
  * @swagger
@@ -43,6 +47,9 @@ const router = express.Router();
  *                     type: string
  *                     enum: [pediatrician, nutritionist, general_practitioner]
  *                     example: "pediatrician"
+ *                   profilePictureURL:
+ *                     type: string
+ *                     example: "https://storage.example.com/profiles/doctor-1.jpg"
  *                   createdAt:
  *                     type: string
  *                     format: date-time
@@ -98,6 +105,9 @@ router.get('/', async (req: Request, res: Response) => {
  *                   type: string
  *                   enum: [pediatrician, nutritionist, general_practitioner]
  *                   example: "nutritionist"
+ *                 profilePictureURL:
+ *                   type: string
+ *                   example: "https://storage.example.com/profiles/doctor-2.jpg"
  *                 createdAt:
  *                   type: string
  *                   format: date-time
@@ -154,6 +164,33 @@ router.get('/:id', async (req: Request, res: Response) => {
  *     requestBody:
  *       required: true
  *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 minLength: 1
+ *                 example: "Dr. Pedro Oliveira"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "pedro.oliveira@cmbraga.pt"
+ *               phone:
+ *                 type: string
+ *                 example: "987654321"
+ *               password:
+ *                 type: string
+ *                 minLength: 6
+ *                 example: "NewPassword456!"
+ *               specialty:
+ *                 type: string
+ *                 enum: [pediatrician, nutritionist, general_practitioner]
+ *                 example: "nutritionist"
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *                 description: "Profile picture image file (JPEG, JPG, PNG, WEBP)"
  *         application/json:
  *           schema:
  *             type: object
@@ -200,26 +237,36 @@ router.get('/:id', async (req: Request, res: Response) => {
  *       500:
  *         description: Internal server error
  */
-router.put('/:id', async (req: Request, res: Response) => {
+router.put('/:id', upload.single('file'), async (req: Request, res: Response) => {
     try {
         const healthProfessionalId = req.params.id;
         const validatedData = UpdateHealthProfessionalSchema.parse(req.body);
-
-        if (validatedData.password) {
-            validatedData.password = informationHash.encrypt(validatedData.password);
-        }
         
         const healthProfessional = await AppDataSource.getRepository(HealthProfessional).findOne({
             where: { id: healthProfessionalId }
         })
-
         if (!healthProfessional) {
             return res.status(404).json({ message: "Health Professional not found" });
         }
 
-        // Update health professional with updatedAt timestamp
-        await AppDataSource.getRepository(HealthProfessional).update(healthProfessional.id, {
+        const healthProfessionalData = { 
             ...validatedData,
+            profilePictureURL: healthProfessional.profilePictureURL
+        }
+
+        if (validatedData.password) {
+            healthProfessionalData.password = informationHash.encrypt(validatedData.password);
+        }
+
+        if (req.file){
+            if (!isValidImageFile(req.file)){
+                return res.status(400).json({ message: "File must be a valid image type (JPEG, JPG, PNG, WEBP)" });
+            }
+            healthProfessionalData.profilePictureURL = await updateProfilePicture(healthProfessional.profilePictureURL, req.file.buffer);
+        }
+
+        await AppDataSource.getRepository(HealthProfessional).update(healthProfessional.id, {
+            ...healthProfessionalData,
             updatedAt: new Date()
         })
         

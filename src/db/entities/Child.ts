@@ -19,6 +19,9 @@ export class Child {
 	name!: string;
 
 	@Column({ type: 'varchar' })
+    profilePictureURL!: string;
+
+	@Column({ type: 'varchar' })
 	gender!: ChildGender;
 
 	@Column({ type: 'varchar' })

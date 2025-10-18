@@ -21,6 +21,9 @@ export class Instructor {
     password!: string;
 
     @Column({ type: 'varchar' })
+    profilePictureURL!: string;
+
+    @Column({ type: 'varchar' })
     phone!: string;
 
     @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })

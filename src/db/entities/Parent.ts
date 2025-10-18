@@ -21,6 +21,9 @@ export class Parent {
     password!: string;
 
     @Column({ type: 'varchar' })
+    profilePictureURL!: string;
+
+    @Column({ type: 'varchar' })
     phone!: string;
 
     @Column({ type: 'varchar' })

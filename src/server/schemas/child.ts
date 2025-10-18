@@ -1,6 +1,15 @@
 import { z } from "zod";
 import { ChildGender } from "@/helpers/types";
 
+const zDate = z.preprocess((val) => {
+  if (typeof val === "string" || typeof val === "number") {
+    const parsed = new Date(val);
+    if (!isNaN(parsed.getTime())) return parsed;
+  }
+  return val;
+}, z.date());
+
+
 const HealthProblemsSchema = z.object({
   allergies: z.string().array().optional(),
   chronicDiseases: z.string().array().optional(),
@@ -21,7 +30,7 @@ export const ChildSchema = z.object({
   school: z.string(),
   schoolGrade: z.number(),
   dropOffStationId: z.string(),
-  dateOfBirth: z.date(),
+  dateOfBirth: zDate,
   healthProblems: HealthProblemsSchema.optional(),
   createdAt: z.date(),
   updatedAt: z.date().nullable()
@@ -39,3 +48,6 @@ export const UpdateChildSchema = CreateChildSchema.partial();
 export type Child = z.infer<typeof ChildSchema>;
 export type CreateChildInput = z.infer<typeof CreateChildSchema>;
 export type UpdateChildInput = z.infer<typeof UpdateChildSchema>;
+
+
+

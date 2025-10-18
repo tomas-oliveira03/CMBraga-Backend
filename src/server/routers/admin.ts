@@ -6,8 +6,12 @@ import { z } from "zod";
 import informationHash from "@/lib/information-hash";
 import { checkIfEmailExists } from "../services/validator";
 import { User } from "@/db/entities/User";
+import multer from "multer";
+import { isValidImageFile } from "@/helpers/storage";
+import { updateProfilePicture } from "../services/user";
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
 /**
  * @swagger
@@ -39,6 +43,9 @@ const router = express.Router();
  *                   phone:
  *                     type: string
  *                     example: "912345678"
+ *                   profilePictureURL:
+ *                     type: string
+ *                     example: "https://storage.example.com/profiles/admin-1.jpg"
  *                   createdAt:
  *                     type: string
  *                     format: date-time
@@ -90,6 +97,9 @@ router.get('/', async (req: Request, res: Response) => {
  *                 phone:
  *                   type: string
  *                   example: "963852741"
+ *                 profilePictureURL:
+ *                   type: string
+ *                   example: "https://storage.example.com/profiles/admin-2.jpg"
  *                 createdAt:
  *                   type: string
  *                   format: date-time
@@ -145,6 +155,29 @@ router.get('/:id', async (req: Request, res: Response) => {
  *     requestBody:
  *       required: true
  *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 minLength: 1
+ *                 example: "Pedro Oliveira"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "pedro.oliveira@cmbraga.pt"
+ *               phone:
+ *                 type: string
+ *                 example: "987654321"
+ *               password:
+ *                 type: string
+ *                 minLength: 6
+ *                 example: "NewPassword456!"
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *                 description: "Profile picture image file (JPEG, JPG, PNG, WEBP)"
  *         application/json:
  *           schema:
  *             type: object
@@ -186,26 +219,36 @@ router.get('/:id', async (req: Request, res: Response) => {
  *       500:
  *         description: Internal server error
  */
-router.put('/:id', async (req: Request, res: Response) => {
+router.put('/:id', upload.single('file'), async (req: Request, res: Response) => {
     try {
         const adminId = req.params.id;
         const validatedData = UpdateAdminSchema.parse(req.body);
-
-        if (validatedData.password) {
-            validatedData.password = informationHash.encrypt(validatedData.password);
-        }
         
         const admin = await AppDataSource.getRepository(Admin).findOne({
             where: { id: adminId }
         })
-
         if (!admin) {
             return res.status(404).json({ message: "Admin not found" });
         }
 
-        // Update admin with updatedAt timestamp
-        await AppDataSource.getRepository(Admin).update(admin.id, {
+        const adminData = { 
             ...validatedData,
+            profilePictureURL: admin.profilePictureURL
+        }
+
+        if (validatedData.password) {
+            adminData.password = informationHash.encrypt(validatedData.password);
+        }
+
+        if (req.file){
+            if (!isValidImageFile(req.file)){
+                return res.status(400).json({ message: "File must be a valid image type (JPEG, JPG, PNG, WEBP)" });
+            }
+            adminData.profilePictureURL = await updateProfilePicture(admin.profilePictureURL, req.file.buffer);
+        }
+
+        await AppDataSource.getRepository(Admin).update(admin.id, {
+            ...adminData,
             updatedAt: new Date()
         })
         

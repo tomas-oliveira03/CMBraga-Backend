@@ -10,8 +10,12 @@ import { validate } from "@/lib/validator";
 import { ChildActivitySession } from "@/db/entities/ChildActivitySession";
 import { Station } from "@/db/entities/Station";
 import { StationType } from "@/helpers/types";
+import multer from "multer";
+import { isValidImageFile } from "@/helpers/storage";
+import { updateProfilePicture } from "../services/user";
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
 /**
  * @swagger
@@ -95,8 +99,6 @@ router.get('/activities/:id', async (req: Request, res: Response) => {
     return res.status(200).json(child.childActivitySessions)
 })
 
-
-
 /**
  * @swagger
  * /child:
@@ -165,6 +167,9 @@ router.get('/activities/:id', async (req: Request, res: Response) => {
  *                     type: string
  *                     example: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
  *                     description: "School station ID where the child is dropped off"
+ *                   profilePictureURL:
+ *                     type: string
+ *                     example: "https://storage.example.com/profiles/child-1.jpg"
  *                   createdAt:
  *                     type: string
  *                     format: date-time
@@ -251,6 +256,9 @@ router.get('/', async (req: Request, res: Response) => {
  *                   type: string
  *                   example: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
  *                   description: "School station ID where the child is dropped off"
+ *                 profilePictureURL:
+ *                   type: string
+ *                   example: "https://storage.example.com/profiles/child-2.jpg"
  *                 createdAt:
  *                   type: string
  *                   format: date-time
@@ -289,168 +297,6 @@ router.get('/:id', async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /child:
- *   post:
- *     summary: Create a new child
- *     description: Creates a new child and associates them with parent(s) and a school station
- *     tags:
- *       - Child
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - name
- *               - gender
- *               - school
- *               - schoolGrade
- *               - dateOfBirth
- *               - parentIds
- *               - dropOffStationId
- *             properties:
- *               name:
- *                 type: string
- *                 minLength: 1
- *                 example: "Carlos Pereira"
- *               gender:
- *                 type: string
- *                 enum: [male, female]
- *                 example: "male"
- *               school:
- *                 type: string
- *                 example: "Escola Básica de Braga"
- *               schoolGrade:
- *                 type: integer
- *                 minimum: 1
- *                 maximum: 12
- *                 example: 5
- *               dateOfBirth:
- *                 type: string
- *                 format: date
- *                 example: "2015-08-25"
- *               healthProblems:
- *                 type: object
- *                 nullable: true
- *                 properties:
- *                   allergies:
- *                     type: array
- *                     items:
- *                       type: string
- *                     example: ["peanuts"]
- *                   chronicDiseases:
- *                     type: array
- *                     items:
- *                       type: string
- *                     example: ["asthma"]
- *                   surgeries:
- *                     type: array
- *                     items:
- *                       type: object
- *                       properties:
- *                         type:
- *                           type: string
- *                         year:
- *                           type: number
- *                     example: [{"type": "tonsillectomy", "year": 2022}]
- *               parentIds:
- *                 type: array
- *                 items:
- *                   type: string
- *                 example: ["parent-uuid-1", "parent-uuid-2"]
- *               dropOffStationId:
- *                 type: string
- *                 example: "station-uuid-1"
- *                 description: "School station ID where the child will be dropped off"
- *           example:
- *             name: "Ana Costa"
- *             gender: "female"
- *             school: "Escola Básica de Braga"
- *             schoolGrade: 2
- *             dateOfBirth: "2016-02-14"
- *             healthProblems:
- *               allergies: ["lactose"]
- *               chronicDiseases: []
- *               surgeries: []
- *             parentIds: ["a1b2c3d4-e5f6-7890-abcd-ef1234567890"]
- *             dropOffStationId: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
- *     responses:
- *       201:
- *         description: Child created successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Child created successfully"
- *       400:
- *         description: Validation error
- *       404:
- *         description: At least one parent doesn't exist or station does not exist/isn't a school
- *       500:
- *         description: Internal server error
- */
-router.post('/', async (req: Request, res: Response) => {
-  try {
-    const validatedData = CreateChildSchema.parse(req.body);
-        
-    const parents = await AppDataSource.getRepository(Parent).find({
-        where: {
-            id: In (validatedData.parentIds)
-        }
-    })
-    
-    if(parents.length !== validatedData.parentIds.length){
-        return res.status(404).json({message: "At least one parent doesn't exist"});
-    }
-
-    const station = await AppDataSource.getRepository(Station).findOne({
-        where: {
-            id: validatedData.dropOffStationId,
-            type: StationType.SCHOOL
-        }
-    })
-    if(!station){
-        return res.status(404).json({message: "Station does not exist or it isn't labeled as school"});
-    }
-
-    
-    const child = await AppDataSource.getRepository(Child).insert(validatedData);
-    const childId = child.identifiers[0]?.id;
-
-    if(!childId){
-        throw new Error("Error inserting child");
-    }
-
-    const parentChildConnector = parents.map(parent => ({
-        parentId: parent.id,
-        childId: childId
-    }));
-
-    await AppDataSource.getRepository(ParentChild).insert(parentChildConnector);
-
-    return res.status(201).json({message: "Child created successfully"});
-
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({
-        message: "Validation error",
-        errors: error.issues
-      });
-    }
-
-    console.error(error);
-    return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
-  }
-});
-
-
-
-/**
- * @swagger
  * /child/{id}:
  *   put:
  *     summary: Update a child
@@ -468,6 +314,42 @@ router.post('/', async (req: Request, res: Response) => {
  *     requestBody:
  *       required: true
  *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 minLength: 1
+ *                 example: "Pedro Oliveira"
+ *               gender:
+ *                 type: string
+ *                 enum: [male, female]
+ *                 example: "male"
+ *               school:
+ *                 type: string
+ *                 example: "Escola Secundária de Braga"
+ *               schoolGrade:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 12
+ *                 example: 6
+ *               dateOfBirth:
+ *                 type: string
+ *                 format: date
+ *                 example: "2015-11-30"
+ *               healthProblems:
+ *                 type: string
+ *                 description: "JSON string of health problems object"
+ *                 example: '{"allergies":["gluten","shellfish"],"chronicDiseases":[],"surgeries":[]}'
+ *               dropOffStationId:
+ *                 type: string
+ *                 example: "station-uuid-2"
+ *                 description: "School station ID where the child will be dropped off"
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *                 description: "Profile picture image file (JPEG, JPG, PNG, WEBP)"
  *         application/json:
  *           schema:
  *             type: object
@@ -543,7 +425,7 @@ router.post('/', async (req: Request, res: Response) => {
  *       500:
  *         description: Internal server error
  */
-router.put('/:id', async (req: Request, res: Response) => {
+router.put('/:id', upload.single('file'), async (req: Request, res: Response) => {
     try {
         const childId = req.params.id;
         const validatedData = UpdateChildSchema.parse(req.body);
@@ -551,7 +433,6 @@ router.put('/:id', async (req: Request, res: Response) => {
         const child = await AppDataSource.getRepository(Child).findOne({
             where: { id: childId }
         })
-
         if (!child) {
             return res.status(404).json({ message: "Child not found" });
         }
@@ -568,9 +449,20 @@ router.put('/:id', async (req: Request, res: Response) => {
             }
         }
 
-        // Update child with updatedAt timestamp
-        await AppDataSource.getRepository(Child).update(child.id, {
+        const childData = { 
             ...validatedData,
+            profilePictureURL: child.profilePictureURL
+        }
+
+        if (req.file){
+            if (!isValidImageFile(req.file)){
+                return res.status(400).json({ message: "File must be a valid image type (JPEG, JPG, PNG, WEBP)" });
+            }
+            childData.profilePictureURL = await updateProfilePicture(child.profilePictureURL, req.file.buffer);
+        }
+
+        await AppDataSource.getRepository(Child).update(child.id, {
+            ...childData,
             updatedAt: new Date()
         })
         

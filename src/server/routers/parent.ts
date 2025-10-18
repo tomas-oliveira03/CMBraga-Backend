@@ -1,14 +1,16 @@
 import { AppDataSource } from "@/db";
 import { Parent } from "@/db/entities/Parent";
-import { Child } from "@/db/entities/Child";
-import { User } from "@/db/entities/User";
 import express, { Request, Response } from "express";
-import { CreateParentSchema, UpdateParentSchema } from "../schemas/parent";
+import { UpdateParentSchema } from "../schemas/parent";
 import { z } from "zod";
 import informationHash from "@/lib/information-hash";
-import { checkIfEmailExists } from "../services/validator";
+import multer from "multer";
+import { uploadImageBuffer } from "../services/cloud";
+import { updateProfilePicture } from "../services/user";
+import { isValidImageFile } from "@/helpers/storage";
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
 /**
  * @swagger
@@ -43,6 +45,9 @@ const router = express.Router();
  *                   address:
  *                     type: string
  *                     example: "Rua das Flores, 123 - Braga"
+ *                   profilePictureURL:
+ *                     type: string
+ *                     example: "https://storage.example.com/profiles/parent-1.jpg"
  *                   createdAt:
  *                     type: string
  *                     format: date-time
@@ -97,6 +102,9 @@ router.get('/', async (req: Request, res: Response) => {
  *                 address:
  *                   type: string
  *                   example: "Avenida da Liberdade, 456 - Braga"
+ *                 profilePictureURL:
+ *                   type: string
+ *                   example: "https://storage.example.com/profiles/parent-2.jpg"
  *                 createdAt:
  *                   type: string
  *                   format: date-time
@@ -153,6 +161,32 @@ router.get('/:id', async (req: Request, res: Response) => {
  *     requestBody:
  *       required: true
  *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 minLength: 1
+ *                 example: "Pedro Oliveira"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "pedro.oliveira@gmail.com"
+ *               password:
+ *                 type: string
+ *                 minLength: 6
+ *                 example: "NewPassword456!"
+ *               phone:
+ *                 type: string
+ *                 example: "+351 934 567 890"
+ *               address:
+ *                 type: string
+ *                 example: "Largo do Paço, 321 - Braga"
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *                 description: "Profile picture image file (JPEG, JPG, PNG, WEBP)"
  *         application/json:
  *           schema:
  *             type: object
@@ -197,25 +231,36 @@ router.get('/:id', async (req: Request, res: Response) => {
  *       500:
  *         description: Internal server error
  */
-router.put('/:id', async (req: Request, res: Response) => {
+router.put('/:id', upload.single('file'), async (req: Request, res: Response) => {
     try {
         const parentId = req.params.id;
         const validatedData = UpdateParentSchema.parse(req.body);
-
-        if (validatedData.password) {
-            validatedData.password = informationHash.encrypt(validatedData.password);
-        }
         
         const parent = await AppDataSource.getRepository(Parent).findOne({
             where: { id: parentId }
         });
-
         if (!parent) {
             return res.status(404).json({ message: "Parent not found" });
         }
 
-        await AppDataSource.getRepository(Parent).update(parent.id, {
+        const parentData = { 
             ...validatedData,
+            profilePictureURL: parent.profilePictureURL
+        }
+
+        if (validatedData.password) {
+            parentData.password = informationHash.encrypt(validatedData.password);
+        }
+
+        if (req.file){
+            if (!isValidImageFile(req.file)){
+                return res.status(400).json({ message: "File must be a valid image type (JPEG, JPG, PNG, WEBP)" });
+            }
+            parentData.profilePictureURL = await updateProfilePicture(parent.profilePictureURL, req.file.buffer);
+        }
+
+        await AppDataSource.getRepository(Parent).update(parent.id, {
+            ...parentData,
             updatedAt: new Date()
         });
         

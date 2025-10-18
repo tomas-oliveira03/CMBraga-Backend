@@ -17,6 +17,13 @@ import { HealthProfessional } from "@/db/entities/HealthProfessional";
 import { CreateParentSchema } from "../schemas/parent";
 import { Parent } from "@/db/entities/Parent";
 import { createPassword, resetPassword, verifyToken } from "../services/email";
+import { Child } from "@/db/entities/Child";
+import { ParentChild } from "@/db/entities/ParentChild";
+import { Station } from "@/db/entities/Station";
+import { selectRandomDefaultProfilePicture } from "@/helpers/storage";
+import { StationType } from "@/helpers/types";
+import { In } from "typeorm";
+import { CreateChildSchema } from "../schemas/child";
 
 const router = express.Router();
 
@@ -124,6 +131,8 @@ router.get('/profile', authenticate, (req: Request, res: Response) => {
     });
 });
 
+
+
 /**
  * @swagger
  * /auth/register/admin:
@@ -204,13 +213,17 @@ router.post('/register/admin', async (req: Request, res: Response) => {
         if (emailExists){
             return res.status(409).json({message: "Email already exists"});
         }
+
+        const dateNow = new Date()
+        const profilePictureURL = selectRandomDefaultProfilePicture()
         
         await AppDataSource.transaction(async tx => {
             
             const admin = await tx.getRepository(Admin).insert({
                 ...validatedData,
-                updatedAt: new Date(),
-                activatedAt: new Date(),
+                updatedAt: dateNow,
+                activatedAt: dateNow,
+                profilePictureURL: profilePictureURL,
                 password: informationHash.encrypt("Person23!"),
             });
             const adminId = admin.identifiers[0]?.id
@@ -300,12 +313,16 @@ router.post('/register/instructor', async (req: Request, res: Response) => {
             return res.status(409).json({message: "Email already exists"});
         }
 
+        const dateNow = new Date()
+        const profilePictureURL = selectRandomDefaultProfilePicture()
+
         await AppDataSource.transaction(async tx => {
 
             const instructor = await tx.getRepository(Instructor).insert({
                 ...validatedData,
-                updatedAt: new Date(),
-                activatedAt: new Date(),
+                updatedAt: dateNow,
+                activatedAt: dateNow,
+                profilePictureURL: profilePictureURL,
                 password: informationHash.encrypt("Person23!"),
             });
             const instructorId = instructor.identifiers[0]?.id
@@ -399,12 +416,16 @@ router.post('/register/health-professional', async (req: Request, res: Response)
             return res.status(409).json({message: "Email already exists"});
         }
 
+        const dateNow = new Date()
+        const profilePictureURL = selectRandomDefaultProfilePicture()
+
         await AppDataSource.transaction(async tx => {
             
             const healthProfessional = await tx.getRepository(HealthProfessional).insert({
                 ...validatedData,
-                updatedAt: new Date(),
-                activatedAt: new Date(),
+                updatedAt: dateNow,
+                activatedAt: dateNow,
+                profilePictureURL: profilePictureURL,
                 password: informationHash.encrypt("Person23!"),
             });
             const healthProfessionalId = healthProfessional.identifiers[0]?.id
@@ -497,13 +518,17 @@ router.post('/register/parent', async (req: Request, res: Response) => {
         if (emailExists){
             return res.status(409).json({message: "Email already exists"});
         }
+
+        const dateNow = new Date()
+        const profilePictureURL = selectRandomDefaultProfilePicture()
         
         await AppDataSource.transaction(async tx => {
             
             const parent = await tx.getRepository(Parent).insert({
                 ...validatedData,
-                updatedAt: new Date(),
-                activatedAt: new Date(),
+                updatedAt: dateNow,
+                activatedAt: dateNow,
+                profilePictureURL: profilePictureURL,
                 password: informationHash.encrypt("Person23!"),
             });
             const parentId = parent.identifiers[0]?.id
@@ -530,6 +555,172 @@ router.post('/register/parent', async (req: Request, res: Response) => {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
+
+/**
+ * @swagger
+ * /auth/register/child:
+ *   post:
+ *     summary: Create a new child
+ *     description: Creates a new child and associates them with parent(s) and a school station
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - gender
+ *               - school
+ *               - schoolGrade
+ *               - dateOfBirth
+ *               - parentIds
+ *               - dropOffStationId
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 minLength: 1
+ *                 example: "Carlos Pereira"
+ *               gender:
+ *                 type: string
+ *                 enum: [male, female]
+ *                 example: "male"
+ *               school:
+ *                 type: string
+ *                 example: "Escola Básica de Braga"
+ *               schoolGrade:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 12
+ *                 example: 5
+ *               dateOfBirth:
+ *                 type: string
+ *                 format: date
+ *                 example: "2015-08-25"
+ *               healthProblems:
+ *                 type: object
+ *                 nullable: true
+ *                 properties:
+ *                   allergies:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                     example: ["peanuts"]
+ *                   chronicDiseases:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                     example: ["asthma"]
+ *                   surgeries:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         type:
+ *                           type: string
+ *                         year:
+ *                           type: number
+ *                     example: [{"type": "tonsillectomy", "year": 2022}]
+ *               parentIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 example: ["parent-uuid-1", "parent-uuid-2"]
+ *               dropOffStationId:
+ *                 type: string
+ *                 example: "station-uuid-1"
+ *                 description: "School station ID where the child will be dropped off"
+ *           example:
+ *             name: "Ana Costa"
+ *             gender: "female"
+ *             school: "Escola Básica de Braga"
+ *             schoolGrade: 2
+ *             dateOfBirth: "2016-02-14"
+ *             healthProblems:
+ *               allergies: ["lactose"]
+ *               chronicDiseases: []
+ *               surgeries: []
+ *             parentIds: ["a1b2c3d4-e5f6-7890-abcd-ef1234567890"]
+ *             dropOffStationId: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
+ *     responses:
+ *       201:
+ *         description: Child created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Child created successfully"
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: At least one parent doesn't exist or station does not exist/isn't a school
+ *       500:
+ *         description: Internal server error
+ */
+router.post('/register/child', async (req: Request, res: Response) => {
+    try {
+        const validatedData = CreateChildSchema.parse(req.body);
+            
+        const parents = await AppDataSource.getRepository(Parent).find({
+            where: {
+                id: In (validatedData.parentIds)
+            }
+        })
+        
+        if(parents.length !== validatedData.parentIds.length){
+            return res.status(404).json({message: "At least one parent doesn't exist"});
+        }
+
+        const station = await AppDataSource.getRepository(Station).findOne({
+            where: {
+                id: validatedData.dropOffStationId,
+                type: StationType.SCHOOL
+            }
+        })
+        if(!station){
+            return res.status(404).json({message: "Station does not exist or it isn't labeled as school"});
+        }
+
+        const profilePictureURL = selectRandomDefaultProfilePicture()
+        const childData = {
+            ...validatedData,
+            profilePictureURL: profilePictureURL
+        }
+
+        const child = await AppDataSource.getRepository(Child).insert(childData);
+        const childId = child.identifiers[0]?.id;
+
+        if(!childId){
+            throw new Error("Error inserting child");
+        }
+
+        const parentChildConnector = parents.map(parent => ({
+            parentId: parent.id,
+            childId: childId
+        }));
+
+        await AppDataSource.getRepository(ParentChild).insert(parentChildConnector);
+
+        return res.status(201).json({message: "Child created successfully"});
+
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+        return res.status(400).json({
+            message: "Validation error",
+            errors: error.issues
+        });
+        }
+
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+});
+
+
 
 /**
  * @swagger

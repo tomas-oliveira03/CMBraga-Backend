@@ -6,8 +6,12 @@ import informationHash from "@/lib/information-hash";
 import { checkIfEmailExists } from "../services/validator";
 import z from "zod";
 import { User } from "@/db/entities/User";
+import multer from "multer";
+import { isValidImageFile } from "@/helpers/storage";
+import { updateProfilePicture } from "../services/user";
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
 /**
  * @swagger
@@ -39,6 +43,9 @@ const router = express.Router();
  *                   phone:
  *                     type: string
  *                     example: "+351 912 345 678"
+ *                   profilePictureURL:
+ *                     type: string
+ *                     example: "https://storage.example.com/profiles/instructor-1.jpg"
  *                   createdAt:
  *                     type: string
  *                     format: date-time
@@ -90,6 +97,9 @@ router.get('/', async (req: Request, res: Response) => {
  *                 phone:
  *                   type: string
  *                   example: "+351 925 678 901"
+ *                 profilePictureURL:
+ *                   type: string
+ *                   example: "https://storage.example.com/profiles/instructor-2.jpg"
  *                 createdAt:
  *                   type: string
  *                   format: date-time
@@ -143,6 +153,29 @@ router.get('/:id', async (req: Request, res: Response) => {
  *     requestBody:
  *       required: true
  *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 minLength: 1
+ *                 example: "Pedro Oliveira"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "pedro.oliveira@cmbraga.pt"
+ *               password:
+ *                 type: string
+ *                 minLength: 6
+ *                 example: "NewPassword456!"
+ *               phone:
+ *                 type: string
+ *                 example: "+351 937 890 123"
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *                 description: "Profile picture image file (JPEG, JPG, PNG, WEBP)"
  *         application/json:
  *           schema:
  *             type: object
@@ -184,26 +217,36 @@ router.get('/:id', async (req: Request, res: Response) => {
  *       500:
  *         description: Internal server error
  */
-router.put('/:id', async (req: Request, res: Response) => {
+router.put('/:id', upload.single('file'), async (req: Request, res: Response) => {
     try {
         const instructorId = req.params.id;
         const validatedData = UpdateInstructorSchema.parse(req.body);
-
-        if (validatedData.password) {
-            validatedData.password = informationHash.encrypt(validatedData.password);
-        }
         
         const instructor = await AppDataSource.getRepository(Instructor).findOne({
             where: { id: instructorId }
         })
-
         if (!instructor) {
             return res.status(404).json({ message: "Instructor not found" });
         }
 
-        // Update intructor with updatedAt timestamp
-        await AppDataSource.getRepository(Instructor).update(instructor.id, {
+        const instructorData = { 
             ...validatedData,
+            profilePictureURL: instructor.profilePictureURL
+        }
+
+        if (validatedData.password) {
+            instructorData.password = informationHash.encrypt(validatedData.password);
+        }
+
+        if (req.file){
+            if (!isValidImageFile(req.file)){
+                return res.status(400).json({ message: "File must be a valid image type (JPEG, JPG, PNG, WEBP)" });
+            }
+            instructorData.profilePictureURL = await updateProfilePicture(instructor.profilePictureURL, req.file.buffer);
+        }
+
+        await AppDataSource.getRepository(Instructor).update(instructor.id, {
+            ...instructorData,
             updatedAt: new Date()
         })
         

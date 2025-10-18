@@ -7,6 +7,7 @@ import { ActivitySession } from "@/db/entities/ActivitySession";
 import { Instructor } from "@/db/entities/Instructor";
 import multer from 'multer';
 import { uploadImagesBuffer } from "../services/cloud";
+import { areValidImageFiles } from "@/helpers/storage";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -229,10 +230,9 @@ router.post('/', upload.array('files'), async (req: Request, res: Response) => {
         const validatedData = CreateIssueSchema.parse(req.body);
 
         const files = (req.files as Express.Multer.File[]);
-        const allowedImageTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
-        const invalidFiles = files.filter(file => !allowedImageTypes.includes(file.mimetype));
+        const isValidFiles = areValidImageFiles(files)
 
-        if(invalidFiles.length > 0){
+        if(!isValidFiles){
             return res.status(400).json({ message: "File must be a valid image type (JPEG, JPG, PNG, WEBP)" });
         }
 
