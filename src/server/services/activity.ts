@@ -31,3 +31,35 @@ export function calculateScheduledTime(
 
     return finalDate;
 }
+
+
+const DEFAULT_CHILD_WEIGHT_KG = 35;
+
+export function calculateCaloriesBurned(
+        distanceMeters: number, 
+        timeSeconds: number, 
+        activityType: ActivityMode
+    ): number {
+
+  if (distanceMeters <= 0 || timeSeconds <= 0) return 0;
+
+  const timeHours = timeSeconds / 3600;
+
+  const MET = activityType === ActivityMode.WALK ? 2.5 : 4.0;
+
+  const calories = MET * DEFAULT_CHILD_WEIGHT_KG * timeHours;
+
+  return Math.round(calories); 
+}
+
+
+const CO2_PER_KM_GRAMS = 120;
+
+export function calculateCO2Saved(distanceMeters: number): number {
+  if (distanceMeters <= 0) return 0;
+
+  const distanceKm = distanceMeters / 1000;
+  const co2Saved = distanceKm * CO2_PER_KM_GRAMS;
+
+  return Math.round(co2Saved);
+}

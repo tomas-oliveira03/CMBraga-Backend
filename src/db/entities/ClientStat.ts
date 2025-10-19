@@ -20,14 +20,14 @@ export class ClientStat {
     @Column({ type: 'timestamptz' })
     activityDate!: Date;
 
-    @Column({ type: 'varchar', nullable: true })
-    parentId!: string | null;
-
-    @Column({ type: 'varchar', nullable: true })
-    childId!: string | null;
-
     @Column({ type: 'varchar' })
     activitySessionId!: string;
+    
+    @Column({ type: 'varchar', nullable: true })
+    parentId!: string | null;
+    
+    @Column({ type: 'varchar', nullable: true })
+    childId!: string | null;
 
     @ManyToOne(() => Parent, { nullable: true })
     parent!: Parent | null;

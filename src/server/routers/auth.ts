@@ -51,7 +51,7 @@ const router = express.Router();
  *                 example: "admin@cmbraga.pt"
  *               password:
  *                 type: string
- *                 example: "password123"
+ *                 example: "Person23!"
  *     responses:
  *       200:
  *         description: Login successful
