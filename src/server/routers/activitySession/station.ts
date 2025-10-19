@@ -1,10 +1,6 @@
 import { AppDataSource } from "@/db";
 import express, { Request, Response } from "express";
 import { ActivitySession } from "@/db/entities/ActivitySession";
-import { UserRole } from "@/helpers/types";
-import { Station } from "@/db/entities/Station";
-import { StationActivitySession } from "@/db/entities/StationActivitySession";
-import { authenticate, authorize } from "@/server/middleware/auth";
 
 const router = express.Router();
 

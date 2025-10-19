@@ -2,7 +2,7 @@ import express, { Request, Response } from "express";
 import { AppDataSource } from "@/db";
 import { Badge } from "@/db/entities/Badge";
 import { z } from "zod";
-import { authorize, authenticate } from "@/server/middleware/auth";
+import { authorize } from "@/server/middleware/auth";
 import { UserRole } from "@/helpers/types";
 import { UpdateBadgeSchema, CreateBadgeSchema } from "../schemas/badge";
 
