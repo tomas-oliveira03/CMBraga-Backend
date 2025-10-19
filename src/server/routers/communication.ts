@@ -5,7 +5,6 @@ import { z } from "zod";
 import { webSocketManager } from "../services/websocket";
 import { authenticate } from "../middleware/auth";
 import { NotificationType } from "@/helpers/types";
-import { v4 as uuidv4 } from 'uuid';
 
 import { Message } from "@/db/entities/Message";
 import { User } from "@/db/entities/User";
@@ -47,7 +46,7 @@ const router = express.Router();
  *                     name:
  *                       type: string
  *                       example: "John Doe"
- *               chat_name:
+ *               chatName:
  *                 type: string
  *                 example: "Project Team"
  *                 description: The name of the chat (required for group chats).
@@ -57,7 +56,7 @@ const router = express.Router();
  *                 name: "John Doe"
  *               - email: "user2@example.com"
  *                 name: "Jane Doe"
- *             chat_name: "Project Team"
+ *             chatName: "Project Team"
  *     responses:
  *       201:
  *         description: Conversation created successfully.
@@ -69,9 +68,9 @@ const router = express.Router();
  *                 message:
  *                   type: string
  *                   example: "Conversation created successfully"
- *                 conversation_id:
+ *                 conversationId:
  *                   type: string
- *                   example: "conversation-uuid"
+ *                   example: "conversation-id"
  *                 chatType:
  *                   type: string
  *                   example: "GROUP_CHAT"
@@ -89,8 +88,8 @@ router.post("/", async (req: Request, res: Response) => {
             return res.status(400).json({ message: "At least two members are required to create a conversation" });
         }
 
-        // Ensure chat_name is provided for group chats
-        if (parsed.members.length > 2 && !parsed.chat_name) {
+        // Ensure chatName is provided for group chats
+        if (parsed.members.length > 2 && !parsed.chatName) {
             return res.status(400).json({ message: "A chat name must be provided for group chats" });
         }
 
@@ -104,7 +103,7 @@ router.post("/", async (req: Request, res: Response) => {
         const newChat = {
             chatType: num_members > 2 ? TypeOfChat.GROUP_CHAT : TypeOfChat.INDIVIDUAL_CHAT,
             destinatairePhoto: "default-photo-url",
-            chatName: num_members > 2 ? parsed.chat_name : null,
+            chatName: num_members > 2 ? parsed.chatName : null,
             messages: [],
         };
 
@@ -145,7 +144,7 @@ router.post("/", async (req: Request, res: Response) => {
  *         required: true
  *         schema:
  *           type: string
- *           example: "conversation-uuid"
+ *           example: "conversation-id"
  *         description: The ID of the conversation.
  *     requestBody:
  *       required: true
@@ -154,22 +153,23 @@ router.post("/", async (req: Request, res: Response) => {
  *           schema:
  *             type: object
  *             required:
- *               - sender_id
- *               - sender_name
+ *               - senderId
+ *               - senderName
  *               - content
  *             properties:
- *               sender_id:
+ *               senderId:
  *                 type: string
- *                 example: "user-uuid"
- *               sender_name:
+ *                 example: "user@example.com"
+ *                 description: The user's email used as identifier.
+ *               senderName:
  *                 type: string
  *                 example: "John Doe"
  *               content:
  *                 type: string
  *                 example: "Hello, how are you?"
  *           example:
- *             sender_id: "user-uuid"
- *             sender_name: "John Doe"
+ *             senderId: "user@example.com"
+ *             senderName: "John Doe"
  *             content: "Hello, how are you?"
  *     responses:
  *       201:
@@ -193,7 +193,7 @@ router.post("/messages/:conversationId", async (req: Request, res: Response) => 
 
         // Validate request body with MessageSchema
         const parsed = MessageSchema.parse(req.body);
-        const sender_id = parsed.sender_id;
+        const sender_id = parsed.senderId;
 
         // Check if user exists
         const userExists = await checkIfUserExists(sender_id);
@@ -219,7 +219,7 @@ router.post("/messages/:conversationId", async (req: Request, res: Response) => 
             timestamp: new Date(),
             chatId: conversationId,
             senderId: sender_id,
-            senderName: parsed.sender_name,
+            senderName: parsed.senderName,
         };
 
         await AppDataSource.getRepository(Message).insert(newMessage);
@@ -273,7 +273,7 @@ router.post("/messages/:conversationId", async (req: Request, res: Response) => 
  *         required: true
  *         schema:
  *           type: string
- *           example: "conversation-uuid"
+ *           example: "conversation-id"
  *         description: The ID of the conversation.
  *       - in: query
  *         name: jump
@@ -295,10 +295,10 @@ router.post("/messages/:conversationId", async (req: Request, res: Response) => 
  *                   items:
  *                     type: object
  *                     properties:
- *                       sender_id:
+ *                       senderId:
  *                         type: string
- *                         example: "user-uuid"
- *                       sender_name:
+ *                         example: "user@example.com"
+ *                       senderName:
  *                         type: string
  *                         example: "John Doe"
  *                       content:
@@ -343,7 +343,7 @@ router.get("/:conversationId", async (req: Request, res: Response) => {
  * /communication/chats/{userId}:
  *   get:
  *     summary: Get chats for a user
- *     description: Retrieves a paginated list of chats for a specific user, sorted by the most recent message.
+ *     description: Retrieves a paginated list of chats for a specific user (userId is the user's email), sorted by the most recent message.
  *     tags:
  *       - Communication
  *     parameters:
@@ -376,7 +376,7 @@ router.get("/:conversationId", async (req: Request, res: Response) => {
  *                     properties:
  *                       chatId:
  *                         type: string
- *                         example: "chat-uuid"
+ *                         example: "chat-id"
  *                       messageContent:
  *                         type: string
  *                         example: "Hello, how are you?"
