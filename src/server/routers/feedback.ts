@@ -67,8 +67,12 @@ const router = express.Router();
  *         description: Internal server error
  */
 router.get('/', async (req: Request, res: Response) => {
-    const feedbacks = await AppDataSource.getRepository(Feedback).find();
-    return res.status(200).json(feedbacks);
+    try {
+        const feedbacks = await AppDataSource.getRepository(Feedback).find();
+        return res.status(200).json(feedbacks);
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
 });
 
 /**

@@ -76,30 +76,35 @@ const router = express.Router();
  */
 // Get all instructors from an activity
 router.get('/:id', async (req: Request, res: Response) => {
-    const activityId = req.params.id;
-    
-    const activityInfo = await AppDataSource.getRepository(ActivitySession).findOne({
-        where: {
-            id: activityId
-        },
-        relations: {
-            instructorActivitySessions: {
-                instructor: true
+    try {
+        const activityId = req.params.id;
+        
+        const activityInfo = await AppDataSource.getRepository(ActivitySession).findOne({
+            where: {
+                id: activityId
+            },
+            relations: {
+                instructorActivitySessions: {
+                    instructor: true
+                }
+            },
+            select: {
+                instructorActivitySessions: {
+                    assignedAt: true,
+                    instructor: true
+                }
             }
-        },
-        select: {
-            instructorActivitySessions: {
-                assignedAt: true,
-                instructor: true
-            }
+        });
+
+        if (!activityInfo){
+            return res.status(404).json({ message: "Activity not found" })
         }
-    });
 
-    if (!activityInfo){
-        return res.status(404).json({ message: "Activity not found" })
+        return res.status(200).json(activityInfo?.instructorActivitySessions);
+        
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
-
-    return res.status(200).json(activityInfo?.instructorActivitySessions);
 });
 
 /**

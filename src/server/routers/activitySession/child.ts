@@ -115,30 +115,34 @@ const router = express.Router();
  */
 // Get all children from an activity
 router.get('/:id', async (req: Request, res: Response) => {
-    const activityId = req.params.id;
-    
-    const activityInfo = await AppDataSource.getRepository(ActivitySession).findOne({
-        where: {
-            id: activityId
-        },
-        relations: {
-            childActivitySessions: {
-                child: true
+    try {
+        const activityId = req.params.id;
+        
+        const activityInfo = await AppDataSource.getRepository(ActivitySession).findOne({
+            where: {
+                id: activityId
+            },
+            relations: {
+                childActivitySessions: {
+                    child: true
+                }
+            },
+            select: {
+                childActivitySessions: {
+                    registeredAt: true,
+                    child: true
+                }
             }
-        },
-        select: {
-            childActivitySessions: {
-                registeredAt: true,
-                child: true
-            }
+        });
+
+        if (!activityInfo){
+            return res.status(404).json({ message: "Activity not found" })
         }
-    });
 
-    if (!activityInfo){
-        return res.status(404).json({ message: "Activity not found" })
+        return res.status(200).json(activityInfo?.childActivitySessions);
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
-
-    return res.status(200).json(activityInfo?.childActivitySessions);
 });
 
 
@@ -246,50 +250,55 @@ router.get('/:id', async (req: Request, res: Response) => {
  *                     message: "Child not found"
  */
 router.get('/available-stations/:id', async (req: Request, res: Response) => {
-    const activitySessionId = req.params.id;
-    const childId = req.query.childId;
+    try {
+        const activitySessionId = req.params.id;
+        const childId = req.query.childId;
 
-    if (!childId || typeof childId !== 'string') {
-        return res.status(400).json({ message: "ChildId is required" });
-    }
-    
-    const activitySession = await AppDataSource.getRepository(ActivitySession).findOne({
-        where: { id: activitySessionId },
-        relations: {
-            stationActivitySessions: {
-                station: true
-            }
+        if (!childId || typeof childId !== 'string') {
+            return res.status(400).json({ message: "ChildId is required" });
         }
-    });
-    if (!activitySession) {
-        return res.status(404).json({ message: "Activity session not found" });
+        
+        const activitySession = await AppDataSource.getRepository(ActivitySession).findOne({
+            where: { id: activitySessionId },
+            relations: {
+                stationActivitySessions: {
+                    station: true
+                }
+            }
+        });
+        if (!activitySession) {
+            return res.status(404).json({ message: "Activity session not found" });
+        }
+
+        const child = await AppDataSource.getRepository(Child).findOne({
+            where: { id: childId }
+        });
+        if (!child) {
+            return res.status(404).json({ message: "Child not found" });
+        }
+
+        const dropOffStationActivity = activitySession.stationActivitySessions.find(
+            sas => sas.stationId === child.dropOffStationId
+        );
+        if (!dropOffStationActivity) {
+            return res.status(400).json({ message: "Child's drop-off station not found in this activity session" });
+        }
+
+        const stationsWithAvailability = activitySession.stationActivitySessions
+            .sort((a, b) => a.stopNumber - b.stopNumber)
+            .map(sas => ({
+                stopNumber: sas.stopNumber,
+                isAvailable: sas.stopNumber < dropOffStationActivity.stopNumber,
+                id: sas.station.id,
+                name: sas.station.name,
+                type: sas.station.type
+            }));
+
+        return res.status(200).json(stationsWithAvailability);
+        
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
-
-    const child = await AppDataSource.getRepository(Child).findOne({
-        where: { id: childId }
-    });
-    if (!child) {
-        return res.status(404).json({ message: "Child not found" });
-    }
-
-    const dropOffStationActivity = activitySession.stationActivitySessions.find(
-        sas => sas.stationId === child.dropOffStationId
-    );
-    if (!dropOffStationActivity) {
-        return res.status(400).json({ message: "Child's drop-off station not found in this activity session" });
-    }
-
-    const stationsWithAvailability = activitySession.stationActivitySessions
-        .sort((a, b) => a.stopNumber - b.stopNumber)
-        .map(sas => ({
-            stopNumber: sas.stopNumber,
-            isAvailable: sas.stopNumber < dropOffStationActivity.stopNumber,
-            id: sas.station.id,
-            name: sas.station.name,
-            type: sas.station.type
-        }));
-
-    return res.status(200).json(stationsWithAvailability);
 });
 
 /**

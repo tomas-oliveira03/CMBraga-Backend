@@ -76,36 +76,39 @@ const router = express.Router();
  *                   example: "Child not found"
  */
 router.get('/child/:id', async (req: Request, res : Response) => {
-    
-    const childId = req.params.id;
-    const child = await AppDataSource.getRepository(Child).findOne({
-        where: { id: childId }, 
-        relations: {
-            medicalReports: { 
-                healthProfessional: true
-            }
-        },
-        select: {
-            medicalReports:{
-                id: true,
-                diagnosis: true,
-                recommendations: true,
-                createdAt: true, 
-                healthProfessional: {
+    try {
+        const childId = req.params.id;
+        const child = await AppDataSource.getRepository(Child).findOne({
+            where: { id: childId }, 
+            relations: {
+                medicalReports: { 
+                    healthProfessional: true
+                }
+            },
+            select: {
+                medicalReports:{
                     id: true,
-                    name: true,
-                    email: true,
-                    specialty: true
+                    diagnosis: true,
+                    recommendations: true,
+                    createdAt: true, 
+                    healthProfessional: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        specialty: true
+                    }
                 }
             }
+        })
+        
+        if(!child){
+            return res.status(404).json({ message: "Child not found" });
         }
-    })
-    
-    if(!child){
-        return res.status(404).json({ message: "Child not found" });
-    }
 
-    return res.status(200).json(child.medicalReports)
+        return res.status(200).json(child.medicalReports)
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
 })
 
 /**
@@ -153,8 +156,12 @@ router.get('/child/:id', async (req: Request, res : Response) => {
  *                     example: "2024-01-20T14:45:30.000Z"
  */
 router.get('/', async (req: Request, res: Response) => {
-    const allReports = await AppDataSource.getRepository(MedicalReport).find();
-    return res.status(200).json(allReports);
+    try {
+        const allReports = await AppDataSource.getRepository(MedicalReport).find();
+        return res.status(200).json(allReports);
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
 });
 
 /**
@@ -218,19 +225,23 @@ router.get('/', async (req: Request, res: Response) => {
  *                   example: "Report not found"
  */
 router.get('/:id', async (req: Request, res: Response) => {
-    const reportId = req.params.id;
+    try {
+        const reportId = req.params.id;
 
-    const report = await AppDataSource.getRepository(MedicalReport).findOne({
-        where: {
-            id: reportId
+        const report = await AppDataSource.getRepository(MedicalReport).findOne({
+            where: {
+                id: reportId
+            }
+        });
+
+        if (!report){
+            return res.status(404).json({ message: "Report not found" })
         }
-    });
 
-    if (!report){
-        return res.status(404).json({ message: "Report not found" })
+        return res.status(200).json(report);
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
-
-    return res.status(200).json(report);
 });
 
 /**

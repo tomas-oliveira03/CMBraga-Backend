@@ -64,14 +64,17 @@ const router = express.Router();
  *                   description: Error message
  */
 router.get("/search",  async (req: Request, res: Response) => {
-    const query = req.query.query;
-    if (!query || typeof query !== "string") {
-        return res.status(400).json({ message: "Missing or invalid query parameter" });
+    try {
+        const query = req.query.query;
+        if (!query || typeof query !== "string") {
+            return res.status(400).json({ message: "Missing or invalid query parameter" });
+        }
+        const lowercaseQuery = query.toLowerCase();
+        const users = await searchSimilarUsers(lowercaseQuery);
+        return res.status(200).json(users);
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
-    const lowercaseQuery = query.toLowerCase();
-    const users = await searchSimilarUsers(lowercaseQuery);
-    return res.json(users);
-
 });
 
 export default router;

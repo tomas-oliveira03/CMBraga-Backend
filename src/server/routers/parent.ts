@@ -58,8 +58,12 @@ const upload = multer({ storage: multer.memoryStorage() });
  *                     example: "2024-01-20T14:45:30.000Z"
  */
 router.get('/', async (req: Request, res: Response) => {
-    const allParents = await AppDataSource.getRepository(Parent).find();
-    return res.status(200).json(allParents);
+    try {
+        const allParents = await AppDataSource.getRepository(Parent).find();
+        return res.status(200).json(allParents);
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
 });
 
 /**
@@ -125,19 +129,23 @@ router.get('/', async (req: Request, res: Response) => {
  *                   example: "Parent not found"
  */
 router.get('/:id', async (req: Request, res: Response) => {
-    const parentId = req.params.id;
+    try {
+        const parentId = req.params.id;
 
-    const parent = await AppDataSource.getRepository(Parent).findOne({
-        where: {
-            id: parentId
+        const parent = await AppDataSource.getRepository(Parent).findOne({
+            where: {
+                id: parentId
+            }
+        });
+
+        if (!parent) {
+            return res.status(404).json({ message: "Parent not found" });
         }
-    });
 
-    if (!parent) {
-        return res.status(404).json({ message: "Parent not found" });
+        return res.status(200).json(parent);
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
-
-    return res.status(200).json(parent);
 });
 
 

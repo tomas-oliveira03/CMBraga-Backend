@@ -58,8 +58,12 @@ const upload = multer({ storage: multer.memoryStorage() });
  *                     example: "2024-01-15T11:00:00.000Z"
  */
 router.get('/', async (req: Request, res: Response) => {
-    const allIssues = await AppDataSource.getRepository(Issue).find();
-    return res.status(200).json(allIssues);
+    try {
+        const allIssues = await AppDataSource.getRepository(Issue).find();
+        return res.status(200).json(allIssues);
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
 });
 
 /**
@@ -124,17 +128,21 @@ router.get('/', async (req: Request, res: Response) => {
  *                   example: "Issue not found"
  */
 router.get('/:id', async (req: Request, res: Response) => {
-    const issueId = req.params.id;
+    try {
+        const issueId = req.params.id;
 
-    const issue = await AppDataSource.getRepository(Issue).findOne({
-        where: { id: issueId}
-    });
+        const issue = await AppDataSource.getRepository(Issue).findOne({
+            where: { id: issueId}
+        });
 
-    if (!issue){
-        return res.status(404).json({ message: "Issue not found" })
+        if (!issue){
+            return res.status(404).json({ message: "Issue not found" })
+        }
+
+        return res.status(200).json(issue);
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
-
-    return res.status(200).json(issue);
 });
 
 /**

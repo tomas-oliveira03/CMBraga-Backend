@@ -100,38 +100,41 @@ const router = express.Router();
  *                   example: "Activity not found"
  */
 router.get('/issue/activity/:id', async (req: Request, res : Response) => {
-    
-    const activityId = req.params.id;
-    const activity = await AppDataSource.getRepository(ActivitySession).findOne({
-        where: { id: activityId }, 
-        relations: {
-            issues: true
-        },
-        select: {
-            id: true,
-            type: true,
-            scheduledAt: true,
-            startedAt: true,
-            finishedAt: true,
-            createdAt: true,
-            updatedAt: true,
-            issues:{
+    try {
+        const activityId = req.params.id;
+        const activity = await AppDataSource.getRepository(ActivitySession).findOne({
+            where: { id: activityId }, 
+            relations: {
+                issues: true
+            },
+            select: {
                 id: true,
-                description: true,
-                imageURLs: true,
+                type: true,
+                scheduledAt: true,
+                startedAt: true,
+                finishedAt: true,
                 createdAt: true,
                 updatedAt: true,
-                resolvedAt: true,
-                instructorId: true
+                issues:{
+                    id: true,
+                    description: true,
+                    imageURLs: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    resolvedAt: true,
+                    instructorId: true
+                }
             }
+        })
+        
+        if(!activity){
+            return res.status(404).json({ message: "Activity not found" });
         }
-    })
-    
-    if(!activity){
-        return res.status(404).json({ message: "Activity not found" });
-    }
 
-    return res.status(200).json(activity)
+        return res.status(200).json(activity)
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
 })
 
 export default router;

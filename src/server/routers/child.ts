@@ -76,27 +76,31 @@ const upload = multer({ storage: multer.memoryStorage() });
  *                   example: "Child not found"
  */
 router.get('/activities/:id', async (req: Request, res: Response) => {
-    const childId = req.params.id;
-    const child = await AppDataSource.getRepository(Child).findOne({
-        where: { id: childId }, 
-        relations: {
-            childActivitySessions: { 
-                activitySession: true
+    try {
+        const childId = req.params.id;
+        const child = await AppDataSource.getRepository(Child).findOne({
+            where: { id: childId }, 
+            relations: {
+                childActivitySessions: { 
+                    activitySession: true
+                }
+            },
+            select: {
+                childActivitySessions:{
+                    registeredAt: true,
+                    activitySession: true
+                }
             }
-        },
-        select: {
-            childActivitySessions:{
-                registeredAt: true,
-                activitySession: true
-            }
+        })
+        
+        if(!child){
+            return res.status(404).json({ message: "Child not found" });
         }
-    })
-    
-    if(!child){
-        return res.status(404).json({ message: "Child not found" });
-    }
 
-    return res.status(200).json(child.childActivitySessions)
+        return res.status(200).json(child.childActivitySessions)
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
 })
 
 /**
@@ -181,8 +185,12 @@ router.get('/activities/:id', async (req: Request, res: Response) => {
  *                     example: "2024-01-20T14:45:30.000Z"
  */
 router.get('/', async (req: Request, res: Response) => {
-    const allChildren = await AppDataSource.getRepository(Child).find();
-    return res.status(200).json(allChildren);
+    try {
+        const allChildren = await AppDataSource.getRepository(Child).find();
+        return res.status(200).json(allChildren);
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
 });
 
 /**
@@ -280,19 +288,23 @@ router.get('/', async (req: Request, res: Response) => {
  *                   example: "Child not found"
  */
 router.get('/:id', async (req: Request, res: Response) => {
-    const childId = req.params.id;
+    try {
+        const childId = req.params.id;
 
-    const child = await AppDataSource.getRepository(Child).findOne({
-        where: {
-            id: childId
+        const child = await AppDataSource.getRepository(Child).findOne({
+            where: {
+                id: childId
+            }
+        });
+
+        if (!child){
+            return res.status(404).json({ message: "Child not found" })
         }
-    });
 
-    if (!child){
-        return res.status(404).json({ message: "Child not found" })
+        return res.status(200).json(child);
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
-
-    return res.status(200).json(child);
 });
 
 /**

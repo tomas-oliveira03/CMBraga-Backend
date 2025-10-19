@@ -57,8 +57,12 @@ const upload = multer({ storage: multer.memoryStorage() });
  *                     example: "2024-01-20T14:45:30.000Z"
  */
 router.get('/', async (req: Request, res: Response) => {
-    const allAdmins = await AppDataSource.getRepository(Admin).find();
-    return res.status(200).json(allAdmins);
+    try {
+        const allAdmins = await AppDataSource.getRepository(Admin).find();
+        return res.status(200).json(allAdmins);
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
 });
 
 /**
@@ -121,19 +125,23 @@ router.get('/', async (req: Request, res: Response) => {
  *                   example: "Admin not found"
  */
 router.get('/:id', async (req: Request, res: Response) => {
-    const adminId = req.params.id;
+    try {
+        const adminId = req.params.id;
 
-    const admin = await AppDataSource.getRepository(Admin).findOne({
-        where: {
-            id: adminId
+        const admin = await AppDataSource.getRepository(Admin).findOne({
+            where: {
+                id: adminId
+            }
+        });
+
+        if (!admin){
+            return res.status(404).json({ message: "Admin not found" })
         }
-    });
 
-    if (!admin){
-        return res.status(404).json({ message: "Admin not found" })
+        return res.status(200).json(admin);
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
-
-    return res.status(200).json(admin);
 });
 
 /**

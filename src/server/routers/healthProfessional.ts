@@ -61,8 +61,12 @@ const upload = multer({ storage: multer.memoryStorage() });
  *                     example: "2024-01-20T14:45:30.000Z"
  */
 router.get('/', async (req: Request, res: Response) => {
-    const allHealthProfessionals = await AppDataSource.getRepository(HealthProfessional).find();
-    return res.status(200).json(allHealthProfessionals);
+    try {
+        const allHealthProfessionals = await AppDataSource.getRepository(HealthProfessional).find();
+        return res.status(200).json(allHealthProfessionals);
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
 });
 
 /**
@@ -129,19 +133,23 @@ router.get('/', async (req: Request, res: Response) => {
  *                   example: "Health professional not found"
  */
 router.get('/:id', async (req: Request, res: Response) => {
-    const healthProfessionalId = req.params.id;
+    try {
+        const healthProfessionalId = req.params.id;
 
-    const healthProfessional = await AppDataSource.getRepository(HealthProfessional).findOne({
-        where: {
-            id: healthProfessionalId
+        const healthProfessional = await AppDataSource.getRepository(HealthProfessional).findOne({
+            where: {
+                id: healthProfessionalId
+            }
+        });
+
+        if (!healthProfessional){
+            return res.status(404).json({ message: "Health professional not found" })
         }
-    });
 
-    if (!healthProfessional){
-        return res.status(404).json({ message: "Health professional not found" })
+        return res.status(200).json(healthProfessional);
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
-
-    return res.status(200).json(healthProfessional);
 });
 
 

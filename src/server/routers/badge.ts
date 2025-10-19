@@ -23,8 +23,12 @@ const router = express.Router();
  *         description: List of badges
  */
 router.get('/', async (req: Request, res: Response) => {
-    const badges = await AppDataSource.getRepository(Badge).find();
-    return res.status(200).json(badges);
+    try {
+        const badges = await AppDataSource.getRepository(Badge).find();
+        return res.status(200).json(badges);
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
 });
 
 /**
@@ -48,11 +52,15 @@ router.get('/', async (req: Request, res: Response) => {
  *         description: Badge not found
  */
 router.get('/:id', async (req: Request, res: Response) => {
-    const badge = await AppDataSource.getRepository(Badge).findOne({ where: { id: req.params.id } });
-    if (!badge) {
-        return res.status(404).json({ message: "Badge not found" });
+    try {
+        const badge = await AppDataSource.getRepository(Badge).findOne({ where: { id: req.params.id } });
+        if (!badge) {
+            return res.status(404).json({ message: "Badge not found" });
+        }
+        return res.status(200).json(badge);
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
-    return res.status(200).json(badge);
 });
 
 /**
@@ -201,12 +209,16 @@ router.put('/:id', async (req: Request, res: Response) => {
  *         description: Badge not found
  */
 router.delete('/:id', authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
-    const badge = await AppDataSource.getRepository(Badge).findOne({ where: { id: req.params.id } });
-    if (!badge) {
-        return res.status(404).json({ message: "Badge not found" });
+    try {
+        const badge = await AppDataSource.getRepository(Badge).findOne({ where: { id: req.params.id } });
+        if (!badge) {
+            return res.status(404).json({ message: "Badge not found" });
+        }
+        await AppDataSource.getRepository(Badge).delete(badge.id);
+        return res.status(200).json({ message: "Badge deleted successfully" });
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
-    await AppDataSource.getRepository(Badge).delete(badge.id);
-    return res.status(200).json({ message: "Badge deleted successfully" });
 });
 
 export default router;

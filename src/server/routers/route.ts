@@ -51,27 +51,32 @@ const upload = multer({ storage: multer.memoryStorage() });
  *                     description: "Number of stations in the route"
  */
 router.get('/', async (req: Request, res: Response) => {
-    const allRoutes = await AppDataSource.getRepository(Route).find({
-        relations: {
-            routeStations: true
-        },
-        select: {
-            id: true,
-            name: true,
-            distanceMeters: true,
-            createdAt: true
-        }
-    });
-    
-    const routesWithStationCount = allRoutes.map(route => ({
-        id: route.id,
-        name: route.name,
-        distanceMeters: route.distanceMeters,
-        createdAt: route.createdAt,
-        numberOfStations: route.routeStations.length
-    }));
-    
-    return res.status(200).json(routesWithStationCount);
+    try {
+        const allRoutes = await AppDataSource.getRepository(Route).find({
+            relations: {
+                routeStations: true
+            },
+            select: {
+                id: true,
+                name: true,
+                distanceMeters: true,
+                createdAt: true
+            }
+        });
+        
+        const routesWithStationCount = allRoutes.map(route => ({
+            id: route.id,
+            name: route.name,
+            distanceMeters: route.distanceMeters,
+            createdAt: route.createdAt,
+            numberOfStations: route.routeStations.length
+        }));
+        
+        return res.status(200).json(routesWithStationCount);
+
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
 });
 
 /**
@@ -128,36 +133,41 @@ router.get('/', async (req: Request, res: Response) => {
  *                   example: "Route not found"
  */
 router.get('/:id', async (req: Request, res: Response) => {
-    const routeId = req.params.id;
+    try {
+        const routeId = req.params.id;
 
-    const route = await AppDataSource.getRepository(Route).findOne({
-        where: {
-            id: routeId
-        },
-        relations: {
-            routeStations: true
-        },
-        select: {
-            id: true,
-            name: true,
-            distanceMeters: true,
-            createdAt: true
+        const route = await AppDataSource.getRepository(Route).findOne({
+            where: {
+                id: routeId
+            },
+            relations: {
+                routeStations: true
+            },
+            select: {
+                id: true,
+                name: true,
+                distanceMeters: true,
+                createdAt: true
+            }
+        });
+
+        if (!route){
+            return res.status(404).json({ message: "Route not found" })
         }
-    });
 
-    if (!route){
-        return res.status(404).json({ message: "Route not found" })
+        const routeWithStationCount = {
+            id: route.id,
+            name: route.name,
+            distanceMeters: route.distanceMeters,
+            createdAt: route.createdAt,
+            numberOfStations: route.routeStations.length
+        };
+
+        return res.status(200).json(routeWithStationCount);
+        
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
-
-    const routeWithStationCount = {
-        id: route.id,
-        name: route.name,
-        distanceMeters: route.distanceMeters,
-        createdAt: route.createdAt,
-        numberOfStations: route.routeStations.length
-    };
-
-    return res.status(200).json(routeWithStationCount);
 });
 
 /**

@@ -125,10 +125,14 @@ router.post('/login', async (req: Request, res: Response) => {
  *         description: Authentication required
  */
 router.get('/profile', authenticate, (req: Request, res: Response) => {
-    return res.status(200).json({
-        message: "Profile retrieved successfully",
-        user: req.user
-    });
+    try {
+        return res.status(200).json({
+            message: "Profile retrieved successfully",
+            user: req.user
+        });
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
 });
 
 
@@ -772,9 +776,9 @@ router.post('/register/child', async (req: Request, res: Response) => {
  *                   example: "Invalid or expired token"
  */
 router.post('/set-password', async (req: Request, res: Response) => {
-    const { token, password } = req.body;
-
     try {
+        const { token, password } = req.body;
+
         const decoded = verifyToken(token);
         const email = decoded.userEmail;
 
@@ -911,12 +915,13 @@ router.post('/set-password', async (req: Request, res: Response) => {
  *                   example: "Internal server error"
  */
 router.post('/recover-password', async (req: Request, res: Response) => {
-    const { email } = req.body;
-    
-    if (!email) {
-        return res.status(400).json({ message: "Email is required" });
-    }
     try {
+        const { email } = req.body;
+        
+        if (!email) {
+            return res.status(400).json({ message: "Email is required" });
+        }
+
         const user = await AppDataSource.getRepository(User).findOne({
             where: { id: email }
         });
