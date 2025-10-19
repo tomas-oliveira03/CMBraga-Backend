@@ -12,6 +12,7 @@ import { AuthService } from "./lib/auth";
 import url from "url";
 import { initCronJobs, stopCronJobs } from "./cron";
 import cors from 'cors';
+import { setActivityStats } from "./server/services/activityStats";
 
 const app = express();
 const server = createServer(app);

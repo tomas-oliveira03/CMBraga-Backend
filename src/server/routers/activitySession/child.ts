@@ -6,6 +6,7 @@ import { ChildActivitySession } from "@/db/entities/ChildActivitySession";
 import { ParentChild } from "@/db/entities/ParentChild";
 import { UserRole } from "@/helpers/types";
 import { authenticate, authorize } from "@/server/middleware/auth";
+import { Station } from "@/db/entities/Station";
 
 const router = express.Router();
 
@@ -140,6 +141,157 @@ router.get('/:id', async (req: Request, res: Response) => {
     return res.status(200).json(activityInfo?.childActivitySessions);
 });
 
+
+/**
+ * @swagger
+ * /activity-session/child/available-stations/{id}:
+ *   get:
+ *     summary: Get available pickup stations for a child in an activity session
+ *     description: Returns a list of all stations in the activity session with availability flags based on the child's drop-off station. Stations with stop numbers less than the child's drop-off station are available for pickup.
+ *     tags:
+ *       - Activity Session - Children
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "c56ad528-3522-4557-8b34-a787a50900b7"
+ *         description: Activity Session ID (UUID)
+ *       - in: query
+ *         name: childId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "1bee5237-02ea-4f5c-83f3-bfe6e5a19756"
+ *         description: Child ID (UUID)
+ *     responses:
+ *       200:
+ *         description: List of stations with availability flags for the specified child
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   stopNumber:
+ *                     type: integer
+ *                     example: 1
+ *                     description: "Sequential stop number in the route"
+ *                   isAvailable:
+ *                     type: boolean
+ *                     example: true
+ *                     description: "True if station is available for pickup (before drop-off station), false otherwise"
+ *                   id:
+ *                     type: string
+ *                     example: "station-uuid-1"
+ *                     description: "Station ID (UUID)"
+ *                   name:
+ *                     type: string
+ *                     example: "Estação Central"
+ *                     description: "Station name"
+ *                   type:
+ *                     type: string
+ *                     enum: [regular, school]
+ *                     example: "regular"
+ *                     description: "Station type"
+ *               example:
+ *                 - stopNumber: 1
+ *                   isAvailable: true
+ *                   id: "station-uuid-1"
+ *                   name: "Estação Central"
+ *                   type: "regular"
+ *                 - stopNumber: 2
+ *                   isAvailable: true
+ *                   id: "station-uuid-2"
+ *                   name: "Biblioteca"
+ *                   type: "regular"
+ *                 - stopNumber: 3
+ *                   isAvailable: false
+ *                   id: "station-uuid-3"
+ *                   name: "Escola Básica"
+ *                   type: "school"
+ *       400:
+ *         description: Missing or invalid parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *               examples:
+ *                 missing_child_id:
+ *                   value:
+ *                     message: "ChildId is required"
+ *                 station_not_in_route:
+ *                   value:
+ *                     message: "Child's drop-off station not found in this activity session"
+ *       404:
+ *         description: Activity session or child not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *               examples:
+ *                 activity_not_found:
+ *                   value:
+ *                     message: "Activity session not found"
+ *                 child_not_found:
+ *                   value:
+ *                     message: "Child not found"
+ */
+router.get('/available-stations/:id', async (req: Request, res: Response) => {
+    const activitySessionId = req.params.id;
+    const childId = req.query.childId;
+
+    if (!childId || typeof childId !== 'string') {
+        return res.status(400).json({ message: "ChildId is required" });
+    }
+    
+    const activitySession = await AppDataSource.getRepository(ActivitySession).findOne({
+        where: { id: activitySessionId },
+        relations: {
+            stationActivitySessions: {
+                station: true
+            }
+        }
+    });
+    if (!activitySession) {
+        return res.status(404).json({ message: "Activity session not found" });
+    }
+
+    const child = await AppDataSource.getRepository(Child).findOne({
+        where: { id: childId }
+    });
+    if (!child) {
+        return res.status(404).json({ message: "Child not found" });
+    }
+
+    const dropOffStationActivity = activitySession.stationActivitySessions.find(
+        sas => sas.stationId === child.dropOffStationId
+    );
+    if (!dropOffStationActivity) {
+        return res.status(400).json({ message: "Child's drop-off station not found in this activity session" });
+    }
+
+    const stationsWithAvailability = activitySession.stationActivitySessions
+        .sort((a, b) => a.stopNumber - b.stopNumber)
+        .map(sas => ({
+            stopNumber: sas.stopNumber,
+            isAvailable: sas.stopNumber < dropOffStationActivity.stopNumber,
+            id: sas.station.id,
+            name: sas.station.name,
+            type: sas.station.type
+        }));
+
+    return res.status(200).json(stationsWithAvailability);
+});
+
 /**
  * @swagger
  * /activity-session/child/{id}:
@@ -166,18 +318,18 @@ router.get('/:id', async (req: Request, res: Response) => {
  *             type: object
  *             required:
  *               - childId
- *               - dropOffStationId
+ *               - pickUpStationId
  *             properties:
  *               childId:
  *                 type: string
  *                 example: "1bee5237-02ea-4f5c-83f3-bfe6e5a19756"
- *               dropOffStationId:
+ *               pickUpStationId:
  *                 type: string
  *                 example: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
  *                 description: "Station ID where the child will be picked up/dropped off"
  *           example:
  *             childId: "1bee5237-02ea-4f5c-83f3-bfe6e5a19756"
- *             dropOffStationId: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
+ *             pickUpStationId: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
  *     responses:
  *       201:
  *         description: Child successfully added to activity session
@@ -205,7 +357,7 @@ router.post('/:id', authenticate, authorize(UserRole.PARENT), async (req: Reques
         const { childId, pickUpStationId } = req.body;
 
         if (!childId || !pickUpStationId) {
-            return res.status(400).json({ message: "Child ID and Station ID are required" });
+            return res.status(400).json({ message: "ChildId and PickUpStationId are required" });
         }
 
         const activitySession = await AppDataSource.getRepository(ActivitySession).findOne({
@@ -228,6 +380,17 @@ router.post('/:id', authenticate, authorize(UserRole.PARENT), async (req: Reques
         });
         if (!child) {
             return res.status(404).json({ message: "Child not found" });
+        }
+
+        if (!(activitySession.stationActivitySessions.some(sas => sas.stationId === child.dropOffStationId))) {
+            return res.status(400).json({ message: "Drop-off station is not assigned to this activity session" });
+        }
+
+        const pickUpStationNumber = activitySession.stationActivitySessions.find(sas => sas.stationId === pickUpStationId)!.stopNumber;
+        const dropOffStationNumber = activitySession.stationActivitySessions.find(sas => sas.stationId === child.dropOffStationId)!.stopNumber;
+
+        if (pickUpStationNumber >= dropOffStationNumber){
+            return res.status(400).json({ message: "Cannot pick up child after or at drop-off station" });
         }
 
         // Check if user is parent of the child
