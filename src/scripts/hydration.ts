@@ -24,16 +24,54 @@ import { Route } from "@/db/entities/Route";
 import { RouteStation } from "@/db/entities/RouteStation";
 import fs from "fs";
 import path from "path";
+import { selectRandomDefaultProfilePicture, USER_DEFAULT_PROFILE_PICTURES } from "@/helpers/storage";
+import { checkImagesExist, uploadImageBuffer } from "@/server/services/cloud";
 
-// Helper function to create dates in Lisbon timezone
-function createLisbonDate(dateString?: string): Date {
-  const date = dateString ? new Date(dateString) : new Date();
-  // Convert to Lisbon timezone (UTC+1 or UTC+2 depending on daylight saving)
-  const lisbonOffset = -date.getTimezoneOffset() + 60; // Assuming UTC+1 for simplicity
-  return new Date(date.getTime() + (lisbonOffset * 60 * 1000));
+
+async function cloudHydration(){
+  console.log("Checking cloud images...");
+  
+  const imageExistenceResults = await checkImagesExist(USER_DEFAULT_PROFILE_PICTURES);
+  
+  const missingImages = USER_DEFAULT_PROFILE_PICTURES.filter(url => !imageExistenceResults[url]);
+  
+  if (missingImages.length === 0) {
+    console.log("✅ All default profile pictures exist in cloud");
+    return;
+  }
+  
+  console.log(`⚠️ Found ${missingImages.length} missing images in cloud, uploading...`);
+  
+  for (const missingUrl of missingImages) {
+    try {
+      const filename = missingUrl.split('/').pop();
+      if (!filename) {
+        console.error(`❌ Could not extract filename from URL: ${missingUrl}`);
+        continue;
+      }
+      
+      const imagePath = path.join(__dirname, "cloud_images", filename);
+      
+      if (!fs.existsSync(imagePath)) {
+        console.error(`❌ Local image file not found: ${imagePath}`);
+        continue;
+      }
+      
+      const imageBuffer = fs.readFileSync(imagePath);
+      const filenameWithoutExt = filename.split('.')[0] || filename; 
+      
+      await uploadImageBuffer(imageBuffer, filenameWithoutExt, "users", true);
+      console.log(`✅ Uploaded ${filename} to cloud`);
+      
+    } catch (error) {
+      console.error(`❌ Failed to upload ${missingUrl}:`, error);
+    }
+  }
+  
+  console.log("Cloud hydration completed");
 }
 
-async function seed() {
+async function dbHydration() {
   console.log("Initializing data source...");
   const dataSource = await AppDataSource.initialize();
 
@@ -156,7 +194,7 @@ async function seed() {
     const atividade = activityRepo.create({
       type: "pedibus" as any,
       mode: "walk" as any,
-      scheduledAt: createLisbonDate(),
+      scheduledAt: new Date(),
       routeId: route.id,
     });
     await activityRepo.save(atividade);
@@ -164,7 +202,7 @@ async function seed() {
 
     // 5. Create station-activity sessions (from route stations)
     const stationActivitySessions = [];
-    const now = createLisbonDate();
+    const now = new Date();
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     
     for (let i = 0; i < stations.length; i++) {
@@ -189,8 +227,8 @@ async function seed() {
       password: encryptedPassword, 
       phone: "912345678",
       specialty: "pediatrician" as any,
-      activatedAt: createLisbonDate(),
-      profilePictureURL: "https://res.cloudinary.com/dwffdkytm/image/upload/v1760796584/default-profile-pic1_qxz6rf.jpg"
+      activatedAt: new Date(),
+      profilePictureURL: selectRandomDefaultProfilePicture()
     });
     await hpRepo.save(hp1);
 
@@ -205,8 +243,8 @@ async function seed() {
       email: "admin@cmbraga.pt", 
       password: encryptedPassword,
       phone: "900000000",
-      activatedAt: createLisbonDate(),
-      profilePictureURL: "https://res.cloudinary.com/dwffdkytm/image/upload/v1760796584/default-profile-pic1_qxz6rf.jpg"
+      activatedAt: new Date(),
+      profilePictureURL: selectRandomDefaultProfilePicture()
     });
     await adminRepo.save(admin);
 
@@ -226,8 +264,8 @@ async function seed() {
         password: encryptedPassword,
         phone: `91${String(i).padStart(7, '0')}`,
         address: `Rua ${i}, Nº ${i}`,
-        activatedAt: createLisbonDate(),
-        profilePictureURL: "https://res.cloudinary.com/dwffdkytm/image/upload/v1760796584/default-profile-pic1_qxz6rf.jpg"
+        activatedAt: new Date(),
+        profilePictureURL: selectRandomDefaultProfilePicture()
       });
       pais.push(parent);
     }
@@ -254,8 +292,8 @@ async function seed() {
         school: "Escola Básica",
         schoolGrade: (i % 6) + 1,
         dropOffStationId: schoolStation!.id,
-        dateOfBirth: createLisbonDate(`2015-0${(i % 9) + 1}-15`),
-        profilePictureURL: "https://res.cloudinary.com/dwffdkytm/image/upload/v1760796584/default-profile-pic1_qxz6rf.jpg"
+        dateOfBirth: new Date(`2015-0${(i % 9) + 1}-15`),
+        profilePictureURL: selectRandomDefaultProfilePicture()
       });
       criancas.push(child);
     }
@@ -276,16 +314,16 @@ async function seed() {
         email: "inst1@cmbraga.pt", 
         password: encryptedPassword, 
         phone: "911111111",
-        activatedAt: createLisbonDate(),
-        profilePictureURL: "https://res.cloudinary.com/dwffdkytm/image/upload/v1760796584/default-profile-pic1_qxz6rf.jpg"
+        activatedAt: new Date(),
+        profilePictureURL: selectRandomDefaultProfilePicture()
       }),
       instructorRepo.create({ 
         name: "Instrutor 2", 
         email: "inst2@cmbraga.pt", 
         password: encryptedPassword, 
         phone: "922222222",
-        activatedAt: createLisbonDate(),
-        profilePictureURL: "https://res.cloudinary.com/dwffdkytm/image/upload/v1760796584/default-profile-pic1_qxz6rf.jpg"
+        activatedAt: new Date(),
+        profilePictureURL: selectRandomDefaultProfilePicture()
       }),
     ];
     await instructorRepo.save(instrutores);
@@ -338,7 +376,7 @@ async function seed() {
     // 14. Create sample issues and medical reports
     const issue1 = issueRepo.create({ 
       description: "Criança com dificuldade respiratória durante o percurso", 
-      imageURLs: ["img1.jpg"], 
+      imageURLs: USER_DEFAULT_PROFILE_PICTURES, 
       instructorId: instrutores[0]!.id, 
       activitySessionId: atividade.id 
     });
@@ -513,6 +551,12 @@ async function seed() {
     await dataSource.destroy();
     console.log("Data source destroyed. Done.");
   }
+}
+
+
+async function seed() {
+  await cloudHydration();
+  await dbHydration();
 }
 
 seed().catch((e) => {

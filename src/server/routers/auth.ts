@@ -140,7 +140,7 @@ router.get('/profile', authenticate, (req: Request, res: Response) => {
  *     summary: Register a new admin
  *     description: Creates a new admin user account
  *     tags:
- *       - Authentication
+ *       - Authentication - Register
  *     requestBody:
  *       required: true
  *       content:
@@ -258,7 +258,7 @@ router.post('/register/admin', async (req: Request, res: Response) => {
  *     summary: Register a new instructor
  *     description: Creates a new instructor user account
  *     tags:
- *       - Authentication
+ *       - Authentication - Register
  *     requestBody:
  *       required: true
  *       content:
@@ -356,7 +356,7 @@ router.post('/register/instructor', async (req: Request, res: Response) => {
  *     summary: Register a new health professional
  *     description: Creates a new health professional user account
  *     tags:
- *       - Authentication
+ *       - Authentication - Register
  *     requestBody:
  *       required: true
  *       content:
@@ -460,7 +460,7 @@ router.post('/register/health-professional', async (req: Request, res: Response)
  *     summary: Register a new parent
  *     description: Creates a new parent user account
  *     tags:
- *       - Authentication
+ *       - Authentication - Register
  *     requestBody:
  *       required: true
  *       content:
@@ -560,10 +560,10 @@ router.post('/register/parent', async (req: Request, res: Response) => {
  * @swagger
  * /auth/register/child:
  *   post:
- *     summary: Create a new child
+ *     summary: Register a new child
  *     description: Creates a new child and associates them with parent(s) and a school station
  *     tags:
- *       - Authentication
+ *       - Authentication - Register
  *     requestBody:
  *       required: true
  *       content:
@@ -724,7 +724,7 @@ router.post('/register/child', async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /auth/register/set-password:
+ * /auth/set-password:
  *   post:
  *     summary: Set password for instructor after registration
  *     description: Sets the password for an instructor using a token sent by email
@@ -771,7 +771,7 @@ router.post('/register/child', async (req: Request, res: Response) => {
  *                   type: string
  *                   example: "Invalid or expired token"
  */
-router.post('/register/set-password', async (req: Request, res: Response) => {
+router.post('/set-password', async (req: Request, res: Response) => {
     const { token, password } = req.body;
 
     try {
@@ -848,7 +848,7 @@ router.post('/register/set-password', async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /auth/register/recover-password:
+ * /auth/recover-password:
  *   post:
  *     summary: Request password recovery
  *     description: Sends a password reset email to the user
@@ -910,7 +910,7 @@ router.post('/register/set-password', async (req: Request, res: Response) => {
  *                   type: string
  *                   example: "Internal server error"
  */
-router.post('/register/recover-password', async (req: Request, res: Response) => {
+router.post('/recover-password', async (req: Request, res: Response) => {
     const { email } = req.body;
     
     if (!email) {

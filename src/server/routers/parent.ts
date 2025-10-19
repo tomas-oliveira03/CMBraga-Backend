@@ -5,7 +5,6 @@ import { UpdateParentSchema } from "../schemas/parent";
 import { z } from "zod";
 import informationHash from "@/lib/information-hash";
 import multer from "multer";
-import { uploadImageBuffer } from "../services/cloud";
 import { updateProfilePicture } from "../services/user";
 import { isValidImageFile } from "@/helpers/storage";
 

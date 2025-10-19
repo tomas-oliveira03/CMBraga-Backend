@@ -8,12 +8,10 @@ import { AppDataSource } from "@/db";
 import { User } from "@/db/entities/User";
 import informationHash from "@/lib/information-hash";
 import { Admin } from "@/db/entities/Admin";
-import { EntityManager } from "typeorm";
 import { Instructor } from "@/db/entities/Instructor";
 import { HealthProfessional } from "@/db/entities/HealthProfessional";
 import { Parent } from "@/db/entities/Parent";
 import { selectRandomDefaultProfilePicture } from "@/helpers/storage";
-import { uploadImageBuffer } from "./cloud";
 
 type UserDataMap = {
   [UserRole.ADMIN]: CreateAdminInput;

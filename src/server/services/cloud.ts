@@ -31,12 +31,13 @@ export async function uploadFileBuffer(buffer: Buffer, fileName: string): Promis
 }
 
 
-export async function uploadImageBuffer(buffer: Buffer, fileName: string, folderName: string): Promise<string> {
+export async function uploadImageBuffer(buffer: Buffer, fileName: string, folderName: string, defaultImage: boolean=false): Promise<string> {
 	return new Promise((resolve, reject) => {
+		const publicId = defaultImage ? fileName : `${fileName}-${Date.now()}`;
 		const uploadStream = cloudinary.uploader.upload_stream(
 			{
 				folder: `CMBraga/${folderName}`,
-				public_id: `${fileName}-${Date.now()}`,
+				public_id: publicId,
 				resource_type: 'image',
 				transformation: [{
 					quality: 'auto',
@@ -57,9 +58,9 @@ export async function uploadImageBuffer(buffer: Buffer, fileName: string, folder
 }
 
 
-export async function uploadImagesBuffer(files: { buffer: Buffer; fileName: string }[], folderName: string): Promise<string[]> {
+export async function uploadImagesBuffer(files: { buffer: Buffer; fileName: string }[], folderName: string, defaultImages: boolean=false): Promise<string[]> {
 	try {
-		const uploadPromises = files.map(file => uploadImageBuffer(file.buffer, file.fileName, folderName));
+		const uploadPromises = files.map(file => uploadImageBuffer(file.buffer, file.fileName, folderName, defaultImages));
 
 		const urls = await Promise.all(uploadPromises);
 		return urls;
@@ -120,4 +121,53 @@ export async function deleteImageSafe(imageUrl: string) {
 	} catch (error) {
 		logger.error("Failed to delete image from Cloudinary:", (error as Error).message);
 	}
+}
+
+
+
+export async function checkImageExists(imageUrl: string): Promise<boolean> {
+	try {
+		if (!imageUrl) throw new Error("No image URL provided");
+
+		const urlParts = imageUrl.split("/");
+		const uploadIndex = urlParts.findIndex(part => part === "upload");
+		if (uploadIndex === -1) throw new Error('Invalid Cloudinary URL: "upload" not found');
+
+		const relevantParts = urlParts.slice(uploadIndex + 1);
+		const versionPart = relevantParts[0]?.startsWith("v") ? relevantParts[0] : null;
+		const publicIdParts = versionPart
+			? relevantParts.slice(1)
+			: relevantParts;
+
+		const lastPart = publicIdParts.pop();
+		const publicIdWithoutExt = lastPart?.split(".")[0];
+		const publicId = [...publicIdParts, publicIdWithoutExt].join("/");
+
+		await cloudinary.api.resource(publicId, { resource_type: "image" });
+		return true;
+	} catch (error: any) {
+		if (error?.error.http_code === 404) {
+			return false;
+		}
+		logger.error("Failed to check if image exists in Cloudinary:", error);
+		throw new Error("Error checking image existence");
+	}
+}
+
+
+export async function checkImagesExist(imageUrls: string[]): Promise<Record<string, boolean>> {
+	const results: Record<string, boolean> = {};
+
+	await Promise.all(
+		imageUrls.map(async (url) => {
+			try {
+				const exists = await checkImageExists(url);
+				results[url] = exists;
+			} catch {
+				results[url] = false;
+			}
+		})
+	);
+
+	return results;
 }
