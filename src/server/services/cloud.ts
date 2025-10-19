@@ -149,7 +149,6 @@ export async function checkImageExists(imageUrl: string): Promise<boolean> {
 		if (error?.error.http_code === 404) {
 			return false;
 		}
-		logger.error("Failed to check if image exists in Cloudinary:", error);
 		throw new Error("Error checking image existence");
 	}
 }

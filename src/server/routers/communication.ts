@@ -108,18 +108,21 @@ router.post("/", async (req: Request, res: Response) => {
             messages: [],
         };
 
-        // Save the new chat and let the database generate the ID
-        const createdChat = await AppDataSource.getRepository(Chat).save(newChat);
-        const conversationId = String(createdChat.id);
+        await AppDataSource.transaction(async tx => {
 
-        const userChatEntries = parsed.members.map(member => ({
-            userId: member.email,
-            chatId: conversationId,
-        }));
+            const chat = await tx.getRepository(Chat).insert(newChat);
+            const conversationId = chat.identifiers[0]?.id
 
-        await AppDataSource.getRepository(UserChat).insert(userChatEntries);
+            const userChatEntries = parsed.members.map(member => ({
+                userId: member.email,
+                chatId: conversationId,
+            }));
 
-        return res.status(201).json({ message: "Conversation created successfully", conversation_id: conversationId });
+            await tx.getRepository(UserChat).insert(userChatEntries);
+        });
+
+        return res.status(201).json({ message: "Conversation created successfully" });
+    
     } catch (error) {
         if (error instanceof z.ZodError) {
             return res.status(400).json({ message: "Validation error", errors: error.issues });
@@ -185,7 +188,7 @@ router.post("/messages/:conversationId", async (req: Request, res: Response) => 
         const { conversationId } = req.params;
 
         if (!conversationId) {
-            return res.status(400).json({ message: "Missing conversationId parameter" });
+            return res.status(400).json({ message: "conversationId is required" });
         }
 
         // Validate request body with MessageSchema

@@ -112,8 +112,7 @@ router.post('/', async (req: Request, res: Response) => {
             return res.status(400).json({ message: "Badge name must be unique" });
         }
 
-        const badge = AppDataSource.getRepository(Badge).create(validatedData);
-        await AppDataSource.getRepository(Badge).save(badge);
+        await AppDataSource.getRepository(Badge).insert(validatedData);
         return res.status(201).json({ message: "Badge created successfully" });
     } catch (error) {
         if (error instanceof z.ZodError) {

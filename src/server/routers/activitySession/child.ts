@@ -6,7 +6,6 @@ import { ChildActivitySession } from "@/db/entities/ChildActivitySession";
 import { ParentChild } from "@/db/entities/ParentChild";
 import { UserRole } from "@/helpers/types";
 import { authenticate, authorize } from "@/server/middleware/auth";
-import { Station } from "@/db/entities/Station";
 
 const router = express.Router();
 
@@ -295,7 +294,7 @@ router.get('/available-stations/:id', async (req: Request, res: Response) => {
             }));
 
         return res.status(200).json(stationsWithAvailability);
-        
+
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }

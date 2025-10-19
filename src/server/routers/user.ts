@@ -1,18 +1,4 @@
 import express, { Request, Response } from "express";
-import { AppDataSource } from "@/db";
-import { CommunicationSchema, MessageSchema } from "../schemas/communication";
-import { z } from "zod";
-import { webSocketManager } from "../services/websocket";
-import { authenticate } from "../middleware/auth";
-import { NotificationType } from "@/helpers/types";
-import { v4 as uuidv4 } from 'uuid';
-
-import { Message } from "@/db/entities/Message";
-import { User } from "@/db/entities/User";
-import { UserChat } from "@/db/entities/UserChat";
-import { Chat } from "@/db/entities/Chat";
-import { TypeOfChat } from "@/helpers/types";
-
 import { searchSimilarUsers } from "../services/comms";
 
 const router = express.Router();

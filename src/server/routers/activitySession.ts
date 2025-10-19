@@ -3,8 +3,7 @@ import express, { Request, Response } from "express";
 import { CreateActivitySessionSchema, UpdateActivitySessionSchema } from "../schemas/activitySession";
 import { z } from "zod";
 import { ActivitySession } from "@/db/entities/ActivitySession";
-import { authenticate, authorize } from "../middleware/auth";
-import { ActivityMode, ActivityType, UserRole } from "@/helpers/types";
+import { ActivityMode, ActivityType } from "@/helpers/types";
 import { Route } from "@/db/entities/Route";
 import { StationActivitySession } from "@/db/entities/StationActivitySession";
 import { calculateScheduledTime } from "../services/activity";
@@ -446,7 +445,6 @@ router.delete('/:id', async (req: Request, res: Response) => {
         if (!session) {
             return res.status(404).json({ message: "Session not found" });
         }
-
 
         await AppDataSource.getRepository(ActivitySession).delete(session.id);
         

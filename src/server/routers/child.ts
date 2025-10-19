@@ -2,12 +2,8 @@ import { AppDataSource } from "@/db";
 import { Child } from "@/db/entities/Child";
 import { ParentChild } from "@/db/entities/ParentChild";
 import express, { Request, Response } from "express";
-import { CreateChildSchema, UpdateChildSchema } from "../schemas/child";
+import { UpdateChildSchema } from "../schemas/child";
 import { z } from "zod";
-import { Parent } from "@/db/entities/Parent";
-import { In } from "typeorm";
-import { validate } from "@/lib/validator";
-import { ChildActivitySession } from "@/db/entities/ChildActivitySession";
 import { Station } from "@/db/entities/Station";
 import { StationType } from "@/helpers/types";
 import multer from "multer";
@@ -552,9 +548,11 @@ router.delete('/:id', async (req: Request, res: Response) => {
             return res.status(404).json({ message: "Child not found" });
         }
 
-        await AppDataSource.getRepository(ParentChild).delete({childId: childId})
+        await AppDataSource.transaction(async tx => {
+            await tx.getRepository(ParentChild).delete({childId: childId})
 
-        await AppDataSource.getRepository(Child).delete(child.id);
+            await tx.getRepository(Child).delete(child.id);
+        });
         
         return res.status(200).json({ message: "Child deleted successfully" });
 

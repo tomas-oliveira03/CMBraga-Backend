@@ -1,11 +1,9 @@
 import { AppDataSource } from "@/db";
 import { Instructor } from "@/db/entities/Instructor";
 import express, { Request, Response } from "express";
-import { CreateInstructorSchema, UpdateInstructorSchema } from "@/server/schemas/instructor";
+import { UpdateInstructorSchema } from "@/server/schemas/instructor";
 import informationHash from "@/lib/information-hash";
-import { checkIfEmailExists } from "../services/validator";
 import z from "zod";
-import { User } from "@/db/entities/User";
 import multer from "multer";
 import { isValidImageFile } from "@/helpers/storage";
 import { updateProfilePicture } from "../services/user";

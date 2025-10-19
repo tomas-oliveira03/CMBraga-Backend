@@ -120,17 +120,6 @@ router.post('/start', authenticate, authorize(UserRole.INSTRUCTOR), async (req: 
             return res.status(400).json({ message: "Cannot start activity: must be within 30 minutes of scheduled time" });
         }
 
-        const now = new Date();
-        const weatherData = await getWeatherFromCity("Braga")
-
-        await AppDataSource.getRepository(ActivitySession).update(activitySession.id, { 
-            startedAt: now, 
-            updatedAt: now,
-            weatherTemperature: weatherData?.temperature ?? null,
-            weatherType: weatherData?.weatherType ?? null,
-            startedById: req.user?.userId 
-        });
-
         const firstStationId = await getCurrentStationId(activitySessionId)
         if (!firstStationId){
             return res.status(404).json({ message: "First station not found" });
@@ -144,6 +133,17 @@ router.post('/start', authenticate, authorize(UserRole.INSTRUCTOR), async (req: 
         if (!firstStation){
             return res.status(404).json({ message: "First station not found" });
         }
+
+        const now = new Date();
+        const weatherData = await getWeatherFromCity("Braga")
+
+        await AppDataSource.getRepository(ActivitySession).update(activitySession.id, { 
+            startedAt: now, 
+            updatedAt: now,
+            weatherTemperature: weatherData?.temperature ?? null,
+            weatherType: weatherData?.weatherType ?? null,
+            startedById: req.user?.userId 
+        });
 
         return res.status(200).json(firstStation);
     } catch (error) {
@@ -282,22 +282,24 @@ router.post('/end', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Re
 
         const stationId = allStationsInActivity[0]?.stationId;
 
-        await AppDataSource.getRepository(StationActivitySession).update(
-            {
-                activitySessionId: activitySessionId,
-                stationId: stationId
-            },
-            {
-                leftAt: new Date()
-            }
-        )
+        await AppDataSource.transaction(async tx => {
+            await tx.getRepository(StationActivitySession).update(
+                {
+                    activitySessionId: activitySessionId,
+                    stationId: stationId
+                },
+                {
+                    leftAt: new Date()
+                }
+            )
 
-        const now = new Date();
-        await AppDataSource.getRepository(ActivitySession).update(activitySession.id, { 
-            finishedAt: now,
-            updatedAt: now,
-            finishedById: req.user?.userId
-        });
+            const now = new Date();
+            await tx.getRepository(ActivitySession).update(activitySession.id, { 
+                finishedAt: now,
+                updatedAt: now,
+                finishedById: req.user?.userId
+            });
+        })
 
         setActivityStats(activitySessionId)
 
@@ -995,7 +997,7 @@ router.post('/station/arrived-at-stop', authenticate, authorize(UserRole.INSTRUC
 /**
  * @swagger
  * /activity-session/actions/station/status:
- *   post:
+ *   get:
  *     summary: Get current station status
  *     description: Returns the current station and whether it is the last station, or the activity status.
  *     tags:
@@ -1127,7 +1129,7 @@ router.post('/station/arrived-at-stop', authenticate, authorize(UserRole.INSTRUC
  *                 value:
  *                   message: "Current station not found"
  */
-router.post('/station/status', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
+router.get('/station/status', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
     try {
         const activitySessionId = req.query.id;
 

@@ -340,12 +340,6 @@ router.delete('/', authenticate, authorize(UserRole.ADMIN), async (req: Request,
                 activitySessionId: activitySessionId
         });
 
-        // Remove parent from activity session
-        await AppDataSource.getRepository(ParentActivitySession).delete({
-            parentId: parentId,
-            activitySessionId: activitySessionId
-        });
-
         return res.status(200).json({ message: "Parent removed from activity session successfully" });
 
     } catch (error) {

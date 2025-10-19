@@ -1,11 +1,9 @@
 import { AppDataSource } from "@/db";
 import { Admin } from "@/db/entities/Admin";
 import express, { Request, Response } from "express";
-import { CreateAdminSchema, UpdateAdminSchema } from "../schemas/admin";
+import { UpdateAdminSchema } from "../schemas/admin";
 import { z } from "zod";
 import informationHash from "@/lib/information-hash";
-import { checkIfEmailExists } from "../services/validator";
-import { User } from "@/db/entities/User";
 import multer from "multer";
 import { isValidImageFile } from "@/helpers/storage";
 import { updateProfilePicture } from "../services/user";

@@ -2,7 +2,7 @@ import { AppDataSource } from "@/db";
 import { Issue } from "@/db/entities/Issue";
 import express, { Request, Response } from "express";
 import { CreateIssueSchema, UpdateIssueSchema } from "../schemas/issue";
-import { map, z } from "zod";
+import { z } from "zod";
 import { ActivitySession } from "@/db/entities/ActivitySession";
 import { Instructor } from "@/db/entities/Instructor";
 import multer from 'multer';
