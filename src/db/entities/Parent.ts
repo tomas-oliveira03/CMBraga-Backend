@@ -4,6 +4,7 @@ import { ChildActivitySession } from "./ChildActivitySession";
 import { User } from "./User";
 import { Feedback } from "./Feedback";
 import { ClientStat } from "./ClientStat";
+import { ParentStation } from "./ParentStation";
 
 @Entity()
 export class Parent {
@@ -40,6 +41,9 @@ export class Parent {
 
     @OneToMany(() => ParentChild, parentChild => parentChild.parent)
     parentChildren!: ParentChild[];
+
+    @OneToMany(() => ParentStation, parentStation => parentStation.parent)
+    parentStations!: ParentStation[];
 
     @OneToMany(() => ChildActivitySession, childActivitySession => childActivitySession.parent)
     parentChildActivitySession!: ChildActivitySession[];

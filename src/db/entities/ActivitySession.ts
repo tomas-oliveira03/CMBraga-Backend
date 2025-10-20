@@ -19,6 +19,7 @@ import { Instructor } from "./Instructor";
 import { ChildActivityRecord } from "./ChildActivityRecord";
 import { Feedback } from "./Feedback";
 import { Route } from "./Route";
+import { ParentStation } from "./ParentStation";
 
 @Entity()
 @Check(`"type" IN ('pedibus', 'ciclo_expresso')`)
@@ -85,6 +86,9 @@ export class ActivitySession {
 
     @OneToMany(() => ChildStation, (childStation) => childStation.activitySession)
     childStations!: ChildStation[];
+
+    @OneToMany(() => ParentStation, (parentStation) => parentStation.activitySession)
+    parentStations!: ParentStation[];
 
     @OneToMany(() => ChildActivityRecord, childActivityRecord => childActivityRecord.child)
     childActivityRecords!: ChildActivitySession[];
