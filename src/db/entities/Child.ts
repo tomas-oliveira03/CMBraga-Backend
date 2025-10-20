@@ -8,6 +8,7 @@ import { Station } from "./Station";
 import { ChildActivityRecord } from "./ChildActivityRecord";
 import { Feedback } from "./Feedback";
 import { ClientStat } from "./ClientStat";
+import { ChildHistory } from "./ChildHistory";
 
 @Entity()
 @Check(`"gender" IN ('male', 'female')`)
@@ -23,6 +24,12 @@ export class Child {
 
 	@Column({ type: 'varchar' })
 	gender!: ChildGender;
+
+	@Column({ type: 'int'})
+	heightCentimeters!: number;
+
+	@Column({ type: 'int'})
+	weightKilograms!: number; 
 
 	@Column({ type: 'varchar' })
 	school!: string;
@@ -66,6 +73,9 @@ export class Child {
 
 	@OneToMany(() => ClientStat, (cs) => cs.child)
 	clientStats!: ClientStat[];
+
+	@OneToMany(() => ChildHistory, (ch) => ch.child)
+	childHistory!: ChildHistory[];
 
 	@ManyToOne(() => Station)
 	dropOffStation!: Station;

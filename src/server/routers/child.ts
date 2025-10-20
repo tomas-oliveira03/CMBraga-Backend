@@ -1,6 +1,5 @@
 import { AppDataSource } from "@/db";
 import { Child } from "@/db/entities/Child";
-import { ParentChild } from "@/db/entities/ParentChild";
 import express, { Request, Response } from "express";
 import { UpdateChildSchema } from "../schemas/child";
 import { z } from "zod";
@@ -9,6 +8,8 @@ import { StationType } from "@/helpers/types";
 import multer from "multer";
 import { isValidImageFile } from "@/helpers/storage";
 import { updateProfilePicture } from "../services/user";
+import { ChildHistory } from "@/db/entities/ChildHistory";
+import { differenceInYears } from "date-fns";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -308,7 +309,7 @@ router.get('/:id', async (req: Request, res: Response) => {
  * /child/{id}:
  *   put:
  *     summary: Update a child
- *     description: Updates an existing child
+ *     description: Updates an existing child and records height/weight changes in history
  *     tags:
  *       - Child
  *     parameters:
@@ -350,6 +351,14 @@ router.get('/:id', async (req: Request, res: Response) => {
  *                 type: string
  *                 description: "JSON string of health problems object"
  *                 example: '{"allergies":["gluten","shellfish"],"chronicDiseases":[],"surgeries":[]}'
+ *               heightCentimeters:
+ *                 type: number
+ *                 example: 135
+ *                 description: "Child's height in centimeters (records history if provided)"
+ *               weightKilograms:
+ *                 type: number
+ *                 example: 32
+ *                 description: "Child's weight in kilograms (records history if provided)"
  *               dropOffStationId:
  *                 type: string
  *                 example: "station-uuid-2"
@@ -403,6 +412,14 @@ router.get('/:id', async (req: Request, res: Response) => {
  *                           type: string
  *                         year:
  *                           type: number
+ *               heightCentimeters:
+ *                 type: number
+ *                 example: 135
+ *                 description: "Child's height in centimeters (records history if provided)"
+ *               weightKilograms:
+ *                 type: number
+ *                 example: 32
+ *                 description: "Child's weight in kilograms (records history if provided)"
  *               dropOffStationId:
  *                 type: string
  *                 example: "station-uuid-2"
@@ -412,6 +429,8 @@ router.get('/:id', async (req: Request, res: Response) => {
  *             gender: "female"
  *             school: "Escola Básica Central"
  *             schoolGrade: 1
+ *             heightCentimeters: 120
+ *             weightKilograms: 25
  *             healthProblems:
  *               allergies: ["gluten", "shellfish"]
  *             dropOffStationId: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
@@ -468,10 +487,22 @@ router.put('/:id', upload.single('file'), async (req: Request, res: Response) =>
             }
             childData.profilePictureURL = await updateProfilePicture(child.profilePictureURL, req.file.buffer);
         }
+        await AppDataSource.transaction(async tx => {
+            await tx.getRepository(Child).update(child.id, {
+                ...childData,
+                updatedAt: new Date()
+            })
 
-        await AppDataSource.getRepository(Child).update(child.id, {
-            ...childData,
-            updatedAt: new Date()
+            const age = differenceInYears(new Date(), child.dateOfBirth);
+
+            if(childData.heightCentimeters || childData.weightKilograms){
+                await tx.getRepository(ChildHistory).insert({
+                    childId: childId,
+                    heightCentimeters: childData.heightCentimeters || child.heightCentimeters,
+                    weightKilograms: childData.weightKilograms || child.weightKilograms,
+                    age: age
+                })
+            }
         })
         
         return res.status(200).json({ message: "Child updated successfully" });
@@ -487,9 +518,5 @@ router.put('/:id', upload.single('file'), async (req: Request, res: Response) =>
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
-
-
-
-
 
 export default router;

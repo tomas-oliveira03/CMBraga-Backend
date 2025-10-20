@@ -25,6 +25,8 @@ import { StationType } from "@/helpers/types";
 import { In } from "typeorm";
 import { CreateChildSchema } from "../schemas/child";
 import { webSocketManager } from "../services/websocket";
+import { ChildHistory } from "@/db/entities/ChildHistory";
+import { differenceInYears } from "date-fns";
 
 const router = express.Router();
 
@@ -632,6 +634,8 @@ router.post('/register/parent', async (req: Request, res: Response) => {
  *               - school
  *               - schoolGrade
  *               - dateOfBirth
+ *               - heightCentimeters
+ *               - weightKilograms
  *               - parentIds
  *               - dropOffStationId
  *             properties:
@@ -655,6 +659,18 @@ router.post('/register/parent', async (req: Request, res: Response) => {
  *                 type: string
  *                 format: date
  *                 example: "2015-08-25"
+ *               heightCentimeters:
+ *                 type: number
+ *                 minimum: 0
+ *                 nullable: true
+ *                 example: 120
+ *                 description: "Child's height in centimeters"
+ *               weightKilograms:
+ *                 type: number
+ *                 minimum: 0
+ *                 nullable: true
+ *                 example: 25
+ *                 description: "Child's weight in kilograms"
  *               healthProblems:
  *                 type: object
  *                 nullable: true
@@ -694,6 +710,8 @@ router.post('/register/parent', async (req: Request, res: Response) => {
  *             school: "Escola Básica de Braga"
  *             schoolGrade: 2
  *             dateOfBirth: "2016-02-14"
+ *             heightCentimeters: 110
+ *             weightKilograms: 22
  *             healthProblems:
  *               allergies: ["lactose"]
  *               chronicDiseases: []
@@ -748,19 +766,28 @@ router.post('/register/child', async (req: Request, res: Response) => {
             profilePictureURL: profilePictureURL
         }
 
-        const child = await AppDataSource.getRepository(Child).insert(childData);
-        const childId = child.identifiers[0]?.id;
+        await AppDataSource.transaction(async tx => {
+            const child = await tx.getRepository(Child).insert(childData);
+        
+            const childId = child.identifiers[0]!.id;
 
-        if(!childId){
-            throw new Error("Error inserting child");
-        }
+            const parentChildConnector = parents.map(parent => ({
+                parentId: parent.id,
+                childId: childId
+            }));
 
-        const parentChildConnector = parents.map(parent => ({
-            parentId: parent.id,
-            childId: childId
-        }));
+            await tx.getRepository(ParentChild).insert(parentChildConnector);
 
-        await AppDataSource.getRepository(ParentChild).insert(parentChildConnector);
+
+            const age = differenceInYears(new Date(), childData.dateOfBirth);
+
+            await tx.getRepository(ChildHistory).insert({
+                childId: childId,
+                heightCentimeters: childData.heightCentimeters,
+                weightKilograms: childData.weightKilograms,
+                age: age
+            })
+        });
 
         return res.status(201).json({message: "Child created successfully"});
 

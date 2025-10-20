@@ -22,6 +22,7 @@ import { BadgeCriteria, StationType } from "@/helpers/types";
 import informationHash from "@/lib/information-hash";
 import { Route } from "@/db/entities/Route";
 import { RouteStation } from "@/db/entities/RouteStation";
+import { ChildHistory } from "@/db/entities/ChildHistory";
 import fs from "fs";
 import path from "path";
 import { selectRandomDefaultProfilePicture, USER_DEFAULT_PROFILE_PICTURES } from "@/helpers/storage";
@@ -97,6 +98,7 @@ async function dbHydration() {
     const routeRepo = dataSource.getRepository(Route);
     const routeStationRepo = dataSource.getRepository(RouteStation);
     const feedbackRepo = dataSource.getRepository(Feedback);
+    const childHistoryRepo = dataSource.getRepository(ChildHistory);
 
     console.log("Cleaning tables (dependents first)...");
     // Clear repositories in order, but ignore errors if the table doesn't exist yet
@@ -108,6 +110,7 @@ async function dbHydration() {
       issueRepo,
       reportRepo,
       feedbackRepo,
+      childHistoryRepo,
       parentChildRepo,
       userRepo,
       childRepo,
@@ -296,12 +299,61 @@ async function dbHydration() {
         schoolGrade: (i % 6) + 1,
         dropOffStationId: schoolStation!.id,
         dateOfBirth: new Date(`2015-0${(i % 9) + 1}-15`),
+        heightCentimeters: 120 + (i * 3), // Heights from 120cm to 147cm
+        weightKilograms: 25 + (i * 2), // Weights from 25kg to 43kg
         profilePictureURL: selectRandomDefaultProfilePicture()
       });
       criancas.push(child);
     }
     await childRepo.save(criancas);
     console.log(`✅ Created ${criancas.length} children`);
+
+    // 8.1. Create child history records (tracking growth over time)
+    const childHistories: ChildHistory[] = [];
+    const currentDate = new Date();
+    
+    for (const child of criancas) {
+      // Calculate age from date of birth
+      const birthDate = new Date(child.dateOfBirth);
+      const age = currentDate.getFullYear() - birthDate.getFullYear();
+      
+      // Create 3 historical records for each child (simulating measurements over 6 months)
+      // 6 months ago
+      childHistories.push(
+        childHistoryRepo.create({
+          childId: child.id,
+          heightCentimeters: child.heightCentimeters - 6,
+          weightKilograms: child.weightKilograms - 3,
+          age: age - 1,
+          createdAt: new Date(currentDate.getTime() - 180 * 24 * 60 * 60 * 1000)
+        })
+      );
+      
+      // 3 months ago
+      childHistories.push(
+        childHistoryRepo.create({
+          childId: child.id,
+          heightCentimeters: child.heightCentimeters - 3,
+          weightKilograms: child.weightKilograms - 1,
+          age: age,
+          createdAt: new Date(currentDate.getTime() - 90 * 24 * 60 * 60 * 1000)
+        })
+      );
+      
+      // Current measurements
+      childHistories.push(
+        childHistoryRepo.create({
+          childId: child.id,
+          heightCentimeters: child.heightCentimeters,
+          weightKilograms: child.weightKilograms,
+          age: age,
+          createdAt: currentDate
+        })
+      );
+    }
+    
+    await childHistoryRepo.save(childHistories);
+    console.log(`✅ Created ${childHistories.length} child history records (${childHistories.length / criancas.length} per child)`);
 
     // 9. Create parent-child relationships
     const parentChildAssociations = criancas.map((c, i) =>
@@ -540,13 +592,15 @@ async function dbHydration() {
     console.log("✅ 3. Criadas " + routeStations.length + " relações rota-estação");
     console.log("✅ 4. Criada atividade baseada na rota");
     console.log("✅ 5. Criados 10 pais e 10 crianças");
-    console.log("✅ 6. Criados 2 instrutores");
-    console.log("✅ 7. Instrutores e crianças registados na atividade");
-    console.log("✅ 8. Crianças distribuídas entre " + pickupStations.length + " estações de recolha");
-    console.log("✅ 9. Todas as crianças têm drop-off na escola (última estação)");
+    console.log("✅ 6. Criados " + childHistories.length + " registos de histórico de crianças (3 por criança)");
+    console.log("✅ 7. Criados 2 instrutores");
+    console.log("✅ 8. Instrutores e crianças registados na atividade");
+    console.log("✅ 9. Crianças distribuídas entre " + pickupStations.length + " estações de recolha");
+    console.log("✅ 10. Todas as crianças têm drop-off na escola (última estação)");
     console.log("📍 Distância total da rota: " + route.distanceMeters + " metros");
     console.log("🏅 Criadas 8 medalhas");
     console.log("💬 Criados 5 feedbacks de pais sobre a atividade");
+    console.log("📊 Cada criança tem 3 registos de crescimento (6 meses, 3 meses e atual)");
 
     console.log("Seeding finished.");
   } catch (err) {

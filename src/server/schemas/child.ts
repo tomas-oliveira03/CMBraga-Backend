@@ -27,6 +27,8 @@ export const ChildSchema = z.object({
   parentIds: z.array(z.string()),
   name: z.string(),
   gender: z.nativeEnum(ChildGender),
+  heightCentimeters: z.number().int(),
+  weightKilograms: z.number().int(),
   school: z.string(),
   schoolGrade: z.number(),
   dropOffStationId: z.string(),
@@ -42,7 +44,12 @@ export const CreateChildSchema = ChildSchema.omit({
   updatedAt: true
 });
 
-export const UpdateChildSchema = CreateChildSchema.partial();
+export const UpdateChildSchema = ChildSchema.omit({
+    id: true,
+    dateOfBirth: true,
+    createdAt: true,
+    updatedAt: true
+}).partial();
 
 
 export type Child = z.infer<typeof ChildSchema>;

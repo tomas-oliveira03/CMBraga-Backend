@@ -53,6 +53,7 @@
     "cloudinary": "^2.7.0",
     "cors": "^2.8.5",
     "csv-writer": "^1.6.0",
+    "date-fns": "^4.1.0",
     "express": "^5.1.0",
     "haversine-distance": "^1.2.4",
     "ioredis": "^5.8.0",
