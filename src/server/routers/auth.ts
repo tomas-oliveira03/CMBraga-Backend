@@ -24,6 +24,7 @@ import { selectRandomDefaultProfilePicture } from "@/helpers/storage";
 import { StationType } from "@/helpers/types";
 import { In } from "typeorm";
 import { CreateChildSchema } from "../schemas/child";
+import { webSocketManager } from "../services/websocket";
 
 const router = express.Router();
 
@@ -107,6 +108,51 @@ router.post('/login', async (req: Request, res: Response) => {
         }
         
         return res.status(401).json({ message: "Invalid email or password" });
+    }
+});
+
+
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: User logout
+ *     description: Logout user (client-side token removal). Token remains valid until expiration.
+ *     tags:
+ *       - Authentication
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Logout successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Logged out successfully"
+ *       401:
+ *         description: Authentication required or invalid token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Access token required"
+ */
+router.post('/logout', authenticate, (req: Request, res: Response) => {
+    try {
+        const userId = req.user!.email;
+
+        webSocketManager.disconnectUser(userId);
+        
+        return res.status(200).json({ message: 'Logged out successfully.' });
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 
