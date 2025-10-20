@@ -7,6 +7,8 @@ import { ActivityMode, ActivityType } from "@/helpers/types";
 import { Route } from "@/db/entities/Route";
 import { StationActivitySession } from "@/db/entities/StationActivitySession";
 import { calculateScheduledTime } from "../services/activity";
+import { Instructor } from "@/db/entities/Instructor";
+import { InstructorActivitySession } from "@/db/entities/InstructorActivitySession";
 
 const router = express.Router();
 
@@ -439,11 +441,24 @@ router.delete('/:id', async (req: Request, res: Response) => {
         const sessionId = req.params.id;
         
         const session = await AppDataSource.getRepository(ActivitySession).findOne({
-            where: { id: sessionId }
+            where: { id: sessionId },
+            relations:{
+                instructorActivitySessions: true,
+                childActivitySessions: true,
+                parentActivitySessions: true
+            }
         })
 
         if (!session) {
             return res.status(404).json({ message: "Session not found" });
+        }
+
+        if(session.startedAt){
+            return res.status(404).json({ message: "Session already started"});
+        }
+
+        if(session.childActivitySessions.length > 0 || session.parentActivitySessions.length > 0 || session.instructorActivitySessions.length > 0){
+            return res.status(400).json({ message: "Session has active child, parent or instructor sessions" });
         }
 
         await AppDataSource.getRepository(ActivitySession).delete(session.id);
