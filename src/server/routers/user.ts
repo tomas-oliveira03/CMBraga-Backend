@@ -1,5 +1,5 @@
 import express, { Request, Response } from "express";
-import { searchSimilarUsers } from "../services/comms";
+import { getAlphabeticOrderedUsers, searchSimilarUsers } from "../services/comms";
 
 const router = express.Router();
 
@@ -18,6 +18,12 @@ const router = express.Router();
  *           type: string
  *         required: true
  *         description: The search query string
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: string
+ *         required: false
+ *         description: The page number to retrieve
  *     responses:
  *       200:
  *         description: A list of matching users
@@ -51,13 +57,35 @@ const router = express.Router();
  */
 router.get("/search",  async (req: Request, res: Response) => {
     try {
-        const query = req.query.query;
-        if (!query || typeof query !== "string") {
+        const rawQuery = req.query.query;
+        const rawPage = req.query.page;
+        const pageParam = Array.isArray(rawPage) ? rawPage[0] : rawPage;
+        let pageNumber = 0;
+        if (pageParam !== undefined) {
+            const parsed = parseInt(pageParam as string, 10);
+            if (isNaN(parsed) || parsed < 0) {
+                return res.status(400).json({ message: "Invalid page parameter. Page must be an integer >= 0" });
+            }
+            pageNumber = parsed;
+        }
+
+        const queryParam = Array.isArray(rawQuery) ? rawQuery[0] : rawQuery;
+
+        if (queryParam === undefined) {
+            const users = await getAlphabeticOrderedUsers(pageNumber);
+            return res.status(200).json(users);
+        }
+
+        if (typeof queryParam !== "string") {
             return res.status(400).json({ message: "Missing or invalid query parameter" });
         }
+
+        const query = queryParam;
         const lowercaseQuery = query.toLowerCase();
-        const users = await searchSimilarUsers(lowercaseQuery);
+        const querysize = lowercaseQuery.length;
+        const users = await searchSimilarUsers(lowercaseQuery, pageNumber);
         return res.status(200).json(users);
+        
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }

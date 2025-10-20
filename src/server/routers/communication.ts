@@ -107,10 +107,12 @@ router.post("/", async (req: Request, res: Response) => {
             messages: [],
         };
 
+        let conversationId: string | undefined;
+
         await AppDataSource.transaction(async tx => {
 
             const chat = await tx.getRepository(Chat).insert(newChat);
-            const conversationId = chat.identifiers[0]?.id
+            conversationId = chat.identifiers[0]?.id
 
             const userChatEntries = parsed.members.map(member => ({
                 userId: member.email,
@@ -120,8 +122,8 @@ router.post("/", async (req: Request, res: Response) => {
             await tx.getRepository(UserChat).insert(userChatEntries);
         });
 
-        return res.status(201).json({ message: "Conversation created successfully" });
-    
+        return res.status(201).json({ message: "Conversation created successfully", chatId: conversationId });
+
     } catch (error) {
         if (error instanceof z.ZodError) {
             return res.status(400).json({ message: "Validation error", errors: error.issues });

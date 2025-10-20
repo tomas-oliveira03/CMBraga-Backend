@@ -5,6 +5,7 @@ import { UserChat } from "@/db/entities/UserChat";
 import { Chat } from "@/db/entities/Chat";
 
 const MESSAGES_PER_PAGE = 20;
+const USERS_PER_PAGE = 10;
 
 export async function checkIfChatAlreadyExists(usersIDs: string[]): Promise<Chat | null> {
     try {
@@ -119,16 +120,33 @@ export async function getMessagesFromChat(chatId: string, page: number): Promise
     }
 }
 
-export async function searchSimilarUsers(query: string): Promise<User[] | null> {
+export async function searchSimilarUsers(query: string, pageNumber: number): Promise<User[] | null> {
     try {
         // Given a part of a name or email, find if it belongs to any user, even if in middle of name or email
         const users = await AppDataSource.getRepository(User)
             .createQueryBuilder("user")
+            .skip(pageNumber * USERS_PER_PAGE)
+            .take(USERS_PER_PAGE)
             .where("user.name LIKE :query OR user.id LIKE :query", { query: `%${query}%` })
             .getMany();
         return users;
     } catch (error) {
         console.error("Error searching for users:", error);
         throw new Error("Failed to search for users");
+    }
+}
+
+export async function getAlphabeticOrderedUsers(jump: number): Promise<User[]> {
+    try {
+        const users = await AppDataSource.getRepository(User)
+            .createQueryBuilder("user")
+            .orderBy("user.name", "ASC")
+            .skip(jump * USERS_PER_PAGE)
+            .take(USERS_PER_PAGE)
+            .getMany();
+        return users;
+    } catch (error) {
+        console.error("Error retrieving users:", error);
+        throw new Error("Failed to retrieve users");
     }
 }
