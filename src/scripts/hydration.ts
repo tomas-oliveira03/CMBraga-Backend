@@ -236,6 +236,7 @@ async function dbHydration() {
       id: hp1.email,
       name: hp1.name,
       healthProfessionalId: hp1.id,
+      profilePictureURL: hp1.profilePictureURL
     }));
 
     const admin = adminRepo.create({ 
@@ -252,6 +253,7 @@ async function dbHydration() {
       id: admin.email,
       name: admin.name,
       adminId: admin.id,
+      profilePictureURL: admin.profilePictureURL
     }));
 
     // 7. Create parents
@@ -278,6 +280,7 @@ async function dbHydration() {
         id: parent.email,
         name: parent.name,
         parentId: parent.id,
+        profilePictureURL: parent.profilePictureURL
       }));
     }
 
@@ -335,6 +338,7 @@ async function dbHydration() {
         id: instructor.email,
         name: instructor.name,
         instructorId: instructor.id,
+        profilePictureURL: instructor.profilePictureURL
       }));
     }
 

@@ -13,6 +13,9 @@ export class User {
     @Column({ type: 'varchar' })
     name!: string;
 
+    @Column({ type: 'varchar' })
+    profilePictureURL!: string;
+
     @Column({ type: "varchar", nullable: true })
     adminId!: string | null;
 

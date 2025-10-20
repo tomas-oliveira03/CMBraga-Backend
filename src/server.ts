@@ -79,7 +79,7 @@ const setupWebSocketServer = () => {
             logger.websocket(`WebSocket authentication successful for user ${decoded.userId}`);
             
             // Connect user through WebSocket manager
-            webSocketManager.connectUser(decoded.userId, decoded.role, ws);
+            webSocketManager.connectUser(decoded.email, decoded.role, ws);
             
         } catch (error) {
             logger.error('WebSocket authentication error:', error);

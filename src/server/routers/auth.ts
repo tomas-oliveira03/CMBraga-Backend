@@ -235,6 +235,7 @@ router.post('/register/admin', async (req: Request, res: Response) => {
             await tx.getRepository(User).insert({
                 id: validatedData.email,
                 name: validatedData.name,
+                profilePictureURL: profilePictureURL,
                 adminId: adminId
             });
         })
@@ -334,6 +335,7 @@ router.post('/register/instructor', async (req: Request, res: Response) => {
             await tx.getRepository(User).insert({
                 id: validatedData.email,
                 name: validatedData.name,
+                profilePictureURL: profilePictureURL,
                 instructorId: instructorId,
             });
         })
@@ -437,6 +439,7 @@ router.post('/register/health-professional', async (req: Request, res: Response)
             await tx.getRepository(User).insert({
                 id: validatedData.email,
                 name: validatedData.name,
+                profilePictureURL: profilePictureURL,
                 healthProfessionalId: healthProfessionalId
             });
         })
@@ -540,6 +543,7 @@ router.post('/register/parent', async (req: Request, res: Response) => {
             await tx.getRepository(User).insert({
                 id: validatedData.email,
                 name: validatedData.name,
+                profilePictureURL: profilePictureURL,
                 parentId: parentId
             });
         })

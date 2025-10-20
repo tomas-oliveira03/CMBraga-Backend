@@ -7,6 +7,7 @@ import informationHash from "@/lib/information-hash";
 import multer from "multer";
 import { updateProfilePicture } from "../services/user";
 import { isValidImageFile } from "@/helpers/storage";
+import { User } from "@/db/entities/User";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -266,9 +267,24 @@ router.put('/:id', upload.single('file'), async (req: Request, res: Response) =>
             parentData.profilePictureURL = await updateProfilePicture(parent.profilePictureURL, req.file.buffer);
         }
 
-        await AppDataSource.getRepository(Parent).update(parent.id, {
-            ...parentData,
-            updatedAt: new Date()
+        const userUpdateData: Partial<User> = {};
+        if (validatedData.name) userUpdateData.name = validatedData.name;
+        if (req.file) userUpdateData.profilePictureURL = parentData.profilePictureURL;
+
+        await AppDataSource.transaction(async tx => {
+
+            await AppDataSource.getRepository(Parent).update(parent.id, {
+                ...parentData,
+                updatedAt: new Date()
+            });
+
+            // If name or profilePictureURL are updated, the copy in User table also needs to be updated
+            if (Object.keys(userUpdateData).length > 0) {
+                await tx.getRepository(User).update(
+                    { id: parent.email },
+                    userUpdateData
+                );
+            }
         });
         
         return res.status(200).json({ message: "Parent updated successfully" });

@@ -1,10 +1,12 @@
 import { WebSocket } from 'ws';
 import { UserRole } from '@/helpers/types';
 import { logger } from '@/lib/logger';
-import { userConnectedToWebsocket, WebSocketEvent, WebSocketMessage } from './websocket-events';
+import { userConnectedToWebsocket } from './websocket-events';
+import { WebSocketMessage } from '@/helpers/websocket-types';
 
 class WebSocketManager {
     private connections: Map<string, WebSocket> = new Map();
+    private chatRooms: Map<string, string[]> = new Map();
     
     // Connect user - ensures only one connection per user
     connectUser(userId: string, role: UserRole, ws: WebSocket): void {
@@ -95,6 +97,29 @@ class WebSocketManager {
             this.connections.delete(userId);
             logger.websocket(`User ${userId} disconnected by server`);
         }
+    }
+
+    // Add new chat room
+    addChatRoom(roomId: string, userIds: string[]): void {
+        this.chatRooms.set(roomId, userIds);
+        logger.websocket(`Created chat room ${roomId} with ${userIds.length} users`);
+    }
+
+    // Send message to chat room
+    sendToChatRoom(roomId: string, senderId: string, message: WebSocketMessage): void {
+        const userIds = this.chatRooms.get(roomId);
+        if (userIds) {
+            const filteredUserIds = userIds.filter(userId => userId !== senderId);
+            this.sendToUsers(filteredUserIds, message);
+            logger.websocket(`Sent ${message.event} to chat room ${roomId} (${filteredUserIds.length} users)`);
+        } else {
+            logger.websocket(`Chat room ${roomId} not found`);
+        }
+    }
+
+    // Get chat room users
+    getChatRoomUsers(roomId: string): string[] | undefined {
+        return this.chatRooms.get(roomId);
     }
 }
 

@@ -1,28 +1,44 @@
+import { ConnectionStatus, WebSocketEvent } from "@/helpers/websocket-types";
 import { webSocketManager } from "./websocket";
-
-export enum WebSocketEvent {
-    NEW_MESSAGE = 'newMessage',
-    NEW_NOTIFICATION = 'newNotification',
-    CONNECTION_STATUS = 'connectionStatus'
-}
-
-export interface WebSocketMessage {
-    event: WebSocketEvent;
-    data: any;
-    timestamp: Date;
-}
-
 
 // Send message when user connects to WebSocket
 export function userConnectedToWebsocket (userId: string) {
-    webSocketManager.sendToUser(userId, {
-        event: WebSocketEvent.CONNECTION_STATUS,
+    const message = {
+        event: WebSocketEvent.CONNECTION_STATUS as WebSocketEvent.CONNECTION_STATUS,
         data: {
-            status: 'connected',
+            status: ConnectionStatus.CONNECTED,
             message: 'WebSocket connection established successfully',
         },
         timestamp: new Date()
-    });
+    };
+
+    webSocketManager.sendToUser(userId, message)
+}
+
+
+// Add new chatRoom
+export function addNewChatRoom(chatId: string, userIds: string[]) {
+    webSocketManager.addChatRoom(chatId, userIds);
+}
+
+
+// Send message to chatRoom
+export function sendMessageToChatRoom(chatId: string, senderId: string) {
+    const message = {
+        event: WebSocketEvent.NEW_MESSAGE as WebSocketEvent.NEW_MESSAGE,
+        data: {
+            sender: {
+                id: senderId,
+                name: "NAME",
+                profilePictureURL: "PROFILE_PICTURE_URL"
+            },
+            chatId: chatId,
+            message: 'Hello, this is a message to the chat room!',
+        },
+        timestamp: new Date()
+    };
+
+    webSocketManager.sendToChatRoom(chatId, senderId, message);
 }
 
 
