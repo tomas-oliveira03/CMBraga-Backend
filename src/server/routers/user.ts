@@ -1,5 +1,5 @@
 import express, { Request, Response } from "express";
-import { getAlphabeticOrderedUsers, searchSimilarUsers } from "../services/comms";
+import { getAlphabeticOrderedUsers, searchSimilarUsers, normalizeUsers } from "../services/comms";
 
 const router = express.Router();
 
@@ -73,7 +73,7 @@ router.get("/search",  async (req: Request, res: Response) => {
 
         if (queryParam === undefined) {
             const users = await getAlphabeticOrderedUsers(pageNumber);
-            return res.status(200).json(users);
+            return res.status(200).json(normalizeUsers(users));
         }
 
         if (typeof queryParam !== "string") {
@@ -84,7 +84,10 @@ router.get("/search",  async (req: Request, res: Response) => {
         const lowercaseQuery = query.toLowerCase();
         const querysize = lowercaseQuery.length;
         const users = await searchSimilarUsers(lowercaseQuery, pageNumber);
-        return res.status(200).json(users);
+        if (!users) {
+            return res.status(200).json([]);
+        }
+        return res.status(200).json(normalizeUsers(users));
         
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });

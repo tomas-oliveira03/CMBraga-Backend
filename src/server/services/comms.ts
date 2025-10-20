@@ -3,6 +3,7 @@ import { Message } from "@/db/entities/Message";
 import { User } from "@/db/entities/User";
 import { UserChat } from "@/db/entities/UserChat";
 import { Chat } from "@/db/entities/Chat";
+import { UserRole } from "@/helpers/types";
 
 const MESSAGES_PER_PAGE = 20;
 const USERS_PER_PAGE = 10;
@@ -149,4 +150,22 @@ export async function getAlphabeticOrderedUsers(jump: number): Promise<User[]> {
         console.error("Error retrieving users:", error);
         throw new Error("Failed to retrieve users");
     }
+}
+
+// Helper: normalize user objects to { id, name, role }
+export function normalizeUsers(users: any[]) {
+    return (users || []).map(u => {
+        const role =
+            u.adminId ? UserRole.ADMIN :
+            u.instructorId ? UserRole.INSTRUCTOR :
+            u.parentId ? UserRole.PARENT :
+            u.healthProfessionalId ? UserRole.HEALTH_PROFESSIONAL :
+            UserRole.HEALTH_PROFESSIONAL;
+
+        return {
+            id: u.id,
+            name: u.name,
+            role
+        };
+    });
 }
