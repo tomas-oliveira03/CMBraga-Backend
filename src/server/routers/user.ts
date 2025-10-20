@@ -1,7 +1,117 @@
 import express, { Request, Response } from "express";
 import { getAlphabeticOrderedUsers, searchSimilarUsers, normalizeUsers } from "../services/comms";
+import { AppDataSource } from "@/db";
+import { User } from "@/db/entities/User";
+import { UserRole } from "@/helpers/types";
 
 const router = express.Router();
+
+/**
+ * @swagger
+ * /user/{id}:
+ *   get:
+ *     summary: Get user by ID
+ *     description: Returns a single user by their ID (email) with role information
+ *     tags:
+ *       - User
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "user@example.com"
+ *         description: User ID (email address)
+ *     responses:
+ *       200:
+ *         description: User found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                   example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *                   description: The user's role-specific ID (adminId, instructorId, etc.)
+ *                 email:
+ *                   type: string
+ *                   example: "user@example.com"
+ *                   description: The user's email address
+ *                 name:
+ *                   type: string
+ *                   example: "João Silva"
+ *                   description: The user's full name
+ *                 profilePictureURL:
+ *                   type: string
+ *                   example: "https://storage.example.com/profiles/user-1.jpg"
+ *                   description: URL to the user's profile picture
+ *                 role:
+ *                   type: string
+ *                   enum: [admin, instructor, parent, health_professional]
+ *                   example: "admin"
+ *                   description: The user's role in the system
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "User not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
+router.get('/:id', async (req: Request, res: Response) => {
+    try {
+        const userId = req.params.id;
+
+        const user = await AppDataSource.getRepository(User).findOne({
+            where: {
+                id: userId
+            },
+            select: {
+                id: true,
+                name: true,
+                profilePictureURL: true,
+                adminId: true,
+                instructorId: true,
+                healthProfessionalId: true,
+                parentId: true
+            }
+        });
+        if (!user){
+            return res.status(404).json({ message: "User not found" })
+        }
+
+        let userRole = UserRole.ADMIN
+        let clientId = user.adminId
+        if (user.instructorId) { userRole = UserRole.INSTRUCTOR, clientId=user.instructorId }
+        else if (user.healthProfessionalId) { userRole = UserRole.HEALTH_PROFESSIONAL, clientId=user.healthProfessionalId }
+        else if (user.parentId) { userRole = UserRole.PARENT, clientId=user.parentId }
+
+        return res.status(200).json({ 
+            id: clientId,
+            email: user.id,
+            name: user.name,
+            profilePictureURL: user.profilePictureURL,
+            role: userRole
+         });
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+});
+
 
 /**
  * @swagger
@@ -10,7 +120,7 @@ const router = express.Router();
  *     summary: Search for users by a query string
  *     description: Returns a list of users whose names or other attributes match the query string.
  *     tags:
- *       - Users
+ *       - User
  *     parameters:
  *       - in: query
  *         name: query

@@ -12,7 +12,8 @@ import { UserChat } from "@/db/entities/UserChat";
 import { Chat } from "@/db/entities/Chat";
 import { TypeOfChat } from "@/helpers/types";
 
-import { checkIfChatAlreadyExists, checkIfUserInChat, checkIfUserExists, checkIfChatExists, getMessagesFromChat } from "../services/comms";
+import { checkIfChatAlreadyExists, checkIfUserInChat, checkIfUserExists, checkIfChatExists, getMessagesFromChat, getChat } from "../services/comms";
+import { addNewChatRoom, sendMessageToChatRoom } from "../services/websocket-events";
 
 const router = express.Router();
 
@@ -119,6 +120,9 @@ router.post("/", async (req: Request, res: Response) => {
                 chatId: conversationId,
             }));
 
+            // Create new chat room in WebSocket manager
+            addNewChatRoom(conversationId!, parsed.members.map(m => m.email));
+
             await tx.getRepository(UserChat).insert(userChatEntries);
         });
 
@@ -204,7 +208,7 @@ router.post("/messages/:conversationId", async (req: Request, res: Response) => 
         }
 
         // Check if conversation exists
-        const chatExists = await checkIfChatExists(conversationId);
+        const chatExists = await getChat(conversationId)
         if (!chatExists) {
             return res.status(404).json({ message: "Conversation not found" });
         }
@@ -227,33 +231,8 @@ router.post("/messages/:conversationId", async (req: Request, res: Response) => 
         await AppDataSource.getRepository(Message).insert(newMessage);
 
         // Send WebSocket notification to room members
-        /*
-        const senderMember = communication.members.find(m => m.id === sender_id);
-        if (senderMember) {
-            await webSocketManager.sendNotificationToRoom(conversationId, {
-                type: NotificationType.MESSAGE,
-                conversationId,
-                title: 'New Message',
-                content: content,
-                from: {
-        // Send WebSocket notification to room members
-        /*
-        const senderMember = communication.members.find(m => m.id === sender_id);
-        if (senderMember) {
-            await webSocketManager.sendNotificationToRoom(conversationId, {
-                type: NotificationType.MESSAGE,
-                conversationId,
-                title: 'New Message',
-                content: content,
-                from: {
-                    userId: senderMember.id,
-                    name: (senderMember as { id: string; name?: string }).name ?? "",
-                    role: req.user!.role
-                },
-                timestamp: newMessage.timestamp
-            }, sender_id); // Exclude sender from notification
-        }
-        */
+        sendMessageToChatRoom(conversationId, chatExists.chatType, chatExists.chatName, sender_id, parsed.content);
+        
 
         return res.status(201).json({ message: "Message sent successfully" });
     } catch (error) {

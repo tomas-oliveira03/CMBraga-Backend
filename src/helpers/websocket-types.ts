@@ -1,3 +1,5 @@
+import { TypeOfChat } from "./types";
+
 export enum WebSocketEvent {
     NEW_MESSAGE = 'newMessage',
     CONNECTION_STATUS = 'connectionStatus'
@@ -14,7 +16,12 @@ interface NewMessageData {
         name: string;
         profilePictureURL: string;
     };
-    chatId: string;
+    chat: {
+        id: string;
+        type: TypeOfChat;
+        name: string | null;
+    }
+
     message: string;
 }
 

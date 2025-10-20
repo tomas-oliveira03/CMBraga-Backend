@@ -18,6 +18,7 @@ export interface LoginResponse {
         id: string;
         name: string;
         email: string;
+        profilePictureURL: string;
         role: UserRole;
     };
 }
@@ -33,6 +34,7 @@ export class AuthenticationService {
                 id: true,
                 name: true,
                 email: true,
+                profilePictureURL: true,
                 password: true,
                 activatedAt: true
             }
@@ -48,6 +50,7 @@ export class AuthenticationService {
                 id: true,
                 name: true,
                 email: true,
+                profilePictureURL: true,
                 password: true,
                 activatedAt: true
             }
@@ -63,6 +66,7 @@ export class AuthenticationService {
                 id: true,
                 name: true,
                 email: true,
+                profilePictureURL: true,
                 password: true,
                 activatedAt: true
             }
@@ -78,6 +82,7 @@ export class AuthenticationService {
                 id: true,
                 name: true,
                 email: true,
+                profilePictureURL: true,
                 password: true,
                 activatedAt: true
             }
@@ -100,7 +105,7 @@ export class AuthenticationService {
     }
 
     private static createAuthResponse(
-        user: { id: string; name: string; email: string }, 
+        user: { id: string; name: string; email: string, profilePictureURL: string }, 
         role: UserRole
     ): LoginResponse {
         const token = AuthService.generateToken({
@@ -115,6 +120,7 @@ export class AuthenticationService {
                 id: user.id,
                 name: user.name,
                 email: user.email,
+                profilePictureURL: user.profilePictureURL,
                 role
             }
         };

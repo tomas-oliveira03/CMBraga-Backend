@@ -71,6 +71,8 @@ const router = express.Router();
  *                       type: string
  *                     email:
  *                       type: string
+ *                     profilePictureURL:
+ *                       type: string
  *                     role:
  *                       type: string
  *                       enum: [admin, instructor, parent, health_professional]

@@ -72,6 +72,18 @@ export async function checkIfChatExists(chatId: string): Promise<boolean> {
     }
 }
 
+
+export async function getChat(chatId: string): Promise<Chat | null> {
+    try {
+        const chat = await AppDataSource.getRepository(Chat)
+            .findOne({ where: { id: chatId } });
+        return chat || null;
+    } catch (error) {
+        console.error("Error checking if chat exists:", error);
+        throw new Error("Failed to check if chat exists");
+    }
+}
+
 export async function getMessagesFromChat(chatId: string, page: number): Promise<{ messages: Partial<Message>[], members?: { name: string, email: string }[], chatName?: string }> {
     try {
         const query = AppDataSource.getRepository(Message)

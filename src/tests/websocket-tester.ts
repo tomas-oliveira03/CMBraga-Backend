@@ -94,7 +94,7 @@ class WebSocketTester {
 
         try {
             // Login as instructor
-            await tester.login('pai4@exemplo.com', 'Person23!');
+            await tester.login('inst1@cmbraga.pt', 'Person23!');
 
             // Connect to WebSocket
             await tester.connect();
@@ -125,7 +125,7 @@ class WebSocketTester {
 
         try {
             // Login once
-            const wsUrl = await tester1.login('pai4@exemplo.com', 'Person23!');
+            const wsUrl = await tester1.login('inst1@cmbraga.pt', 'Person23!');
 
             // First connection
             console.log('\n📡 Establishing first connection...');
