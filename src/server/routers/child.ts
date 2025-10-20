@@ -488,78 +488,7 @@ router.put('/:id', upload.single('file'), async (req: Request, res: Response) =>
     }
 });
 
-/**
- * @swagger
- * /child/{id}:
- *   delete:
- *     summary: Delete a child
- *     description: Deletes a child by ID and removes all parent-child associations
- *     tags:
- *       - Child
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
- *         description: Child ID (UUID)
- *     responses:
- *       200:
- *         description: Child deleted successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Child deleted successfully"
- *       404:
- *         description: Child not found
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Child not found"
- *       500:
- *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Internal server error"
- */
-router.delete('/:id', async (req: Request, res: Response) => {
-    try {
-        const childId = req.params.id;
-        
-        const child = await AppDataSource.getRepository(Child).findOne({
-            where: { id: childId }
-        })
 
-        if (!child) {
-            return res.status(404).json({ message: "Child not found" });
-        }
-
-        await AppDataSource.transaction(async tx => {
-            await tx.getRepository(ParentChild).delete({childId: childId})
-
-            await tx.getRepository(Child).delete(child.id);
-        });
-        
-        return res.status(200).json({ message: "Child deleted successfully" });
-
-    } catch (error) {
-        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
-    }
-});
 
 
 

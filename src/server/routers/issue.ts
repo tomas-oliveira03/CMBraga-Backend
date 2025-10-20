@@ -66,6 +66,7 @@ router.get('/', async (req: Request, res: Response) => {
     }
 });
 
+
 /**
  * @swagger
  * /issue/{id}:
@@ -298,10 +299,10 @@ router.post('/', upload.array('files'), async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /issue/{id}:
+ * /issue/resolve/toggle/{id}:
  *   put:
- *     summary: Update an issue
- *     description: Updates an existing issue
+ *     summary: Toggle issue resolved status
+ *     description: Marks an issue as resolved or reopens a resolved issue (toggles resolvedAt field)
  *     tags:
  *       - Issue
  *     parameters:
@@ -312,27 +313,9 @@ router.post('/', upload.array('files'), async (req: Request, res: Response) => {
  *           type: string
  *           example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
  *         description: Issue ID (UUID)
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               description:
- *                 type: string
- *                 example: "Criança recuperou e voltou para casa com os pais"
- *               imageURLs:
- *                 type: array
- *                 items:
- *                   type: string
- *                 example: ["updated_photo.jpg"]
- *           example:
- *             description: "Situação resolvida - bicicleta reparada"
- *             imageURLs: ["bike_fixed.jpg"]
  *     responses:
  *       200:
- *         description: Issue updated successfully
+ *         description: Issue status toggled successfully
  *         content:
  *           application/json:
  *             schema:
@@ -341,17 +324,29 @@ router.post('/', upload.array('files'), async (req: Request, res: Response) => {
  *                 message:
  *                   type: string
  *                   example: "Issue updated successfully"
- *       400:
- *         description: Validation error
+ *             examples:
+ *               marked_resolved:
+ *                 value:
+ *                   message: "Issue marked as resolved"
+ *               reopened:
+ *                 value:
+ *                   message: "Issue reopened"
  *       404:
  *         description: Issue not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Issue not found"
  *       500:
  *         description: Internal server error
  */
-router.put('/:id', async (req: Request, res: Response) => {
+router.put('/resolve/toggle/:id', async (req: Request, res: Response) => {
     try {
         const issueId = req.params.id;
-        const validatedData = UpdateIssueSchema.parse(req.body);
         
         const issue = await AppDataSource.getRepository(Issue).findOne({
             where: { id: issueId }
@@ -361,10 +356,16 @@ router.put('/:id', async (req: Request, res: Response) => {
             return res.status(404).json({ message: "Issue not found" });
         }
 
+        const date = new Date();
+        let resolvedAt: Date | null = date;
+
+        if(issue.resolvedAt){
+            resolvedAt = null;
+        }
 
         await AppDataSource.getRepository(Issue).update(issue.id, {
-            ...validatedData,
-            updatedAt: new Date()
+            updatedAt: date,
+            resolvedAt: resolvedAt
         });
         
         return res.status(200).json({ message: "Issue updated successfully" });
@@ -381,73 +382,6 @@ router.put('/:id', async (req: Request, res: Response) => {
     }
 });
 
-/**
- * @swagger
- * /issue/{id}:
- *   delete:
- *     summary: Delete an issue
- *     description: Deletes an issue by ID
- *     tags:
- *       - Issue
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
- *         description: Issue ID (UUID)
- *     responses:
- *       200:
- *         description: Issue deleted successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Issue deleted successfully"
- *       404:
- *         description: Issue not found
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Issue not found"
- *       500:
- *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Internal server error"
- */
-router.delete('/:id', async (req: Request, res: Response) => {
-    try {
-        const issueId = req.params.id;
-        
-        const issue = await AppDataSource.getRepository(Issue).findOne({
-            where: { id: issueId }
-        });
 
-        if (!issue) {
-            return res.status(404).json({ message: "Issue not found" });
-        }
-
-        await AppDataSource.getRepository(Issue).delete(issue.id);
-        
-        return res.status(200).json({ message: "Issue deleted successfully" });
-
-    } catch (error) {
-        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
-    }
-});
 
 export default router;
