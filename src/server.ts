@@ -98,6 +98,7 @@ const startServer = async () => {
         await appInitialization();
 
         initCronJobs()
+        webSocketManager.setAllChatRooms()
         
         // Route timing middleware
         app.use((req, res, next) => {

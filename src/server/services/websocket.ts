@@ -3,6 +3,8 @@ import { UserRole } from '@/helpers/types';
 import { logger } from '@/lib/logger';
 import { userConnectedToWebsocket } from './websocket-events';
 import { WebSocketMessage } from '@/helpers/websocket-types';
+import { AppDataSource } from '@/db';
+import { Chat } from '@/db/entities/Chat';
 
 class WebSocketManager {
     private connections: Map<string, WebSocket> = new Map();
@@ -120,6 +122,19 @@ class WebSocketManager {
     // Get chat room users
     getChatRoomUsers(roomId: string): string[] | undefined {
         return this.chatRooms.get(roomId);
+    }
+
+    // Hydrate chat rooms
+    async setAllChatRooms(){
+        const allChats = await AppDataSource.getRepository(Chat).find({
+            relations: {
+                userChat: true
+            }
+        })
+
+        allChats.forEach(chat => {
+            this.chatRooms.set(chat.id, chat.userChat.map(uc => uc.userId));
+        });
     }
 }
 
