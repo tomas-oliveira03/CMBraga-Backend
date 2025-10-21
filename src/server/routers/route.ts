@@ -5,11 +5,12 @@ import { CreateRouteSchema } from "../schemas/route";
 import z from "zod";
 import { processKMLFromURL } from "../services/kmlParser";
 import { Station } from "@/db/entities/Station";
-import { StationType } from "@/helpers/types";
+import { ActivityMode, ActivityType, StationType } from "@/helpers/types";
 import { RouteStation } from "@/db/entities/RouteStation";
 import multer from 'multer';
 import { deleteFile, uploadFileBuffer } from "../services/cloud";
 import { MAX_KML_SIZE } from "@/helpers/storage";
+import { calculateTimeUntilArrival } from "../services/activity";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -38,6 +39,10 @@ const upload = multer({ storage: multer.memoryStorage() });
  *                   name:
  *                     type: string
  *                     example: "Rota Pedibus Centro"
+ *                   activityType:
+ *                     type: string
+ *                     enum: [pedibus, ciclo_expresso]
+ *                     example: "pedibus"
  *                   distanceMeters:
  *                     type: integer
  *                     example: 2500
@@ -60,6 +65,7 @@ router.get('/', async (req: Request, res: Response) => {
             select: {
                 id: true,
                 name: true,
+                activityType: true,
                 distanceMeters: true,
                 createdAt: true
             }
@@ -68,6 +74,7 @@ router.get('/', async (req: Request, res: Response) => {
         const routesWithStationCount = allRoutes.map(route => ({
             id: route.id,
             name: route.name,
+            activityType: route.activityType,
             distanceMeters: route.distanceMeters,
             createdAt: route.createdAt,
             numberOfStations: route.routeStations.length
@@ -110,6 +117,10 @@ router.get('/', async (req: Request, res: Response) => {
  *                 name:
  *                   type: string
  *                   example: "Rota Pedibus Centro"
+ *                 activityType:
+ *                   type: string
+ *                   enum: [pedibus, ciclo_expresso]
+ *                   example: "pedibus"
  *                 distanceMeters:
  *                   type: integer
  *                   example: 2500
@@ -147,6 +158,7 @@ router.get('/:id', async (req: Request, res: Response) => {
             select: {
                 id: true,
                 name: true,
+                activityType: true,
                 distanceMeters: true,
                 createdAt: true
             }
@@ -159,6 +171,7 @@ router.get('/:id', async (req: Request, res: Response) => {
         const routeWithStationCount = {
             id: route.id,
             name: route.name,
+            activityType: route.activityType,
             distanceMeters: route.distanceMeters,
             createdAt: route.createdAt,
             numberOfStations: route.routeStations.length
@@ -187,6 +200,7 @@ router.get('/:id', async (req: Request, res: Response) => {
  *             type: object
  *             required:
  *               - name
+ *               - activityType
  *               - file
  *             properties:
  *               name:
@@ -194,6 +208,11 @@ router.get('/:id', async (req: Request, res: Response) => {
  *                 minLength: 1
  *                 example: "Rota Pedibus Norte"
  *                 description: "Unique name for the route"
+ *               activityType:
+ *                 type: string
+ *                 enum: [pedibus, ciclo_expresso]
+ *                 example: "pedibus"
+ *                 description: "Type of activity for this route"
  *               file:
  *                 type: string
  *                 format: binary
@@ -279,6 +298,7 @@ router.post('/', upload.single('file'), async (req: Request, res: Response) => {
 
             const route = await tx.getRepository(Route).insert({
                 name: validatedData.name,
+                activityType: validatedData.activityType,
                 distanceMeters: routeData.totalDistance,
                 boundsNorth: routeData.bounds.north,
                 boundsEast: routeData.bounds.east,
@@ -312,12 +332,15 @@ router.post('/', upload.single('file'), async (req: Request, res: Response) => {
                     stationId = station.identifiers[0]?.id
                 }
                 
+                const activityMode = validatedData.activityType === ActivityType.PEDIBUS ? ActivityMode.WALK : ActivityMode.BIKE;
+                
                 await tx.getRepository(RouteStation).insert({
                     routeId: routeId,
                     stationId: stationId,
                     stopNumber: stopNumber,
                     distanceFromStartMeters: stationData.distanceFromStart,
-                    distanceFromPreviousStationMeters: stationData.distanceFromPrevious
+                    distanceFromPreviousStationMeters: stationData.distanceFromPrevious,
+                    timeFromStartMinutes: calculateTimeUntilArrival(stationData.distanceFromStart, activityMode)
                 })
             }
         });

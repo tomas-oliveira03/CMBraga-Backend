@@ -84,7 +84,16 @@ export async function processKMLFromURL(kmlUrl: string): Promise<RouteData> {
 	return await processKMLData(kmlText);
 }
 
-async function processKMLData(kmlText: string): Promise<RouteData> {
+// Read KML file from local path
+export async function processKMLFromFile(kmlPath: string): Promise<RouteData> {
+	// Read KML file from local path
+	const fs = await import('fs');
+	const kmlText = fs.readFileSync(kmlPath, 'utf-8');
+	return await processKMLData(kmlText);
+}
+
+// Make processKMLData public so it can be used by other modules
+export async function processKMLData(kmlText: string): Promise<RouteData> {
 	// Parse XML
 	const parser = new XMLParser({ ignoreAttributes: false });
 	const kml = parser.parse(kmlText);
@@ -137,47 +146,58 @@ async function processKMLData(kmlText: string): Promise<RouteData> {
 	if (placemarks.length < 2)
 		throw new Error("É necessário pelo menos duas paragens para calcular distâncias.");
 
-	// Determinar distância real entre paragens, seguindo a rota
-	const results: OutputRow[] = [];
-	const distAlongRoute: number[] = [];
-
+	// Calculate distances along the route for each stop
+	const stopData: Array<{ placemark: Placemark; distanceAlongRoute: number; routeIndex: number }> = [];
+	
 	for (const pm of placemarks) {
 		const idx = findClosestPointIndex(pm, linePoints);
 		const distAtPm = cumDistMeters[idx] ?? 0;
-		distAlongRoute.push(distAtPm);
+		stopData.push({
+			placemark: pm,
+			distanceAlongRoute: distAtPm,
+			routeIndex: idx
+		});
 	}
 
-	for (let i = 0; i < placemarks.length; i++) {
-		const current = placemarks[i];
-		if (!current) continue;
+	// Sort stops by distance along route to ensure correct order
+	stopData.sort((a, b) => a.distanceAlongRoute - b.distanceAlongRoute);
+
+	// --- FIX: Use first stop's route index as offset ---
+	const firstStopRouteIdx = stopData[0]?.routeIndex ?? 0;
+	const offsetDistance = cumDistMeters[firstStopRouteIdx] ?? 0;
+
+	// Create results with proper distance calculations
+	const results: OutputRow[] = [];
+	for (let i = 0; i < stopData.length; i++) {
+		const current = stopData[i]!;
+		
 		let dist_from_previous_m: number | null = null;
-		if (i > 0 && distAlongRoute[i] !== undefined && distAlongRoute[i - 1] !== undefined) {
-			const diffMeters = distAlongRoute[i]! - distAlongRoute[i - 1]!;
-			dist_from_previous_m = Math.trunc(diffMeters); 
+		if (i > 0) {
+			const previous = stopData[i - 1]!;
+			const diffMeters = (current.distanceAlongRoute - offsetDistance) - (previous.distanceAlongRoute - offsetDistance);
+			dist_from_previous_m = Math.max(0, Math.trunc(diffMeters));
 		}
+		
 		results.push({
-			name: current.name,
-			lat: current.lat,
-			lon: current.lon,
+			name: current.placemark.name,
+			lat: current.placemark.lat,
+			lon: current.placemark.lon,
 			dist_from_previous_m,
 		});
 	}
 
 	const routeData: RouteData = {
 		route: linePoints,
-		stops: results.map((result, index) => {
-			const now = new Date();
-			const timeString = now.toTimeString().slice(0, 5); // HH:MM format
-			
-			return {
-				name: result.name,
-				lat: result.lat,
-				lon: result.lon,
-				distanceFromStart: Math.trunc(distAlongRoute[index]!), 
-				distanceFromPrevious: result.dist_from_previous_m || 0,
-			};
-		}),
-		totalDistance: Math.trunc(cumDistMeters[cumDistMeters.length - 1] || 0), 
+		stops: results.map((result, index) => ({
+			name: result.name,
+			lat: result.lat,
+			lon: result.lon,
+			distanceFromStart: Math.trunc((stopData[index]?.distanceAlongRoute ?? 0) - offsetDistance),
+			distanceFromPrevious: result.dist_from_previous_m || 0,
+		})),
+		totalDistance: Math.trunc(
+			(cumDistMeters[cumDistMeters.length - 1] || 0) - offsetDistance
+		),
 		bounds: {
 			north: Math.max(...linePoints.map(p => p.lat)),
 			south: Math.min(...linePoints.map(p => p.lat)),

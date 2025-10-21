@@ -195,12 +195,39 @@
   ],
   "stops": [
     {
-      "name": "R. Manuel Ferreira Gomes",
-      "lat": 41.553404,
-      "lon": -8.397567,
-      "distanceFromStart": 2.616,
-      "distanceFromPrevious": null,
-      "timeFromPrevious": 0,
+      "name": "EB N2 Lamaçães",
+      "lat": 41.542656,
+      "lon": -8.402857,
+      "distanceFromStart": 0,
+      "distanceFromPrevious": 0,
+      "timeFromStartMinutes": 0,
+      "type": "regular"
+    },
+    {
+      "name": "Rua Ambrósio dos Santos",
+      "lat": 41.5450736,
+      "lon": -8.4033521,
+      "distanceFromStart": 0.312,
+      "distanceFromPrevious": 0.312,
+      "timeFromStartMinutes": 2,
+      "type": "regular"
+    },
+    {
+      "name": "Rua Afonso Palmeira",
+      "lat": 41.547125,
+      "lon": -8.404334,
+      "distanceFromStart": 0.579,
+      "distanceFromPrevious": 0.266,
+      "timeFromStartMinutes": 4,
+      "type": "regular"
+    },
+    {
+      "name": "Largo da Princesa (Rotunda CGD)",
+      "lat": 41.548339,
+      "lon": -8.403491,
+      "distanceFromStart": 0.937,
+      "distanceFromPrevious": 0.358,
+      "timeFromStartMinutes": 6,
       "type": "regular"
     },
     {
@@ -208,44 +235,17 @@
       "lat": 41.5517053,
       "lon": -8.3955289,
       "distanceFromStart": 1.993,
-      "distanceFromPrevious": -0.623,
-      "timeFromPrevious": 5,
+      "distanceFromPrevious": 1.055,
+      "timeFromStartMinutes": 8,
       "type": "regular"
     },
     {
-      "name": "Largo da Princesa (Rotunda CGD)",
-      "lat": 41.548339,
-      "lon": -8.403491,
-      "distanceFromStart": 0.938,
-      "distanceFromPrevious": -1.056,
-      "timeFromPrevious": 10,
-      "type": "regular"
-    },
-    {
-      "name": "Rua Afonso Palmeira",
-      "lat": 41.547125,
-      "lon": -8.404334,
-      "distanceFromStart": 0.58,
-      "distanceFromPrevious": -0.358,
-      "timeFromPrevious": 2,
-      "type": "regular"
-    },
-    {
-      "name": "Rua Ambrósio dos Santos",
-      "lat": 41.5450736,
-      "lon": -8.4033521,
-      "distanceFromStart": 0.313,
-      "distanceFromPrevious": -0.267,
-      "timeFromPrevious": 2,
-      "type": "regular"
-    },
-    {
-      "name": "EB N2 Lamaçães",
-      "lat": 41.542656,
-      "lon": -8.402857,
-      "distanceFromStart": 0,
-      "distanceFromPrevious": -0.313,
-      "timeFromPrevious": 4,
+      "name": "R. Manuel Ferreira Gomes",
+      "lat": 41.553404,
+      "lon": -8.397567,
+      "distanceFromStart": 2.616,
+      "distanceFromPrevious": 0.622,
+      "timeFromStartMinutes": 10,
       "type": "school"
     }
   ],

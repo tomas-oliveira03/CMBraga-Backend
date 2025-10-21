@@ -1,35 +1,19 @@
 import fs from "fs";
 import path from "path";
-import JSZip from "jszip";
-import { XMLParser } from "fast-xml-parser";
-import haversine from "haversine-distance";
-import { createObjectCsvWriter } from "csv-writer";
-
-interface Point {
-  lat: number;
-  lon: number;
-}
-interface Placemark {
-  name: string;
-  lat: number;
-  lon: number;
-}
-interface OutputRow {
-  name: string;
-  lat: number;
-  lon: number;
-  dist_from_previous_km: number | null;
-}
+import { processKMLFromFile } from "../server/services/kmlParser";
 
 interface FrontendData {
-  route: Point[];
+  route: {
+    lat: number;
+    lon: number;
+  }[];
   stops: {
     name: string;
     lat: number;
     lon: number;
     distanceFromStart: number;
-    distanceFromPrevious: number | null;
-    timeFromPrevious: number | null;
+    distanceFromPrevious: number;
+    timeFromStartMinutes: number;
     type: 'school' | 'regular';
   }[];
   totalDistance: number;
@@ -41,156 +25,30 @@ interface FrontendData {
   };
 }
 
-function toArray<T>(v: T | T[] | undefined | null): T[] {
-  return (Array.isArray(v) ? v : v ? [v] : []).filter(Boolean);
-}
-
-function cumulativeDistances(points: Point[]): number[] {
-  const cumulative: number[] = [0];
-  let total = 0;
-  for (let i = 1; i < points.length; i++) {
-    const prev = points[i - 1];
-    const curr = points[i];
-    if (prev && curr) {
-      const d = haversine(prev, curr);
-      total += d;
-      cumulative.push(total);
-    } else {
-      cumulative.push(total);
-    }
-  }
-  return cumulative;
-}
-
-function findClosestPointIndex(target: Point, line: Point[]): number {
-  let minDist = Infinity;
-  let minIdx = 0;
-  for (let i = 0; i < line.length; i++) {
-    const p = line[i];
-    if (!p) continue;
-    const d = haversine(target, p);
-    if (d < minDist) {
-      minDist = d;
-      minIdx = i;
-    }
-  }
-  return minIdx;
-}
-
 async function processKML(kmlPath: string, outputDir: string): Promise<void> {
   console.log(`Processing: ${kmlPath}`);
   
   try {
-    // Read KML file directly
-    const kmlText = fs.readFileSync(kmlPath, 'utf-8');
+    // Use kmlParser to process the file
+    const routeData = await processKMLFromFile(kmlPath);
 
-    // Parse XML
-    const parser = new XMLParser({ ignoreAttributes: false });
-    const kml = parser.parse(kmlText);
-
-    // Extract route (LineString)
-    let linePoints: Point[] = [];
-    const extractLines = (obj: any): void => {
-      if (!obj) return;
-      if (obj.LineString?.coordinates) {
-        const coordsText = obj.LineString.coordinates.trim();
-        const coords = coordsText.split(/\s+/);
-        for (const c of coords) {
-          const [lonStr, latStr] = c.split(",");
-          const lat = Number(latStr);
-          const lon = Number(lonStr);
-          if (!isNaN(lat) && !isNaN(lon)) linePoints.push({ lat, lon });
-        }
-      }
-      for (const key in obj) {
-        if (typeof obj[key] === "object") extractLines(obj[key]);
-      }
-    };
-    extractLines(kml);
-    
-    if (linePoints.length < 2) {
-      throw new Error("No route found in file!");
-    }
-
-    const cumDistMeters = cumulativeDistances(linePoints);
-
-    // Extract stops (Placemarks)
-    const placemarks: Placemark[] = [];
-    const extractPlacemarks = (obj: any): void => {
-      if (!obj) return;
-      if (obj.Placemark) {
-        for (const pm of toArray(obj.Placemark)) {
-          const name = pm.name ? String(pm.name) : "";
-          const coordsText = pm?.Point?.coordinates;
-          if (coordsText) {
-            const [lonStr, latStr] = coordsText.trim().split(",");
-            const lat = Number(latStr);
-            const lon = Number(lonStr);
-            if (!isNaN(lat) && !isNaN(lon)) placemarks.push({ name, lat, lon });
-          }
-        }
-      }
-      for (const key in obj) {
-        if (typeof obj[key] === "object") extractPlacemarks(obj[key]);
-      }
-    };
-    extractPlacemarks(kml);
-
-    if (placemarks.length < 2) {
-      throw new Error("At least two stops are required to calculate distances.");
-    }
-
-    // Determine real distance between stops, following the route
-    const results: OutputRow[] = [];
-    const distAlongRoute: number[] = [];
-
-    for (const pm of placemarks) {
-      const idx = findClosestPointIndex(pm, linePoints);
-      const distAtPm = cumDistMeters[idx] ?? 0;
-      distAlongRoute.push(distAtPm);
-    }
-
-    for (let i = 0; i < placemarks.length; i++) {
-      const current = placemarks[i];
-      if (!current) continue;
-      let dist_from_previous_km: number | null = null;
-      if (i > 0 && distAlongRoute[i] !== undefined && distAlongRoute[i - 1] !== undefined) {
-        const diffMeters = distAlongRoute[i]! - distAlongRoute[i - 1]!;
-        dist_from_previous_km = +(diffMeters / 1000).toFixed(3);
-      }
-      results.push({
-        name: current.name,
-        lat: current.lat,
-        lon: current.lon,
-        dist_from_previous_km,
-      });
-    }
-
-    // Generate JSON for frontend
+    // Convert to frontend format
     const frontendData: FrontendData = {
-      route: linePoints,
-      stops: results.map((result, index) => {
-        
-        return {
-          name: result.name,
-          lat: result.lat,
-          lon: result.lon,
-          distanceFromStart: +(distAlongRoute[index]! / 1000).toFixed(3),
-          distanceFromPrevious: result.dist_from_previous_km,
-          timeFromPrevious: 2,
-          type: 'school' as const
-        };
-      }),
-      totalDistance: +((cumDistMeters[cumDistMeters.length - 1] || 0) / 1000).toFixed(3),
-      bounds: {
-        north: Math.max(...linePoints.map(p => p.lat)),
-        south: Math.min(...linePoints.map(p => p.lat)),
-        east: Math.max(...linePoints.map(p => p.lon)),
-        west: Math.min(...linePoints.map(p => p.lon)),
-      }
+      route: routeData.route,
+      stops: routeData.stops.map((stop, index) => ({
+        name: stop.name,
+        lat: stop.lat,
+        lon: stop.lon,
+        distanceFromStart: +(stop.distanceFromStart / 1000).toFixed(3), // Convert to km
+        distanceFromPrevious: index === 0 ? 0 : +(stop.distanceFromPrevious / 1000).toFixed(3), // First stop has no previous, convert others to km
+        timeFromStartMinutes: index * 2, 
+        type: index === routeData.stops.length - 1 ? 'school' as const : 'regular' as const // Last stop is school
+      })),
+      totalDistance: +(routeData.totalDistance / 1000).toFixed(3), // Convert to km
+      bounds: routeData.bounds
     };
 
-    // Generate JSON output path in the json folder
+    // Generate JSON output path
     const fileName = path.basename(kmlPath, '.kml');
     const jsonOutputPath = path.join(outputDir, `${fileName}.json`);
     

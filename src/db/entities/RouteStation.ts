@@ -19,6 +19,9 @@ export class RouteStation {
     distanceFromStartMeters!: number; 
 
     @Column({ type: 'int' })
+    timeFromStartMinutes!: number;
+
+    @Column({ type: 'int' })
     distanceFromPreviousStationMeters!: number; 
 
     @ManyToOne(() => Route)

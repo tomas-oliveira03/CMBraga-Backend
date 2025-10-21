@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ActivityTypeEnum } from "./activitySession";
 
 export const RoutePointSchema = z.object({
   lat: z.number(),
@@ -8,6 +9,7 @@ export const RoutePointSchema = z.object({
 export const RouteSchema = z.object({
     id: z.string(),
     name: z.string(),
+    activityType: ActivityTypeEnum,
     distanceMeters: z.number(),
     boundsNorth: z.number(),
     boundsSouth: z.number(),

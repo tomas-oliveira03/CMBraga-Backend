@@ -154,11 +154,10 @@ async function dbHydration() {
     
     for (let i = 0; i < routeData.stops.length; i++) {
       const stop = routeData.stops[i];
-      const isLastStop = i === routeData.stops.length - 1;
-      
+      // Use type from JSON directly
       const station = stationRepo.create({
         name: stop.name,
-        type: isLastStop ? StationType.SCHOOL : StationType.REGULAR,
+        type: stop.type, // <-- use type from JSON
         longitude: stop.lon,
         latitude: stop.lat
       });
@@ -170,6 +169,7 @@ async function dbHydration() {
     // 2. Create Route
     const route = routeRepo.create({
       name: "Rota Pedibus Centro",
+      activityType: "pedibus" as any,
       distanceMeters: Math.round(routeData.totalDistance * 1000), // Convert km to meters
       boundsNorth: routeData.bounds.north,
       boundsSouth: routeData.bounds.south,
@@ -187,7 +187,8 @@ async function dbHydration() {
         stationId: stations[index]!.id,
         stopNumber: index + 1,
         distanceFromStartMeters: stop.distanceFromStart * 1000, // Convert km to meters
-        distanceFromPreviousStationMeters: stop.distanceFromPrevious ? Math.round(stop.distanceFromPrevious * 1000) : 0
+        distanceFromPreviousStationMeters: stop.distanceFromPrevious ? Math.round(stop.distanceFromPrevious * 1000) : 0,
+        timeFromStartMinutes: stop.timeFromStartMinutes // <-- use timeFromStartMinutes from JSON
       })
     );
     await routeStationRepo.save(routeStations);
@@ -209,12 +210,14 @@ async function dbHydration() {
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     
     for (let i = 0; i < stations.length; i++) {
+      const stop = routeData.stops[i];
       stationActivitySessions.push(
         stationActivityRepo.create({
           stationId: stations[i]!.id,
           activitySessionId: atividade.id,
           stopNumber: i + 1,
-          scheduledAt: new Date(yesterday.getTime() + (20 + i * 5) * 60 * 1000),
+          // Use timeFromStartMinutes to calculate scheduled time
+          scheduledAt: new Date(yesterday.getTime() + (stop.timeFromStartMinutes * 60 * 1000)),
         })
       );
     }

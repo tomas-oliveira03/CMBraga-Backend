@@ -1,9 +1,10 @@
-import { RoutePoint } from "@/helpers/types";
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm"
+import { ActivityType, RoutePoint } from "@/helpers/types";
+import { Check, Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm"
 import { ActivitySession } from "./ActivitySession";
 import { RouteStation } from "./RouteStation";
 
 @Entity()
+@Check(`"activity_type" IN ('pedibus', 'ciclo_expresso')`)
 export class Route {
 
     @PrimaryGeneratedColumn("uuid")
@@ -11,6 +12,9 @@ export class Route {
 
     @Column({ type: 'varchar', unique: true })
     name!: string;
+
+    @Column({ type: 'varchar' })
+    activityType!: ActivityType;
 
     @Column({ type: 'int' })
     distanceMeters!: number;

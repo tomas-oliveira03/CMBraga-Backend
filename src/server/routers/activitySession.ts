@@ -6,9 +6,6 @@ import { ActivitySession } from "@/db/entities/ActivitySession";
 import { ActivityMode, ActivityType } from "@/helpers/types";
 import { Route } from "@/db/entities/Route";
 import { StationActivitySession } from "@/db/entities/StationActivitySession";
-import { calculateScheduledTime } from "../services/activity";
-import { Instructor } from "@/db/entities/Instructor";
-import { InstructorActivitySession } from "@/db/entities/InstructorActivitySession";
 
 const router = express.Router();
 
@@ -242,6 +239,9 @@ router.post('/', async (req: Request, res: Response) => {
     if (!route) {
         return res.status(404).json({ message: "Route not found" });
     }
+    if(route.activityType !== validatedData.type){
+        return res.status(400).json({ message: "Cannot link an activity to a different route type" });
+    }
 
     await AppDataSource.transaction(async tx => {
 
@@ -257,7 +257,7 @@ router.post('/', async (req: Request, res: Response) => {
             stationId: station.stationId,
             activitySessionId: activitySessionId,
             stopNumber: station.stopNumber,
-            scheduledAt: calculateScheduledTime(station.distanceFromStartMeters, validatedData.scheduledAt, activityMode, station.stopNumber)
+            scheduledAt: new Date(validatedData.scheduledAt.getTime() + station.timeFromStartMinutes * 60 * 1000)
         }));
 
         await tx.getRepository(StationActivitySession).insert(stationsActivitySession);
