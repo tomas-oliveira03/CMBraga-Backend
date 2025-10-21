@@ -42,7 +42,7 @@ function toArray<T>(v: T | T[] | undefined | null): T[] {
 }
 
 function cumulativeDistances(points: Point[]): number[] {
-	const cum: number[] = [0];
+	const cumulative: number[] = [0];
 	let total = 0;
 	for (let i = 1; i < points.length; i++) {
 		const prev = points[i - 1];
@@ -50,12 +50,12 @@ function cumulativeDistances(points: Point[]): number[] {
 		if (prev && curr) {
 			const d = haversine(prev, curr);
 			total += d;
-			cum.push(total);
+			cumulative.push(total);
 		} else {
-			cum.push(total);
+			cumulative.push(total);
 		}
 	}
-	return cum;
+	return cumulative;
 }
 
 function findClosestPointIndex(target: Point, line: Point[]): number {
@@ -159,8 +159,7 @@ export async function processKMLData(kmlText: string): Promise<RouteData> {
 		});
 	}
 
-	// Sort stops by distance along route to ensure correct order
-	stopData.sort((a, b) => a.distanceAlongRoute - b.distanceAlongRoute);
+	
 
 	// --- FIX: Use first stop's route index as offset ---
 	const firstStopRouteIdx = stopData[0]?.routeIndex ?? 0;
@@ -174,7 +173,7 @@ export async function processKMLData(kmlText: string): Promise<RouteData> {
 		let dist_from_previous_m: number | null = null;
 		if (i > 0) {
 			const previous = stopData[i - 1]!;
-			const diffMeters = (current.distanceAlongRoute - offsetDistance) - (previous.distanceAlongRoute - offsetDistance);
+			const diffMeters = Math.abs((current.distanceAlongRoute - offsetDistance) - (previous.distanceAlongRoute - offsetDistance));
 			dist_from_previous_m = Math.max(0, Math.trunc(diffMeters));
 		}
 		
@@ -192,11 +191,11 @@ export async function processKMLData(kmlText: string): Promise<RouteData> {
 			name: result.name,
 			lat: result.lat,
 			lon: result.lon,
-			distanceFromStart: Math.trunc((stopData[index]?.distanceAlongRoute ?? 0) - offsetDistance),
+			distanceFromStart: Math.abs(Math.trunc((stopData[index]?.distanceAlongRoute ?? 0) - offsetDistance)),
 			distanceFromPrevious: result.dist_from_previous_m || 0,
 		})),
 		totalDistance: Math.trunc(
-			(cumDistMeters[cumDistMeters.length - 1] || 0) - offsetDistance
+			(cumDistMeters[cumDistMeters.length - 1] || 0) 
 		),
 		bounds: {
 			north: Math.max(...linePoints.map(p => p.lat)),
