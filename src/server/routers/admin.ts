@@ -216,9 +216,19 @@ router.get('/:id', async (req: Request, res: Response) => {
  *             schema:
  *               type: object
  *               properties:
- *                 message:
+ *                 id:
  *                   type: string
- *                   example: "Admin updated successfully"
+ *                   example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *                 name:
+ *                   type: string
+ *                   example: "Pedro Oliveira"
+ *                 profilePictureURL:
+ *                   type: string
+ *                   example: "https://storage.example.com/profiles/admin-1.jpg"
+ *                 updatedAt:
+ *                   type: string
+ *                   format: date-time
+ *                   example: "2024-01-20T14:45:30.000Z"
  *       400:
  *         description: Validation error
  *       404:
@@ -258,11 +268,12 @@ router.put('/:id', upload.single('file'), async (req: Request, res: Response) =>
         if (validatedData.name) userUpdateData.name = validatedData.name;
         if (req.file) userUpdateData.profilePictureURL = adminData.profilePictureURL;
 
+        const updatedAt = new Date()
         await AppDataSource.transaction(async tx => {
             
             await tx.getRepository(Admin).update(admin.id, {
                 ...adminData,
-                updatedAt: new Date()
+                updatedAt: updatedAt
             })
 
             // If name or profilePictureURL are updated, the copy in User table also needs to be updated
@@ -274,7 +285,12 @@ router.put('/:id', upload.single('file'), async (req: Request, res: Response) =>
             }
         });
         
-        return res.status(200).json({ message: "Admin updated successfully" });
+        return res.status(200).json({ 
+            id: adminId,
+            name: adminData.name,
+            profilePictureURL: req.file ? adminData.profilePictureURL : undefined,
+            updatedAt: updatedAt
+        });
 
     } catch (error) {
         if (error instanceof z.ZodError) {
