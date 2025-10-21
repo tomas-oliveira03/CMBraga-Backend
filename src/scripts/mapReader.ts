@@ -29,7 +29,7 @@ interface FrontendData {
     lon: number;
     distanceFromStart: number;
     distanceFromPrevious: number | null;
-    scheduledAt: string;
+    timeFromPrevious: number | null;
     type: 'school' | 'regular';
   }[];
   totalDistance: number;
@@ -46,7 +46,7 @@ function toArray<T>(v: T | T[] | undefined | null): T[] {
 }
 
 function cumulativeDistances(points: Point[]): number[] {
-  const cum: number[] = [0];
+  const cumulative: number[] = [0];
   let total = 0;
   for (let i = 1; i < points.length; i++) {
     const prev = points[i - 1];
@@ -54,12 +54,12 @@ function cumulativeDistances(points: Point[]): number[] {
     if (prev && curr) {
       const d = haversine(prev, curr);
       total += d;
-      cum.push(total);
+      cumulative.push(total);
     } else {
-      cum.push(total);
+      cumulative.push(total);
     }
   }
-  return cum;
+  return cumulative;
 }
 
 function findClosestPointIndex(target: Point, line: Point[]): number {
@@ -170,8 +170,6 @@ async function processKML(kmlPath: string, outputDir: string): Promise<void> {
     const frontendData: FrontendData = {
       route: linePoints,
       stops: results.map((result, index) => {
-        const now = new Date();
-        const timeString = now.toTimeString().slice(0, 5); // HH:MM format
         
         return {
           name: result.name,
@@ -179,7 +177,7 @@ async function processKML(kmlPath: string, outputDir: string): Promise<void> {
           lon: result.lon,
           distanceFromStart: +(distAlongRoute[index]! / 1000).toFixed(3),
           distanceFromPrevious: result.dist_from_previous_km,
-          scheduledAt: timeString,
+          timeFromPrevious: 2,
           type: 'school' as const
         };
       }),

@@ -200,7 +200,7 @@
       "lon": -8.397567,
       "distanceFromStart": 2.616,
       "distanceFromPrevious": null,
-      "scheduledAt": "08:30",
+      "timeFromPrevious": 0,
       "type": "regular"
     },
     {
@@ -209,7 +209,7 @@
       "lon": -8.3955289,
       "distanceFromStart": 1.993,
       "distanceFromPrevious": -0.623,
-      "scheduledAt": "08:35",
+      "timeFromPrevious": 5,
       "type": "regular"
     },
     {
@@ -218,7 +218,7 @@
       "lon": -8.403491,
       "distanceFromStart": 0.938,
       "distanceFromPrevious": -1.056,
-      "scheduledAt": "08:45",
+      "timeFromPrevious": 10,
       "type": "regular"
     },
     {
@@ -227,7 +227,7 @@
       "lon": -8.404334,
       "distanceFromStart": 0.58,
       "distanceFromPrevious": -0.358,
-      "scheduledAt": "08:47",
+      "timeFromPrevious": 2,
       "type": "regular"
     },
     {
@@ -236,7 +236,7 @@
       "lon": -8.4033521,
       "distanceFromStart": 0.313,
       "distanceFromPrevious": -0.267,
-      "scheduledAt": "08:51",
+      "timeFromPrevious": 2,
       "type": "regular"
     },
     {
@@ -245,7 +245,7 @@
       "lon": -8.402857,
       "distanceFromStart": 0,
       "distanceFromPrevious": -0.313,
-      "scheduledAt": "08:55",
+      "timeFromPrevious": 4,
       "type": "school"
     }
   ],

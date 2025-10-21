@@ -1,9 +1,7 @@
 import fs from "fs";
 import path from "path";
-import JSZip from "jszip";
 import { XMLParser } from "fast-xml-parser";
 import haversine from "haversine-distance";
-import { createObjectCsvWriter } from "csv-writer";
 
 interface Point {
 	lat: number;
@@ -18,7 +16,7 @@ interface OutputRow {
 	name: string;
 	lat: number;
 	lon: number;
-	dist_from_previous_m: number | null; // renamed and now in meters as integer
+	dist_from_previous_m: number | null;
 }
 
 interface RouteData {
@@ -75,31 +73,23 @@ function findClosestPointIndex(target: Point, line: Point[]): number {
 	return minIdx;
 }
 
-export async function processKMZFromURL(kmzUrl: string): Promise<RouteData> {
-	// Fetch KMZ file from URL
-	const response = await fetch(kmzUrl);
+export async function processKMLFromURL(kmlUrl: string): Promise<RouteData> {
+	// Fetch KML file from URL
+	const response = await fetch(kmlUrl);
 	if (!response.ok) {
-		throw new Error(`Failed to fetch KMZ file from URL: ${response.statusText}`);
+		throw new Error(`Failed to fetch KML file from URL: ${response.statusText}`);
 	}
 	
-	const arrayBuffer = await response.arrayBuffer();
-	const kmzData = Buffer.from(arrayBuffer);
-	return await processKMZData(kmzData);
+	const kmlText = await response.text();
+	return await processKMLData(kmlText);
 }
 
-async function processKMZData(kmzData: Buffer): Promise<RouteData> {
-	const zip = await JSZip.loadAsync(kmzData);
-	const kmlFile = Object.keys(zip.files).find(f => f.toLowerCase().endsWith(".kml"));
-	if (!kmlFile) throw new Error("Nenhum ficheiro .kml encontrado dentro do .kmz!");
-	const kmlEntry = zip.files[kmlFile];
-	if (!kmlEntry) throw new Error("Erro ao abrir o ficheiro KML dentro do KMZ.");
-	const kmlText = await kmlEntry.async("string");
-
+async function processKMLData(kmlText: string): Promise<RouteData> {
 	// Parse XML
 	const parser = new XMLParser({ ignoreAttributes: false });
 	const kml = parser.parse(kmlText);
 
-	// Extrair rota (LineString)
+	// Extract route (LineString)
 	let linePoints: Point[] = [];
 	const extractLines = (obj: any): void => {
 		if (!obj) return;
@@ -122,7 +112,7 @@ async function processKMZData(kmzData: Buffer): Promise<RouteData> {
 
 	const cumDistMeters = cumulativeDistances(linePoints);
 
-	// Extrair paragens (Placemarks)
+	// Extract stops (Placemarks)
 	const placemarks: Placemark[] = [];
 	const extractPlacemarks = (obj: any): void => {
 		if (!obj) return;
@@ -175,13 +165,18 @@ async function processKMZData(kmzData: Buffer): Promise<RouteData> {
 
 	const routeData: RouteData = {
 		route: linePoints,
-		stops: results.map((result, index) => ({
-			name: result.name,
-			lat: result.lat,
-			lon: result.lon,
-			distanceFromStart: Math.trunc(distAlongRoute[index]!), 
-			distanceFromPrevious: result.dist_from_previous_m || 0,     
-		})),
+		stops: results.map((result, index) => {
+			const now = new Date();
+			const timeString = now.toTimeString().slice(0, 5); // HH:MM format
+			
+			return {
+				name: result.name,
+				lat: result.lat,
+				lon: result.lon,
+				distanceFromStart: Math.trunc(distAlongRoute[index]!), 
+				distanceFromPrevious: result.dist_from_previous_m || 0,
+			};
+		}),
 		totalDistance: Math.trunc(cumDistMeters[cumDistMeters.length - 1] || 0), 
 		bounds: {
 			north: Math.max(...linePoints.map(p => p.lat)),

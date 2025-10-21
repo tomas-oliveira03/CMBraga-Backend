@@ -3,12 +3,13 @@ import { Route } from "@/db/entities/Route";
 import express, { Request, Response } from "express";
 import { CreateRouteSchema } from "../schemas/route";
 import z from "zod";
-import { processKMZFromURL } from "../services/kmzParser";
+import { processKMLFromURL } from "../services/kmlParser";
 import { Station } from "@/db/entities/Station";
 import { StationType } from "@/helpers/types";
 import { RouteStation } from "@/db/entities/RouteStation";
 import multer from 'multer';
 import { deleteFile, uploadFileBuffer } from "../services/cloud";
+import { MAX_KML_SIZE } from "@/helpers/storage";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -174,8 +175,8 @@ router.get('/:id', async (req: Request, res: Response) => {
  * @swagger
  * /route:
  *   post:
- *     summary: Create a new route from KMZ file
- *     description: Creates a new route by processing a KMZ file (a.kmz). Automatically creates stations and route-station relationships. The KMZ file should contain a LineString for the route path and Placemarks for stations. All distances are stored in meters (integers).
+ *     summary: Create a new route from KML file
+ *     description: Creates a new route by processing a KML file (a.kml). Automatically creates stations and route-station relationships. The KML file should contain a LineString for the route path and Placemarks for stations. All distances are stored in meters (integers).
  *     tags:
  *       - Route
  *     requestBody:
@@ -196,7 +197,7 @@ router.get('/:id', async (req: Request, res: Response) => {
  *               file:
  *                 type: string
  *                 format: binary
- *                 description: "KMZ file containing route and station data"
+ *                 description: "KML file containing route and station data"
  *     responses:
  *       201:
  *         description: Route created successfully
@@ -217,7 +218,7 @@ router.get('/:id', async (req: Request, res: Response) => {
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "KMZ file is required"
+ *                   example: "KML file is required"
  *       404:
  *         description: Route name already exists
  *         content:
@@ -244,11 +245,14 @@ router.post('/', upload.single('file'), async (req: Request, res: Response) => {
         const validatedData = CreateRouteSchema.parse(req.body);
         
         if (!req.file) {
-            return res.status(400).json({ message: "KMZ file is required" });
+            return res.status(400).json({ message: "KML file is required" });
+        }
+        if (req.file.mimetype !== 'application/vnd.google-earth.kml+xml') {
+            return res.status(400).json({ message: "File must be a KML file" });
         }
 
-        if (req.file.mimetype !== 'application/vnd.google-earth.kmz') {
-            return res.status(400).json({ message: "File must be a KMZ file" });
+        if (req.file.size > MAX_KML_SIZE) {
+            return res.status(400).json({ message: "File size exceeds 1MB limit" });
         }
 
         const route = await AppDataSource.getRepository(Route).findOne({
@@ -265,8 +269,8 @@ router.post('/', upload.single('file'), async (req: Request, res: Response) => {
             validatedData.name.replace(/\s+/g, '-')
         );
 
-        // Process KMZ from cloud URL
-        const routeData = await processKMZFromURL(cloudStoredFileURL);
+        // Process KML from cloud URL
+        const routeData = await processKMLFromURL(cloudStoredFileURL);
 
         // Delete file from cloud
         await deleteFile(cloudStoredFileURL)

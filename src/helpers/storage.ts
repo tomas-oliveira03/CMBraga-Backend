@@ -1,3 +1,5 @@
+export const MAX_KML_SIZE = 1 * 1024 * 1024 // 1MB
+
 export const USER_DEFAULT_PROFILE_PICTURES = [
     "https://res.cloudinary.com/dwffdkytm/image/upload/v1760867592/CMBraga/users/default-profile-picture1.jpg",
     "https://res.cloudinary.com/dwffdkytm/image/upload/v1760867592/CMBraga/users/default-profile-picture2.jpg"
