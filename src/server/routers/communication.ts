@@ -379,7 +379,13 @@ router.get("/:conversationId", async (req: Request, res: Response) => {
 router.get("/chats/:userId", async (req: Request, res: Response) => {
     try {
         const { userId } = req.params;
-        const page = parseInt(req.query.page as string) || 1;
+        // Safe parse to allow 0 as a valid page value
+        const rawPage = req.query.page;
+        let page = 1;
+        if (rawPage !== undefined) {
+            const parsed = parseInt(rawPage as string, 10);
+            if (!isNaN(parsed) && parsed >= 0) page = parsed;
+        }
         const limit = 10;
 
         const userExists = await AppDataSource.getRepository(User).findOne({ where: { id: userId } });
@@ -409,12 +415,13 @@ router.get("/chats/:userId", async (req: Request, res: Response) => {
                 const memberDetails = members.map(member => ({
                     name: member.user.name,
                     email: member.user.id,
+                    profilePictureURL: member.user.profilePictureURL
                 }));
-
+    
                 return {
                     chatId: chat.id,
                     chatType: chat.chatType,
-                    chatName: chat.chatName, // Include chat name
+                    chatName: chat.chatName,
                     messageContent: mostRecentMessage?.content || null,
                     sender: mostRecentMessage?.senderName || null,
                     timestamp: mostRecentMessage?.timestamp || null,

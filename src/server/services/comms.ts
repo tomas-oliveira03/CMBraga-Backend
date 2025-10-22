@@ -84,7 +84,7 @@ export async function getChat(chatId: string): Promise<Chat | null> {
     }
 }
 
-export async function getMessagesFromChat(chatId: string, page: number): Promise<{ messages: Partial<Message>[], members?: { name: string, email: string }[], chatName?: string }> {
+export async function getMessagesFromChat(chatId: string, page: number): Promise<{ messages: Partial<Message>[], members?: { name: string, email: string, profilePictureURL: string }[], chatName?: string }> {
     try {
         const query = AppDataSource.getRepository(Message)
             .createQueryBuilder("message")
@@ -121,6 +121,7 @@ export async function getMessagesFromChat(chatId: string, page: number): Promise
             const members = chat.userChat.map(userChat => ({
                 name: userChat.user.name,
                 email: userChat.user.id,
+                profilePictureURL: userChat.user.profilePictureURL, // added profile picture
             }));
 
             return { messages: mappedMessages, members, chatName: chat.chatName ?? undefined };
