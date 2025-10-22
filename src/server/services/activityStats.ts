@@ -6,6 +6,7 @@ import { ChildStationType } from "@/helpers/types";
 import { logger } from "@/lib/logger";
 import { calculateCaloriesBurned, calculateCO2Saved } from "./activity";
 import { ClientStat } from "@/db/entities/ClientStat";
+import { Child } from "@/db/entities/Child";
 
 export async function setActivityStats(activityId: string){
     try{
@@ -75,10 +76,21 @@ export async function setActivityStats(activityId: string){
             const pickUpStation = stationInfoMap.get(stations.pickupStationId);
             const dropOffStation = stationInfoMap.get(stations.dropoffStationId);
 
+            const child = await AppDataSource.getRepository(Child).findOne({
+                where: {
+                    id: childId
+                }
+            })
+
+            if(!child){
+                throw new Error("Child not found");
+            }
+        
+
             if (pickUpStation && dropOffStation) {
                 const distanceMeters = Math.abs(dropOffStation.distanceFromStartMeters - pickUpStation.distanceFromStartMeters);
                 const durationSeconds = Math.abs(dropOffStation.arrivedAt.getTime() - pickUpStation.leftAt.getTime()) / 1000;
-                const caloriesBurned = calculateCaloriesBurned(distanceMeters, durationSeconds, activityMode);
+                const caloriesBurned = calculateCaloriesBurned(distanceMeters, durationSeconds, activityMode, child);
                 const co2Saved = calculateCO2Saved(distanceMeters);
 
                 clientStats.push({
