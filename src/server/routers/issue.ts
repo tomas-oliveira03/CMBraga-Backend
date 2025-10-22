@@ -59,7 +59,11 @@ const upload = multer({ storage: multer.memoryStorage() });
  */
 router.get('/', async (req: Request, res: Response) => {
     try {
-        const allIssues = await AppDataSource.getRepository(Issue).find();
+        const allIssues = await AppDataSource.getRepository(Issue).find({
+            order: {
+                createdAt: 'ASC'
+            }
+        });
         return res.status(200).json(allIssues);
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
@@ -275,10 +279,7 @@ router.post('/', upload.array('files'), async (req: Request, res: Response) => {
 
             await tx.getRepository(Issue).update(
                 { id: issueId },
-                { 
-                    imageURLs: cloudStoredImagesURLs,
-                    updatedAt: new Date()
-                }
+                { imageURLs: cloudStoredImagesURLs }
             )
         });
         
