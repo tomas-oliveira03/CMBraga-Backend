@@ -178,6 +178,7 @@ export function normalizeUsers(users: any[]) {
         return {
             id: u.id,
             name: u.name,
+            profilePictureURL: u.profilePictureURL, // added profile picture to response
             role
         };
     });
