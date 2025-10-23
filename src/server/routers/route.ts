@@ -92,7 +92,7 @@ router.get('/', async (req: Request, res: Response) => {
  * /route/{id}:
  *   get:
  *     summary: Get route by ID
- *     description: Returns a single route by its ID with station count
+ *     description: Returns a single route by its ID with station info and bounds object
  *     tags:
  *       - Route
  *     parameters:
@@ -129,10 +129,72 @@ router.get('/', async (req: Request, res: Response) => {
  *                   type: string
  *                   format: date-time
  *                   example: "2024-01-15T10:30:00.000Z"
- *                 numberOfStations:
- *                   type: integer
- *                   example: 5
- *                   description: "Number of stations in the route"
+ *                 updatedAt:
+ *                   type: string
+ *                   format: date-time
+ *                   example: null
+ *                 route:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       lat:
+ *                         type: number
+ *                         example: 41.553404
+ *                       lon:
+ *                         type: number
+ *                         example: -8.397567
+ *                   description: "Raw route metadata (array of lat/lon points)"
+ *                 bounds:
+ *                   type: object
+ *                   properties:
+ *                     north:
+ *                       type: number
+ *                       example: 41.554448
+ *                     east:
+ *                       type: number
+ *                       example: -8.395174
+ *                     south:
+ *                       type: number
+ *                       example: 41.542617
+ *                     west:
+ *                       type: number
+ *                       example: -8.404334
+ *                   description: "Bounding box of the route"
+ *                 stops:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       stationId:
+ *                         type: string
+ *                         example: "37b57f49-fecf-413d-bc90-6727682a8785"
+ *                       stopNumber:
+ *                         type: integer
+ *                         example: 1
+ *                       distanceFromStartMeters:
+ *                         type: integer
+ *                         example: 0
+ *                       timeFromStartMinutes:
+ *                         type: integer
+ *                         example: 0
+ *                       distanceFromPreviousStationMeters:
+ *                         type: integer
+ *                         example: 0
+ *                       name:
+ *                         type: string
+ *                         example: "R. Manuel Ferreira Gomes"
+ *                       type:
+ *                         type: string
+ *                         enum: [regular, school]
+ *                         example: "regular"
+ *                       latitude:
+ *                         type: number
+ *                         example: 41.553404
+ *                       longitude:
+ *                         type: number
+ *                         example: -8.397567
+ *                   description: "List of stops with station info flattened"
  *       404:
  *         description: Route not found
  *         content:
@@ -153,14 +215,9 @@ router.get('/:id', async (req: Request, res: Response) => {
                 id: routeId
             },
             relations: {
-                routeStations: true
-            },
-            select: {
-                id: true,
-                name: true,
-                activityType: true,
-                distanceMeters: true,
-                createdAt: true
+                routeStations: {
+                    station: true
+                }
             }
         });
 
@@ -168,16 +225,40 @@ router.get('/:id', async (req: Request, res: Response) => {
             return res.status(404).json({ message: "Route not found" })
         }
 
-        const routeWithStationCount = {
+        const bounds = {
+            north: route.boundsNorth,
+            east: route.boundsEast,
+            south: route.boundsSouth,
+            west: route.boundsWest
+        };
+
+        const stops = route.routeStations
+            .map(rs => ({
+                stationId: rs.stationId,
+                stopNumber: rs.stopNumber,
+                distanceFromStartMeters: rs.distanceFromStartMeters,
+                timeFromStartMinutes: rs.timeFromStartMinutes,
+                distanceFromPreviousStationMeters: rs.distanceFromPreviousStationMeters,
+                name: rs.station.name,
+                type: rs.station.type,
+                latitude: rs.station.latitude,
+                longitude: rs.station.longitude,
+            }))
+            .sort((a, b) => a.stopNumber - b.stopNumber);
+
+        const response = {
             id: route.id,
             name: route.name,
             activityType: route.activityType,
             distanceMeters: route.distanceMeters,
             createdAt: route.createdAt,
-            numberOfStations: route.routeStations.length
+            updatedAt: route.updatedAt,
+            route: route.metadata,
+            bounds: bounds,
+            stops: stops
         };
 
-        return res.status(200).json(routeWithStationCount);
+        return res.status(200).json(response);
         
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
