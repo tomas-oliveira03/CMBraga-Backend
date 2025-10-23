@@ -108,6 +108,3 @@ const child = {
     dateOfBirth: new Date(2015, 2, 1),
     gender: ChildGender.MALE
 }
-
-const caloriesBurned = calculateCaloriesBurned(1000, 360, ActivityMode.WALK, child);
-console.log(caloriesBurned)

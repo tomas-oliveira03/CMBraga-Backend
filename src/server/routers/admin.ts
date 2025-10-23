@@ -267,8 +267,8 @@ router.put('/:id', upload.single('file'), async (req: Request, res: Response) =>
         const userUpdateData: Partial<User> = {};
         if (validatedData.name) userUpdateData.name = validatedData.name;
         if (req.file) userUpdateData.profilePictureURL = adminData.profilePictureURL;
-
         const updatedAt = new Date()
+
         await AppDataSource.transaction(async tx => {
             
             await tx.getRepository(Admin).update(admin.id, {
