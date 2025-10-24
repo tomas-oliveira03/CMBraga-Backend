@@ -19,16 +19,6 @@ export function calculateTimeUntilArrival(
 }
 
 
-/**
- * Calculate calories burned using MET (Metabolic Equivalent of Task) method
- * Formula: Calories = MET × weight(kg) × time(hours)
- * 
- * MET values for children:
- * - Walking (slow pace): 3.0
- * - Walking (moderate pace): 3.5
- * - Biking (leisure): 4.0
- * - Biking (moderate): 6.0
- */
 export function calculateCaloriesBurned(
     distanceMeters: number, 
     timeSeconds: number, 
@@ -83,8 +73,8 @@ export function calculateCaloriesBurned(
         ageMultiplier = 1.05;
     }
 
-    // Calculate calories using standard MET formula with age adjustment
-    const calories = met * childData.weightKilograms * timeHours * ageMultiplier;
+    const timeMinutes = timeSeconds / 60;
+    const calories = met * 3.5 * childData.weightKilograms * timeMinutes / 200 * ageMultiplier;
 
     return Math.round(calories); 
 }
@@ -99,12 +89,4 @@ export function calculateCO2Saved(distanceMeters: number): number {
   const co2Saved = distanceKm * CO2_PER_KM_GRAMS;
 
   return Math.round(co2Saved);
-}
-
-
-const child = {
-    weightKilograms: 25,
-    heightCentimeters: 120,
-    dateOfBirth: new Date(2015, 2, 1),
-    gender: ChildGender.MALE
 }
