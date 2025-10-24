@@ -6,6 +6,7 @@ import { ChildActivitySession } from "@/db/entities/ChildActivitySession";
 import { ParentChild } from "@/db/entities/ParentChild";
 import { UserRole } from "@/helpers/types";
 import { authenticate, authorize } from "@/server/middleware/auth";
+import { IsNull } from "typeorm";
 
 const router = express.Router();
 
@@ -144,6 +145,124 @@ router.get('/:id', async (req: Request, res: Response) => {
     }
 });
 
+/**
+ * @swagger
+ * /activity-session/child/available/{id}:
+ *   get:
+ *     summary: Get all available future activity sessions for a child
+ *     description: Returns a list of all future activity sessions that the child can register for, based on their drop-off station.
+ *     tags:
+ *       - Activity Session - Children
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "1bee5237-02ea-4f5c-83f3-bfe6e5a19756"
+ *         description: Child ID (UUID)
+ *     responses:
+ *       200:
+ *         description: List of available activity sessions for the child
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     example: "c56ad528-3522-4557-8b34-a787a50900b7"
+ *                   type:
+ *                     type: string
+ *                     example: "regular"
+ *                   mode:
+ *                     type: string
+ *                     example: "bus"
+ *                   inLateRegistration:
+ *                     type: boolean
+ *                     example: false
+ *                   createdAt:
+ *                     type: string
+ *                     format: date-time
+ *                     example: "2025-10-05T14:22:01.592Z"
+ *                   scheduledAt:
+ *                     type: string
+ *                     format: date-time
+ *                     example: "2025-10-10T08:00:00.000Z"
+ *                   updatedAt:
+ *                     type: string
+ *                     format: date-time
+ *                     nullable: true
+ *                     example: null
+ *                   route:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         example: "route-uuid-1"
+ *                       name:
+ *                         type: string
+ *                         example: "Rota Escola"
+ *       404:
+ *         description: Child not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Child not found"
+ */
+router.get('/available/:id', async (req: Request, res: Response) => {
+    try {
+        const childId = req.params.id;
+        const child = await AppDataSource.getRepository(Child).findOne({
+            where: { 
+                id: childId
+            }
+        })
+        if(!child){
+            return res.status(404).json({ message: "Child not found" });
+        }
+
+        const allFutureActivitySessions = await AppDataSource.getRepository(ActivitySession).find({
+            where: { 
+                startedAt: IsNull()
+            },
+            relations: {
+                stationActivitySessions: true,
+                route: true
+            }
+        })
+
+        const futureActivitySessionsAvailableForChild = allFutureActivitySessions.filter(activitySession => {
+            return activitySession.stationActivitySessions.some(sas => sas.stationId === child.dropOffStationId)
+        })
+
+        const responsePayload = futureActivitySessionsAvailableForChild.map(activitySession => {
+            return {
+                id: activitySession.id,
+                type: activitySession.type,
+                mode: activitySession.mode,
+                inLateRegistration: activitySession.inLateRegistration,
+                createdAt: activitySession.createdAt,
+                scheduledAt: activitySession.scheduledAt,
+                updatedAt: activitySession.updatedAt,
+                route: {
+                    id: activitySession.route.id,
+                    name: activitySession.route.name
+                }
+            }
+        }).sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime())
+
+        return res.status(200).json(responsePayload)
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+})
 
 /**
  * @swagger
