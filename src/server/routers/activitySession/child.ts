@@ -234,7 +234,8 @@ router.get('/available/:id', async (req: Request, res: Response) => {
             },
             relations: {
                 stationActivitySessions: true,
-                route: true
+                route: true,
+                childActivitySessions: true
             }
         })
 
@@ -247,6 +248,7 @@ router.get('/available/:id', async (req: Request, res: Response) => {
                 id: activitySession.id,
                 type: activitySession.type,
                 mode: activitySession.mode,
+                isAlreadyRegistered: activitySession.childActivitySessions.some(cas => cas.childId === childId),
                 inLateRegistration: activitySession.inLateRegistration,
                 createdAt: activitySession.createdAt,
                 scheduledAt: activitySession.scheduledAt,
