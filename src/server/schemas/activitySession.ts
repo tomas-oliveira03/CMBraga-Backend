@@ -38,6 +38,8 @@ export const UpdateActivitySessionSchema = ActivitySessionSchema.omit({
     createdAt: true,
     updatedAt: true,
     startedById: true,
+    startedAt: true,
+    finishedAt: true,
     finishedById: true
 }).partial();
 

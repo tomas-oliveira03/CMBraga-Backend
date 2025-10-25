@@ -375,6 +375,16 @@ router.post('/', upload.single('file'), async (req: Request, res: Response) => {
         // Delete file from cloud
         await deleteFile(cloudStoredFileURL)
 
+        let stationsList: Array<{
+            id: string,
+            name: string,
+            stopNumber: number,
+            typeofStation: string,
+            expectedTimeOfArrivalFromStartMinutes: number
+        }> = [];
+
+        let routeId: string = '';
+
         await AppDataSource.transaction(async tx => {
 
             const route = await tx.getRepository(Route).insert({
@@ -387,7 +397,7 @@ router.post('/', upload.single('file'), async (req: Request, res: Response) => {
                 boundsWest: routeData.bounds.west,
                 metadata: routeData.route
             })
-            const routeId = route.identifiers[0]?.id
+            routeId = route.identifiers[0]?.id
             
             let stopNumber = 0
             for (const stationData of routeData.stops){
@@ -415,18 +425,32 @@ router.post('/', upload.single('file'), async (req: Request, res: Response) => {
                 
                 const activityMode = validatedData.activityType === ActivityType.PEDIBUS ? ActivityMode.WALK : ActivityMode.BIKE;
                 
+                const timeFromStartMinutes = calculateTimeUntilArrival(stationData.distanceFromStart, activityMode);
                 await tx.getRepository(RouteStation).insert({
                     routeId: routeId,
                     stationId: stationId,
                     stopNumber: stopNumber,
                     distanceFromStartMeters: stationData.distanceFromStart,
                     distanceFromPreviousStationMeters: stationData.distanceFromPrevious,
-                    timeFromStartMinutes: calculateTimeUntilArrival(stationData.distanceFromStart, activityMode)
+                    timeFromStartMinutes: timeFromStartMinutes
                 })
+
+                stationsList.push({
+                    id: stationId,
+                    name: stationData.name,
+                    stopNumber: stopNumber,
+                    typeofStation: stationExists?.type ?? StationType.SCHOOL,
+                    expectedTimeOfArrivalFromStartMinutes: timeFromStartMinutes
+                });
             }
         });
+
+        const finalPayload = {
+            id: routeId,
+            stops: stationsList.sort((a, b) => a.stopNumber - b.stopNumber)
+        };
         
-        return res.status(201).json({ message: "Route created successfully" });
+        return res.status(201).json(finalPayload);
 
     } catch (error) {
         if (error instanceof z.ZodError) {
