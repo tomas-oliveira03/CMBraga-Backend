@@ -1885,9 +1885,176 @@ router.delete('/child/check-out', authenticate, authorize(UserRole.INSTRUCTOR), 
     }
 });
 
+/**
+ * @swagger
+ * /activity-session/actions/child/allActivities:
+ *   get:
+ *     summary: Get all activities for a child
+ *     description: Returns all activity sessions that a specific child is registered for.
+ *     tags:
+ *       - Activity Session - Actions
+ *     parameters:
+ *       - in: query
+ *         name: childId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Child ID
+ *         example: "child-uuid-1"
+ *     responses:
+ *       200:
+ *         description: List of activity sessions
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     example: "activity-session-uuid-1"
+ *                   scheduledAt:
+ *                     type: string
+ *                     format: date-time
+ *                   startedAt:
+ *                     type: string
+ *                     format: date-time
+ *                     nullable: true
+ *                   finishedAt:
+ *                     type: string
+ *                     format: date-time
+ *                     nullable: true
+ *             examples:
+ *               success:
+ *                 value:
+ *                   - id: "activity-session-uuid-1"
+ *                     scheduledAt: "2024-01-15T10:00:00.000Z"
+ *                     startedAt: "2024-01-15T10:30:00.000Z"
+ *                     finishedAt: null
+ *       400:
+ *         description: Bad request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               missing_id:
+ *                 value:
+ *                   message: "Child ID is required"
+ */
+router.get('/child/allActivities', async (req: Request, res: Response) => {
+    try {
+        const childId = req.query.childId;
+
+        if (!childId || typeof childId !== "string") {
+            return res.status(400).json({ message: "Child ID is required" });
+        }
+
+        const childActivities = await AppDataSource.getRepository(ChildActivitySession).find({
+            where: {
+                childId: childId
+            },
+            relations: {
+                activitySession: true
+            }
+        });
+
+        return res.status(200).json(childActivities.map(ca => ca.activitySession));
+
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+});
 
 
-
+/**
+ * @swagger
+ * /activity-session/actions/parent/check-in:
+ *   post:
+ *     summary: Check in a parent
+ *     description: Checks in a parent for the activity session.
+ *     tags:
+ *       - Activity Session - Actions
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: parentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Parent ID
+ *         example: "parent-uuid-1"
+ *       - in: query
+ *         name: activitySessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Activity session ID
+ *         example: "c56ad528-3522-4557-8b34-a787a50900b7"
+ *     responses:
+ *       200:
+ *         description: Parent checked-in successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               success:
+ *                 value:
+ *                   message: "Parent checked-in successfully"
+ *       400:
+ *         description: Bad request or already checked-in
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               missing_params:
+ *                 value:
+ *                   message: "Parent ID, Station ID and Activity Session ID are required"
+ *               not_registered:
+ *                 value:
+ *                   message: "Parent is not registered for this activity session in this station"
+ *               already_checked_in:
+ *                 value:
+ *                   message: "Parent already checked-in"
+ *               not_assigned:
+ *                 value:
+ *                   message: "Instructor is not assigned to this activity session"
+ *       404:
+ *         description: Not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               parent_not_found:
+ *                 value:
+ *                   message: "Parent not found"
+ *               activity_not_found:
+ *                 value:
+ *                   message: "Activity session not found"
+ *               station_not_found:
+ *                 value:
+ *                   message: "Station not found in this activity session"
+ *               no_stations:
+ *                 value:
+ *                   message: "Activity session not found or no more stations left"
+ */
 router.post('/parent/check-in', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
     try {
         const parentId = req.query.parentId;
@@ -1977,6 +2144,90 @@ router.post('/parent/check-in', authenticate, authorize(UserRole.INSTRUCTOR), as
 });
 
 
+/**
+ * @swagger
+ * /activity-session/actions/parent/check-in:
+ *   delete:
+ *     summary: Undo check-in for a parent
+ *     description: Removes the check-in record for a parent in the activity session.
+ *     tags:
+ *       - Activity Session - Actions
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: childId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Parent ID (note - parameter name should be parentId)
+ *         example: "parent-uuid-1"
+ *       - in: query
+ *         name: activitySessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Activity session ID
+ *         example: "c56ad528-3522-4557-8b34-a787a50900b7"
+ *     responses:
+ *       200:
+ *         description: Parent unchecked-in successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               success:
+ *                 value:
+ *                   message: "Parent unchecked-in successfully"
+ *       400:
+ *         description: Parent not checked-in or bad request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               not_checked_in:
+ *                 value:
+ *                   message: "Parent is not checked-in"
+ *               missing_params:
+ *                 value:
+ *                   message: "Parent ID, Station ID and Activity Session ID are required"
+ *               not_registered:
+ *                 value:
+ *                   message: "Parent is not registered for this activity session in this station"
+ *               not_assigned:
+ *                 value:
+ *                   message: "Instructor is not assigned to this activity session"
+ *       404:
+ *         description: Not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               parent_not_found:
+ *                 value:
+ *                   message: "Parent not found"
+ *               activity_not_found:
+ *                 value:
+ *                   message: "Activity session not found"
+ *               station_not_found:
+ *                 value:
+ *                   message: "Station not found in this activity session"
+ *               no_stations:
+ *                 value:
+ *                   message: "Activity session not found or no more stations left"
+ */
 router.delete('/parent/check-in', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
     try {
         const parentId = req.query.childId;
