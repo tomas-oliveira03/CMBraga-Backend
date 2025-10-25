@@ -176,10 +176,13 @@ router.get('/:id', async (req: Request, res: Response) => {
  *                     example: "c56ad528-3522-4557-8b34-a787a50900b7"
  *                   type:
  *                     type: string
- *                     example: "regular"
+ *                     example: "pedibus"
  *                   mode:
  *                     type: string
- *                     example: "bus"
+ *                     example: "walk"
+ *                   isAlreadyRegistered:
+ *                     type: boolean
+ *                     example: false
  *                   inLateRegistration:
  *                     type: boolean
  *                     example: false
@@ -205,6 +208,20 @@ router.get('/:id', async (req: Request, res: Response) => {
  *                       name:
  *                         type: string
  *                         example: "Rota Escola"
+ *                   stops:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: string
+ *                           example: "station-uuid-1"
+ *                         name:
+ *                           type: string
+ *                           example: "Estação Central"
+ *                         stopNumber:
+ *                           type: integer
+ *                           example: 1
  *       404:
  *         description: Child not found
  *         content:
@@ -233,7 +250,9 @@ router.get('/available/:id', async (req: Request, res: Response) => {
                 startedAt: IsNull()
             },
             relations: {
-                stationActivitySessions: true,
+                stationActivitySessions: {
+                    station: true
+                },
                 route: true,
                 childActivitySessions: true
             }
@@ -256,7 +275,14 @@ router.get('/available/:id', async (req: Request, res: Response) => {
                 route: {
                     id: activitySession.route.id,
                     name: activitySession.route.name
-                }
+                },
+                stops: [...activitySession.stationActivitySessions]
+                    .sort((a, b) => a.stopNumber - b.stopNumber)
+                    .map(sas => ({
+                        id: sas.stationId,
+                        name: sas.station.name,
+                        stopNumber: sas.stopNumber
+                    }))
             }
         }).sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime())
 

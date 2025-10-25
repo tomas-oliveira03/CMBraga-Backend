@@ -82,7 +82,7 @@ router.get('/', async (req: Request, res: Response) => {
  * /activity-session/{id}:
  *   get:
  *     summary: Get activity session by ID
- *     description: Returns a single activity session by its ID
+ *     description: Returns a single activity session by its ID, including a flattened stations array.
  *     tags:
  *       - Activity Session
  *     parameters:
@@ -112,12 +112,10 @@ router.get('/', async (req: Request, res: Response) => {
  *                   type: string
  *                   enum: [walk, bike]
  *                   example: "bike"
- *                   description: "Transportation mode (automatically set based on type)"
  *                 routeId:
  *                   type: string
  *                   nullable: true
  *                   example: "c3d4e5f6-g7h8-9012-cdef-34567890123a"
- *                   description: "Associated route ID (UUID)"
  *                 scheduledAt:
  *                   type: string
  *                   format: date-time
@@ -140,6 +138,44 @@ router.get('/', async (req: Request, res: Response) => {
  *                   type: string
  *                   format: date-time
  *                   example: "2024-01-10T09:15:22.000Z"
+ *                 stations:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       stationId:
+ *                         type: string
+ *                         example: "b8b395a0-9239-45cc-bd25-1173744dcbc2"
+ *                       stopNumber:
+ *                         type: integer
+ *                         example: 1
+ *                       scheduledAt:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2025-10-24T19:12:13.250Z"
+ *                       arrivedAt:
+ *                         type: string
+ *                         format: date-time
+ *                         nullable: true
+ *                         example: null
+ *                       leftAt:
+ *                         type: string
+ *                         format: date-time
+ *                         nullable: true
+ *                         example: null
+ *                       name:
+ *                         type: string
+ *                         example: "R. Manuel Ferreira Gomes"
+ *                       type:
+ *                         type: string
+ *                         enum: [regular, school]
+ *                         example: "regular"
+ *                       latitude:
+ *                         type: number
+ *                         example: 41.553404
+ *                       longitude:
+ *                         type: number
+ *                         example: -8.397567
  *       404:
  *         description: Activity session not found
  *         content:
@@ -158,14 +194,37 @@ router.get('/:id', async (req: Request, res: Response) => {
         const session = await AppDataSource.getRepository(ActivitySession).findOne({
             where: {
                 id: sessionId
+            },
+            relations: {
+                stationActivitySessions: {
+                    station: true
+                }
             }
         });
-
         if (!session){
             return res.status(404).json({ message: "Session not found" })
         }
 
-        return res.status(200).json(session);
+        // Flatten stationActivitySessions to stations array
+        const stations = session.stationActivitySessions.map(sas => ({
+            stationId: sas.stationId,
+            stopNumber: sas.stopNumber,
+            scheduledAt: sas.scheduledAt,
+            arrivedAt: sas.arrivedAt,
+            leftAt: sas.leftAt,
+            name: sas.station.name,
+            type: sas.station.type,
+            latitude: sas.station.latitude,
+            longitude: sas.station.longitude
+        }));
+
+        const { stationActivitySessions, ...rest } = session;
+        const response = {
+            ...rest,
+            stations
+        };
+
+        return res.status(200).json(response);
         
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
