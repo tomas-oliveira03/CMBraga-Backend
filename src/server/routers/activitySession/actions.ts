@@ -1346,6 +1346,10 @@ router.post('/child/check-in', authenticate, authorize(UserRole.INSTRUCTOR), asy
             });
         }
 
+        if(!stationActivity.arrivedAt){
+            return res.status(400).json({ message: "Instructor has not arrived at this station yet" });
+        }
+
         const alreadyCheckedIn = await AppDataSource.getRepository(ChildStation).findOne({
             where: {
                 childId: childId,
@@ -1521,6 +1525,10 @@ router.post('/child/check-out', authenticate, authorize(UserRole.INSTRUCTOR), as
             return res.status(404).json({ 
                 message: "Station not found in this activity session" 
             });
+        }
+
+        if(!stationActivity.arrivedAt){
+            return res.status(400).json({ message: "Instructor has not arrived at this station yet" });
         }
 
         const alreadyCheckedOut = await AppDataSource.getRepository(ChildStation).findOne({
@@ -2115,6 +2123,10 @@ router.post('/parent/check-in', authenticate, authorize(UserRole.INSTRUCTOR), as
             return res.status(404).json({ 
                 message: "Station not found in this activity session" 
             });
+        }
+
+        if(!stationActivity.arrivedAt){
+            return res.status(400).json({ message: "Instructor has not arrived at this station yet" });
         }
 
         const alreadyCheckedIn = await AppDataSource.getRepository(ParentStation).findOne({
