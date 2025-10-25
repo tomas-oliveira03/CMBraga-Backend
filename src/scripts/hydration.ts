@@ -450,71 +450,332 @@ async function dbHydration() {
     await reportRepo.save(report1);
 
     // 15. Create badges
-    const badge1 = badgeRepo.create({
-      name: "Primeira Participação",
-      description: "Concluiu a primeira participação com sucesso!",
-      imageUrl: "https://example.com/images/badge1.png",
-      criteria: BadgeCriteria.PARTICIPATION,
-      valueneeded: 1
-    });
-
-    const badge2 = badgeRepo.create({
-      name: "Explorador Urbano",
-      description: "Concluiu 5 caminhadas consecutivas.",
-      imageUrl: "https://example.com/images/badge2.png",
-      criteria: BadgeCriteria.STREAK,
-      valueneeded: 5
-    });
-
-    const badge3 = badgeRepo.create({
-      name: "Cidadão Ativo",
-      description: "Percorreu 20 km no total.",
-      imageUrl: "https://example.com/images/badge3.png",
-      criteria: BadgeCriteria.DISTANCE,
-      valueneeded: 20
-    });
-
-    const badge4 = badgeRepo.create({
-      name: "Queimador de Calorias",
-      description: "Queimou 2000 calorias no total.",
-      imageUrl: "https://example.com/images/badge4.png",
+    const calories1 = badgeRepo.create({
+      name: "Centelha Calórica",
+      description: "Premiado por queimar 100 calorias.",
       criteria: BadgeCriteria.CALORIES,
-      valueneeded: 2000
-    });
+      valueneeded: 100,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Calories1.png"
+    })
 
-    const badge5 = badgeRepo.create({
-      name: "Amante do Clima",
-      description: "Participou em atividades sob diferentes condições climáticas.",
-      imageUrl: "https://example.com/images/badge5.png",
-      criteria: BadgeCriteria.WEATHER,
-      valueneeded: 3
-    });
+    const calories2 = badgeRepo.create({
+      name: "Queimador Urbano",
+      description: "Premiado por queimar 500 calorias.",
+      criteria: BadgeCriteria.CALORIES,
+      valueneeded: 500,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Calories2.png"
+    })
 
-    const badge6 = badgeRepo.create({
-      name: "Pontuador",
-      description: "Acumulou 1000 pontos de atividade.",
-      imageUrl: "https://example.com/images/badge6.png",
-      criteria: BadgeCriteria.POINTS,
-      valueneeded: 1000
-    });
+    const calories3 = badgeRepo.create({
+      name: "Titã das Calorias",
+      description: "Premiado por queimar 1000 calorias.",
+      criteria: BadgeCriteria.CALORIES,
+      valueneeded: 1000,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Calories3.png"
+    })
+    const calories4 = badgeRepo.create({
+      name: "Força Incansável",
+      description: "Premiado por queimar 5000 calorias.",
+      criteria: BadgeCriteria.CALORIES,
+      valueneeded: 5000,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Calories4.png"
+    })
 
-    const badge7 = badgeRepo.create({
-      name: "Top do Ranking",
-      description: "Alcançou o top 1 no quadro de líderes mensal.",
-      imageUrl: "https://example.com/images/badge7.png",
+    const calories5 = badgeRepo.create({
+      name: "Devastador de Calorias",
+      description: "Premiado por queimar 10000 calorias.",
+      criteria: BadgeCriteria.CALORIES,
+      valueneeded: 10000,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Calories5.png"
+    })
+
+    const distance1 = badgeRepo.create({
+      name: "Passo Inicial",
+      description: "Premiado por percorrer 1 km.",
+      criteria: BadgeCriteria.DISTANCE,
+      valueneeded: 1,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Distance1.png"
+    })
+
+    const distance2 = badgeRepo.create({
+      name: "Caminho Alegre",
+      description: "Premiado por percorrer 5 km.",
+      criteria: BadgeCriteria.DISTANCE,
+      valueneeded: 5,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Distance2.png"
+    })
+
+    const distance3 = badgeRepo.create({
+      name: "Explorador de Trilhas",
+      description: "Premiado por percorrer 10 km.",
+      criteria: BadgeCriteria.DISTANCE,
+      valueneeded: 10,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Distance3.png"
+    })
+
+    const distance4 = badgeRepo.create({
+      name: "Aventureiro das Distâncias",
+      description: "Premiado por percorrer 20 km.",
+      criteria: BadgeCriteria.DISTANCE,
+      valueneeded: 20,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Distance4.png"
+    })
+
+    const distance5 = badgeRepo.create({
+      name: "Navegador de Longas",
+      description: "Premiado por percorrer 50 km.",
+      criteria: BadgeCriteria.DISTANCE,
+      valueneeded: 50,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Distance5.png"
+    })
+    
+    const leaderboard1 = badgeRepo.create({
+      name: "Top Dez Distintos",
+      description: "Premiado por estar entre os 10 primeiros em distância.",
       criteria: BadgeCriteria.LEADERBOARD,
-      valueneeded: 1
-    });
+      valueneeded: 10,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Leaderboard1.png"
+    })
+    const leaderboard2 = badgeRepo.create({
+      name: "Elite dos Cinco",
+      description: "Premiado por estar entre os 5 primeiros em distância.",
+      criteria: BadgeCriteria.LEADERBOARD,
+      valueneeded: 5,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Leaderboard2.png"
+    })
 
-    const badge8 = badgeRepo.create({
-      name: "Participante Solidário",
-      description: "Foi solidário.",
-      imageUrl: "https://example.com/images/badge8.png",
+    const leaderboard3 = badgeRepo.create({
+      name: "Número Um Supremo",
+      description: "Premiado por ser o 1º classificado em distância.",
+      criteria: BadgeCriteria.LEADERBOARD,
+      valueneeded: 1,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Leaderboard3.png"
+    })
+    const leaderboard4 = badgeRepo.create({
+      name: "Tricampeão da Rua",
+      description: "Premiado por ser o 1º classificado em distância por 3 vezes.",
+      criteria: BadgeCriteria.LEADERBOARD,
+      valueneeded: 3,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Leaderboard4.png"
+    })
+    
+    const leaderboard5 = badgeRepo.create({
+      name: "Penta Vanguardista",
+      description: "Premiado por ser o 1º classificado em distância por 5 vezes.",
+      criteria: BadgeCriteria.LEADERBOARD,
+      valueneeded: 5,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Leaderboard5.png"
+    })
+    
+    const participation1 = badgeRepo.create({
+      name: "Participante Promissor",
+      description: "Premiado por participar em 3 atividades.",
+      criteria: BadgeCriteria.PARTICIPATION,
+      valueneeded: 3,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Participation1.png"
+    })
+
+    const participation2 = badgeRepo.create({
+      name: "Entusiasta Constante",
+      description: "Premiado por participar em 5 atividades.",
+      criteria: BadgeCriteria.PARTICIPATION,
+      valueneeded: 5,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Participation2.png"
+    })
+    
+    const participation3 = badgeRepo.create({
+      name: "Assíduo Notável",
+      description: "Premiado por participar em 10 atividades.",
+      criteria: BadgeCriteria.PARTICIPATION,
+      valueneeded: 10,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Participation3.png"
+    })
+
+    const participation4 = badgeRepo.create({
+      name: "Veterano do Passeio",
+      description: "Premiado por participar em 20 atividades.",
+      criteria: BadgeCriteria.PARTICIPATION,
+      valueneeded: 20,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Participation4.png"
+    })
+
+    const participation5 = badgeRepo.create({
+      name: "Mestre da Participação",
+      description: "Premiado por participar em 50 atividades.",
+      criteria: BadgeCriteria.PARTICIPATION,
+      valueneeded: 50,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Participation5.png"
+    })
+
+    const points1 = badgeRepo.create({
+      name: "Contador Iniciante",
+      description: "Premiado por acumular 100 pontos.",
+      criteria: BadgeCriteria.POINTS,
+      valueneeded: 100,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Points1.png"
+    })
+
+    const points2 = badgeRepo.create({
+      name: "Acumulador Sagaz",
+      description: "Premiado por acumular 500 pontos.",
+      criteria: BadgeCriteria.POINTS,
+      valueneeded: 500,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Points2.png"
+    })
+
+    const points3 = badgeRepo.create({
+      name: "Pontual Vanguardista",
+      description: "Premiado por acumular 1000 pontos.",
+      criteria: BadgeCriteria.POINTS,
+      valueneeded: 1000,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Points3.png"
+    })
+
+    const points4 = badgeRepo.create({
+      name: "Especialista em Pontos",
+      description: "Premiado por acumular 5000 pontos.",
+      criteria: BadgeCriteria.POINTS,
+      valueneeded: 5000,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Points4.png"
+    })
+
+    const points5 = badgeRepo.create({
+      name: "Lendário dos Pontos",
+      description: "Premiado por acumular 10000 pontos.",
+      criteria: BadgeCriteria.POINTS,
+      valueneeded: 10000,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Points5.png"
+    })
+
+    const special1 = badgeRepo.create({
+      name: "Pequeno Valente",
+      description: "Premiado por uma ação especial",
       criteria: BadgeCriteria.SPECIAL,
-      valueneeded: 1
-    });
+      valueneeded: 0,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Special1.png"
+    })
 
-    await badgeRepo.save([badge1, badge2, badge3, badge4, badge5, badge6, badge7, badge8]);
+    const special2 = badgeRepo.create({
+      name: "Gratidão Brilhante",
+      description: "Premiado por participar de forma especial",
+      criteria: BadgeCriteria.SPECIAL,
+      valueneeded: 0,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Special2.png"
+    })
+
+    const special3 = badgeRepo.create({
+      name: "Aplauso Especial",
+      description: "Premiado por participar de forma especial",
+      criteria: BadgeCriteria.SPECIAL,
+      valueneeded: 0,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Special3.png"
+    })
+
+    const special4 = badgeRepo.create({
+      name: "Campeão Singular",
+      description: "Premiado por uma ação especial",
+      criteria: BadgeCriteria.SPECIAL,
+      valueneeded: 0,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Special4.png"
+    })
+
+    const special5 = badgeRepo.create({
+      name: "Herói Eterno",
+      description: "Premiado por uma ação lendária",
+      criteria: BadgeCriteria.SPECIAL,
+      valueneeded: 0,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Special5.png"
+    })
+
+    const streak1 = badgeRepo.create({
+      name: "Chama Inicial",
+      description: "Premiado por completar 1 atividade consecutiva.",
+      criteria: BadgeCriteria.STREAK,
+      valueneeded: 1,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Streak1.png"
+    })
+    const streak2 = badgeRepo.create({
+      name: "Fogo de Três",
+      description: "Premiado por completar 3 atividades consecutivas.",
+      criteria: BadgeCriteria.STREAK,
+      valueneeded: 3,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Streak2.png"
+    })
+
+    const streak3 = badgeRepo.create({
+      name: "Chama Persistente",
+      description: "Premiado por completar 5 atividades consecutivas.",
+      criteria: BadgeCriteria.STREAK,
+      valueneeded: 5,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Streak3.png"
+    })
+
+    const streak4 = badgeRepo.create({
+      name: "Fagulha Duradoura",
+      description: "Premiado por completar 10 atividades consecutivas.",
+      criteria: BadgeCriteria.STREAK,
+      valueneeded: 10,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Streak4.png"
+    })
+
+    const streak5 = badgeRepo.create({
+      name: "Força Incandescente",
+      description: "Premiado por completar 25 atividades consecutivas.",
+      criteria: BadgeCriteria.STREAK,
+      valueneeded: 25,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Streak5.png"
+    })
+    
+    const weather1 = badgeRepo.create({
+      name: "Clima Amigo",
+      description: "Premiado por completar 1 atividade num clima diferente.",
+      criteria: BadgeCriteria.WEATHER,
+      valueneeded: 1,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Weather1.png"
+    })
+
+    const weather2 = badgeRepo.create({
+      name: "Viajante do Tempo",
+      description: "Premiado por completar 2 atividades em climas diferentes.",
+      criteria: BadgeCriteria.WEATHER,
+      valueneeded: 2,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Weather2.png"
+    })
+    const weather3 = badgeRepo.create({
+      name: "Aventureiro Climático",
+      description: "Premiado por completar 3 atividades em climas diferentes.",
+      criteria: BadgeCriteria.WEATHER,
+      valueneeded: 3,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Weather3.png"
+    })
+
+    const weather4 = badgeRepo.create({
+      name: "Explorador Atmosférico",
+      description: "Premiado por completar 4 atividades em climas diferentes.",
+      criteria: BadgeCriteria.WEATHER,
+      valueneeded: 4,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Weather4.png"
+    })
+
+    const weather5 = badgeRepo.create({
+      name: "Dominador do Tempo",
+      description: "Premiado por completar 5 atividades em climas diferentes.",
+      criteria: BadgeCriteria.WEATHER,
+      valueneeded: 5,
+      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Weather5.png"
+    })
+
+    const badges = [calories1, calories2, calories3, calories4, calories5,
+      distance1, distance2, distance3, distance4, distance5,
+      leaderboard1, leaderboard2, leaderboard3, leaderboard4, leaderboard5,
+      participation1, participation2, participation3, participation4, participation5,
+      points1, points2, points3, points4, points5,
+      special1, special2, special3, special4, special5,
+      streak1, streak2, streak3, streak4, streak5,
+      weather1, weather2, weather3, weather4, weather5
+    ];
+
+    await badgeRepo.save(badges);
 
     // 16. Create feedbacks
     const feedback1 = feedbackRepo.create({
