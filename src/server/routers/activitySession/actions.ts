@@ -15,6 +15,7 @@ import { setActivityStats } from "@/server/services/activityStats";
 import { Parent } from "@/db/entities/Parent";
 import { ParentActivitySession } from "@/db/entities/ParentActivitySession";
 import { ParentStation } from "@/db/entities/ParentStation";
+import { RouteSchema } from "@/server/schemas/route";
 
 const router = express.Router();
 
@@ -2319,6 +2320,110 @@ router.delete('/parent/check-in', authenticate, authorize(UserRole.INSTRUCTOR), 
         });
 
         return res.status(200).json({message: "Parent unchecked-in successfully"});
+
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+});
+
+/**
+ * @swagger
+ * /activity-session/actions/parentStatus:
+ *   get:
+ *     summary: Get parent check-in status
+ *     description: Returns parents that have been checked-in and parents yet to be checked-in for the activity session.
+ *     tags:
+ *       - Activity Session - Actions
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: activitySessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Activity session ID
+ *         example: "c56ad528-3522-4557-8b34-a787a50900b7"
+ *     responses:
+ *       200:
+ *         description: Parent status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 parentsCheckedIn:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id: { type: string }
+ *                       name: { type: string }
+ *                 parentsYetToCheckIn:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id: { type: string }
+ *                       name: { type: string }
+ *       400:
+ *         description: Bad request
+ *       404:
+ *         description: Activity session not found
+ */
+router.get('/parentStatus', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
+    try {
+        const activitySessionId = req.query.activitySessionId;
+
+        if (!activitySessionId || typeof activitySessionId !== "string") {
+            return res.status(400).json({ message: "Activity session ID is required" });
+        }
+
+        const activitySession = await AppDataSource.getRepository(ActivitySession).findOne({
+            where: { id: activitySessionId },
+           
+        });
+
+        if (!activitySession) {
+            return res.status(404).json({ message: "Activity session not found" });
+        }
+
+        const allParentsInActivity = await AppDataSource.getRepository(ParentActivitySession).find({
+            where: {
+                activitySessionId: activitySessionId
+            },
+            relations: {
+                parent: true
+            }
+        });
+
+        const checkedInParents = await AppDataSource.getRepository(ParentStation).find({
+            where: {
+                activitySessionId: activitySessionId
+            },
+            relations: {
+                parent: true
+            }
+        });
+
+        const checkedInParentIds = new Set(checkedInParents.map(ps => ps.parentId));
+
+        const parentsCheckedIn = checkedInParents.map(ps => ({
+            id: ps.parent.id,
+            name: ps.parent.name
+        }));
+
+        const parentsYetToCheckIn = allParentsInActivity
+            .filter(pas => !checkedInParentIds.has(pas.parentId))
+            .map(pas => ({
+                id: pas.parent.id,
+                name: pas.parent.name
+            }));
+
+        return res.status(200).json({
+            parentsCheckedIn,
+            parentsYetToCheckIn
+        });
 
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
