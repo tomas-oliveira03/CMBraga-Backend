@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ActivityTypeEnum } from "./activitySession";
+import { StationTypeEnum } from "./station";
 
 export const RoutePointSchema = z.object({
   lat: z.number(),
@@ -19,6 +20,12 @@ export const RouteSchema = z.object({
     createdAt: z.date(),
     updatedAt: z.date().nullable()
 });
+
+export const InitialUpdateSchema = z.array(z.object({
+    stationId: z.string(),
+    type: StationTypeEnum,
+    timeFromStartMinutes: z.number()
+}));
 
 export const CreateRouteSchema = RouteSchema.omit({
     id: true,
@@ -46,4 +53,5 @@ export const UpdateRouteSchema = RouteSchema.omit({
 
 export type Route = z.infer<typeof RouteSchema>;
 export type CreateRouteInput = z.infer<typeof CreateRouteSchema>;
+export type InitialUpdateRouteInput = z.infer<typeof InitialUpdateSchema>;
 export type UpdateRouteInput = z.infer<typeof UpdateRouteSchema>;

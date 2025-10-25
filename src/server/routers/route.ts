@@ -1,7 +1,7 @@
 import { AppDataSource } from "@/db";
 import { Route } from "@/db/entities/Route";
 import express, { Request, Response } from "express";
-import { CreateRouteSchema } from "../schemas/route";
+import { CreateRouteSchema, InitialUpdateSchema, UpdateRouteSchema } from "../schemas/route";
 import z from "zod";
 import { processKMLFromURL } from "../services/kmlParser";
 import { Station } from "@/db/entities/Station";
@@ -463,5 +463,252 @@ router.post('/', upload.single('file'), async (req: Request, res: Response) => {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
+
+/**
+ * @swagger
+ * /route/initial-update/{id}:
+ *   put:
+ *     summary: Initial update for route stations and times
+ *     description: Updates station types and time from start for each station in a route. Should be called immediately after route creation to finalize station data.
+ *     tags:
+ *       - Route
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *         description: Route ID (UUID)
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: array
+ *             items:
+ *               type: object
+ *               required:
+ *                 - stationId
+ *                 - type
+ *                 - timeFromStartMinutes
+ *               properties:
+ *                 stationId:
+ *                   type: string
+ *                   example: "37b57f49-fecf-413d-bc90-6727682a8785"
+ *                 type:
+ *                   type: string
+ *                   enum: [regular, school]
+ *                   example: "regular"
+ *                 timeFromStartMinutes:
+ *                   type: integer
+ *                   example: 5
+ *     responses:
+ *       200:
+ *         description: Route updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Route updated successfully"
+ *       400:
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Validation error"
+ *                 errors:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *       404:
+ *         description: Route not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Route not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
+router.put('/initial-update/:id', async (req: Request, res: Response) => {
+    try {
+        const routeId = req.params.id;
+        const validatedData = InitialUpdateSchema.parse(req.body);
+
+        const route = await AppDataSource.getRepository(Route).findOne({
+            where: { id: routeId }
+        });
+        if (!route) {
+            return res.status(404).json({ message: "Route not found" });
+        }
+
+        await AppDataSource.transaction(async tx => {
+
+            for (const updateData of validatedData) {
+                const station = await tx.getRepository(Station).findOne({
+                    where: { id: updateData.stationId }
+                });
+                if (!station) {
+                    throw new Error(`Station with ID ${updateData.stationId} not found`);
+                }
+                if (station.type===StationType.SCHOOL && updateData.type !== StationType.SCHOOL) {
+                    throw new Error(`Station with ID ${updateData.stationId} is a school station and it cannot be updated to anything else`);
+                }
+
+                await tx.getRepository(Station).update(
+                    { id: updateData.stationId },
+                    { type: updateData.type });
+
+                await tx.getRepository(RouteStation).update(
+                    { 
+                        routeId: route.id,
+                        stationId: updateData.stationId
+                    },
+                    { timeFromStartMinutes: updateData.timeFromStartMinutes });
+            }
+        });
+
+        return res.status(200).json({ message: "Route updated successfully" });
+
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({ 
+                message: "Validation error", 
+                errors: error.issues 
+            });
+        }
+        
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+});
+
+/**
+ * @swagger
+ * /route/{id}:
+ *   put:
+ *     summary: Update route by ID
+ *     description: Updates the route's information by its ID. Only name and activityType can be updated.
+ *     tags:
+ *       - Route
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *         description: Route ID (UUID)
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 minLength: 1
+ *                 example: "Rota Pedibus Centro"
+ *               activityType:
+ *                 type: string
+ *                 enum: [pedibus, ciclo_expresso]
+ *                 example: "pedibus"
+ *     responses:
+ *       200:
+ *         description: Route updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Route updated successfully"
+ *       400:
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Validation error"
+ *                 errors:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *       404:
+ *         description: Route not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Route not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
+router.put('/:id', async (req: Request, res: Response) => {
+    try {
+        const routeId = req.params.id;
+        const validatedData = UpdateRouteSchema.parse(req.body);
+
+        const route = await AppDataSource.getRepository(Route).findOne({
+            where: { id: routeId }
+        });
+        if (!route) {
+            return res.status(404).json({ message: "Route not found" });
+        }
+
+        await AppDataSource.getRepository(Route).update(route.id, {
+            ...validatedData,
+            updatedAt: new Date()
+        });
+
+        return res.status(200).json({ message: "Route updated successfully" });
+
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({ 
+                message: "Validation error", 
+                errors: error.issues 
+            });
+        }
+        
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+});
+
+
 
 export default router;
