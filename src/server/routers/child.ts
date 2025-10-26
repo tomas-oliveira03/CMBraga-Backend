@@ -13,6 +13,8 @@ import { differenceInYears } from "date-fns";
 import { ParentChild } from "@/db/entities/ParentChild";
 import { Parent } from "@/db/entities/Parent";
 import { In } from "typeorm";
+import { ChildActivitySession } from "@/db/entities/ChildActivitySession";
+import { Feedback } from "@/db/entities/Feedback";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -312,7 +314,7 @@ router.get('/:id', async (req: Request, res: Response) => {
  * /child/{id}:
  *   put:
  *     summary: Update a child
- *     description: Updates an existing child and records height/weight changes in history. Can add one additional parent (max 2 parents total).
+ *     description: Updates an existing child and records height/weight changes in history. Can add one additional parent (max 2 parents total) or remove a parent (with validations).
  *     tags:
  *       - Child
  *     parameters:
@@ -371,6 +373,10 @@ router.get('/:id', async (req: Request, res: Response) => {
  *                 type: string
  *                 description: "Parent ID to add (max 2 parents total)"
  *                 example: "parent-uuid-2"
+ *               removeParentId:
+ *                 type: string
+ *                 description: "Parent ID to remove (requires at least 1 other parent, no activities, no feedback)"
+ *                 example: "parent-uuid-1"
  *               file:
  *                 type: string
  *                 format: binary
@@ -402,76 +408,30 @@ router.get('/:id', async (req: Request, res: Response) => {
  *               healthProblems:
  *                 type: object
  *                 nullable: true
- *                 properties:
- *                   allergies:
- *                     type: array
- *                     items:
- *                       type: string
- *                   chronicDiseases:
- *                     type: array
- *                     items:
- *                       type: string
- *                   surgeries:
- *                     type: array
- *                     items:
- *                       type: object
- *                       properties:
- *                         type:
- *                           type: string
- *                         year:
- *                           type: number
  *               heightCentimeters:
  *                 type: number
  *                 example: 135
- *                 description: "Child's height in centimeters (records history if provided)"
  *               weightKilograms:
  *                 type: number
  *                 example: 32
- *                 description: "Child's weight in kilograms (records history if provided)"
  *               dropOffStationId:
  *                 type: string
  *                 example: "station-uuid-2"
- *                 description: "School station ID where the child will be dropped off"
  *               parentId:
  *                 type: string
  *                 example: "parent-uuid-2"
- *                 description: "Parent ID to add (max 2 parents total)"
+ *               removeParentId:
+ *                 type: string
+ *                 example: "parent-uuid-1"
  *           example:
- *             name: "Sofia Mendes"
- *             gender: "female"
- *             school: "Escola Básica Central"
- *             schoolGrade: 1
- *             heightCentimeters: 120
- *             weightKilograms: 25
- *             healthProblems:
- *               allergies: ["gluten", "shellfish"]
- *             dropOffStationId: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
- *             parentId: "parent-uuid-2"
+ *             removeParentId: "parent-uuid-1"
  *     responses:
  *       200:
  *         description: Child updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 id:
- *                   type: string
- *                   example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
- *                 name:
- *                   type: string
- *                   example: "Pedro Oliveira"
- *                 profilePictureURL:
- *                   type: string
- *                   example: "https://storage.example.com/profiles/admin-1.jpg"
- *                 updatedAt:
- *                   type: string
- *                   format: date-time
- *                   example: "2024-01-20T14:45:30.000Z"
  *       400:
- *         description: Validation error or child already has 2 parents or parent already associated
+ *         description: Validation error or cannot remove parent (only parent, has activities, or has feedback)
  *       404:
- *         description: Child not found, station does not exist/isn't a school, or parent not found
+ *         description: Child not found or parent not associated
  *       500:
  *         description: Internal server error
  */
@@ -499,7 +459,7 @@ router.put('/:id', upload.single('file'), async (req: Request, res: Response) =>
             }
         }
 
-        const { parentId, ...childDataFields } = validatedData;
+        const { parentId, removeParentId, dropOffStationId, ...childDataFields } = validatedData;
         const childData = { 
             ...childDataFields,
             profilePictureURL: child.profilePictureURL
@@ -541,6 +501,49 @@ router.put('/:id', upload.single('file'), async (req: Request, res: Response) =>
             }
         }
 
+        if(removeParentId){
+            const parentAssociation = await AppDataSource.getRepository(ParentChild).findOne({
+                where: {
+                    childId: childId,
+                    parentId: removeParentId
+                }
+            });
+
+            if(!parentAssociation){
+                return res.status(404).json({message: "Parent is not associated with this child"});
+            }
+
+            const parentsNumber = await AppDataSource.getRepository(ParentChild).count({
+                where: { childId: childId }
+            });
+
+            if(parentsNumber === 1){
+                return res.status(400).json({message: "Cannot remove parent: child must have at least one parent"});
+            }
+
+            const activitiesNumber = await AppDataSource.getRepository(ChildActivitySession).count({
+                where: {
+                    childId: childId,
+                    parentId: removeParentId
+                }
+            });
+
+            if(activitiesNumber > 0){
+                return res.status(400).json({message: "Cannot remove parent: child has activities registered by this parent"});
+            }
+
+            const feedbackNumber = await AppDataSource.getRepository(Feedback).count({
+                where: {
+                    childId: childId,
+                    parentId: removeParentId
+                }
+            });
+
+            if(feedbackNumber > 0){
+                return res.status(400).json({message: "Cannot remove parent: parent has submitted feedback for this child"});
+            }
+        }
+
         const updatedAt = new Date()
         await AppDataSource.transaction(async tx => {
             await tx.getRepository(Child).update(child.id, {
@@ -559,12 +562,19 @@ router.put('/:id', upload.single('file'), async (req: Request, res: Response) =>
                 })
             }
 
-           
-            await tx.getRepository(ParentChild).insert({
-                parentId: parentId,
-                childId: childId
-            })
-            
+            if(parentId){
+                await tx.getRepository(ParentChild).insert({
+                    parentId: parentId,
+                    childId: childId
+                })
+            }
+
+            if(removeParentId){
+                await tx.getRepository(ParentChild).delete({
+                    parentId: removeParentId,
+                    childId: childId
+                })
+            }
         })
         
         return res.status(200).json({ 
