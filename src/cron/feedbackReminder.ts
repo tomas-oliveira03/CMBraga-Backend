@@ -1,12 +1,10 @@
 import cron, { ScheduledTask } from 'node-cron';
-import { CronExpression } from '@/helpers/utils';
 import { logger } from '@/lib/logger';
 import { AppDataSource } from '@/db';
 import { ActivitySession } from '@/db/entities/ActivitySession';
-import { ChildActivitySession } from '@/db/entities/ChildActivitySession';
 import { Feedback } from '@/db/entities/Feedback';
 import { Not, IsNull } from 'typeorm';
-import { sendEmail, sendFeedbackReminder } from '@/server/services/email';
+import { sendFeedbackReminder } from '@/server/services/email';
 import { envs } from '@/config';
 
 class FeedbackReminderCron {

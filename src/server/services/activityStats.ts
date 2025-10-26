@@ -4,7 +4,7 @@ import { RouteStation } from "@/db/entities/RouteStation";
 import { StationActivitySession } from "@/db/entities/StationActivitySession";
 import { ChildStationType } from "@/helpers/types";
 import { logger } from "@/lib/logger";
-import { calculateCaloriesBurned, calculateCO2Saved } from "./activity";
+import { calculateCaloriesBurned, calculateCO2Saved, calculatePointsEarned } from "./activity";
 import { ClientStat } from "@/db/entities/ClientStat";
 import { Child } from "@/db/entities/Child";
 
@@ -92,11 +92,13 @@ export async function setActivityStats(activityId: string){
                 const durationSeconds = Math.abs(dropOffStation.arrivedAt.getTime() - pickUpStation.leftAt.getTime()) / 1000;
                 const caloriesBurned = calculateCaloriesBurned(distanceMeters, durationSeconds, activityMode, child);
                 const co2Saved = calculateCO2Saved(distanceMeters);
+                const pointsEarned = calculatePointsEarned(distanceMeters, co2Saved, caloriesBurned);
 
                 clientStats.push({
                     distanceMeters: distanceMeters,
                     co2Saved: co2Saved,
                     caloriesBurned: caloriesBurned,
+                    pointsEarned: pointsEarned,
                     activityDate: activityDate,
                     activitySessionId: activity.id,
                     childId: childId

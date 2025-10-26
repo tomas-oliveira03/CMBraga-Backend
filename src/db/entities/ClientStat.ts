@@ -1,5 +1,4 @@
-import { Column, Entity, ManyToOne, OneToOne, PrimaryGeneratedColumn } from "typeorm"
-import { Parent } from "./Parent";
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm"
 import { Child } from "./Child";
 import { ActivitySession } from "./ActivitySession";
 
@@ -17,6 +16,9 @@ export class ClientStat {
     @Column({ type: 'int' })
     caloriesBurned!: number;
 
+    @Column({ type: 'int' })
+    pointsEarned!: number;
+
     @Column({ type: 'timestamptz' })
     activityDate!: Date;
 
@@ -24,13 +26,7 @@ export class ClientStat {
     activitySessionId!: string;
     
     @Column({ type: 'varchar', nullable: true })
-    parentId!: string | null;
-    
-    @Column({ type: 'varchar', nullable: true })
     childId!: string | null;
-
-    @ManyToOne(() => Parent, { nullable: true })
-    parent!: Parent | null;
 
     @ManyToOne(() => Child, { nullable: true })
     child!: Child | null;
