@@ -44,11 +44,17 @@ export const CreateChildSchema = ChildSchema.omit({
   updatedAt: true
 });
 
-export const UpdateChildSchema = ChildSchema.omit({
-    id: true,
-    dateOfBirth: true,
-    createdAt: true,
-    updatedAt: true
+export const UpdateChildSchema = z.object({
+    name: z.string().min(1).optional(),
+    gender: z.nativeEnum(ChildGender).optional(),
+    school: z.string().optional(),
+    schoolGrade: z.coerce.number().int().min(1).max(12).optional(),
+    dateOfBirth: z.coerce.date().optional(),
+    healthProblems: z.any().optional(),
+    dropOffStationId: z.string().uuid().optional(),
+    heightCentimeters: z.coerce.number().positive().optional(),
+    weightKilograms: z.coerce.number().positive().optional(),
+    parentId: z.string().uuid().optional()
 }).partial();
 
 

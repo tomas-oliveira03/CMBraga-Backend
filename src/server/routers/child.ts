@@ -10,6 +10,9 @@ import { isValidImageFile } from "@/helpers/storage";
 import { updateProfilePicture } from "../services/user";
 import { ChildHistory } from "@/db/entities/ChildHistory";
 import { differenceInYears } from "date-fns";
+import { ParentChild } from "@/db/entities/ParentChild";
+import { Parent } from "@/db/entities/Parent";
+import { In } from "typeorm";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -309,7 +312,7 @@ router.get('/:id', async (req: Request, res: Response) => {
  * /child/{id}:
  *   put:
  *     summary: Update a child
- *     description: Updates an existing child and records height/weight changes in history
+ *     description: Updates an existing child and records height/weight changes in history. Can add one additional parent (max 2 parents total).
  *     tags:
  *       - Child
  *     parameters:
@@ -351,6 +354,7 @@ router.get('/:id', async (req: Request, res: Response) => {
  *                 type: string
  *                 description: "JSON string of health problems object"
  *                 example: '{"allergies":["gluten","shellfish"],"chronicDiseases":[],"surgeries":[]}'
+
  *               heightCentimeters:
  *                 type: number
  *                 example: 135
@@ -363,6 +367,10 @@ router.get('/:id', async (req: Request, res: Response) => {
  *                 type: string
  *                 example: "station-uuid-2"
  *                 description: "School station ID where the child will be dropped off"
+ *               parentId:
+ *                 type: string
+ *                 description: "Parent ID to add (max 2 parents total)"
+ *                 example: "parent-uuid-2"
  *               file:
  *                 type: string
  *                 format: binary
@@ -424,6 +432,10 @@ router.get('/:id', async (req: Request, res: Response) => {
  *                 type: string
  *                 example: "station-uuid-2"
  *                 description: "School station ID where the child will be dropped off"
+ *               parentId:
+ *                 type: string
+ *                 example: "parent-uuid-2"
+ *                 description: "Parent ID to add (max 2 parents total)"
  *           example:
  *             name: "Sofia Mendes"
  *             gender: "female"
@@ -434,6 +446,7 @@ router.get('/:id', async (req: Request, res: Response) => {
  *             healthProblems:
  *               allergies: ["gluten", "shellfish"]
  *             dropOffStationId: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
+ *             parentId: "parent-uuid-2"
  *     responses:
  *       200:
  *         description: Child updated successfully
@@ -456,9 +469,9 @@ router.get('/:id', async (req: Request, res: Response) => {
  *                   format: date-time
  *                   example: "2024-01-20T14:45:30.000Z"
  *       400:
- *         description: Validation error
+ *         description: Validation error or child already has 2 parents or parent already associated
  *       404:
- *         description: Child not found or station does not exist/isn't a school
+ *         description: Child not found, station does not exist/isn't a school, or parent not found
  *       500:
  *         description: Internal server error
  */
@@ -486,16 +499,46 @@ router.put('/:id', upload.single('file'), async (req: Request, res: Response) =>
             }
         }
 
+        const { parentId, ...childDataFields } = validatedData;
         const childData = { 
-            ...validatedData,
+            ...childDataFields,
             profilePictureURL: child.profilePictureURL
         }
-
+        
         if (req.file){
             if (!isValidImageFile(req.file)){
                 return res.status(400).json({ message: "File must be a valid image type (JPEG, JPG, PNG, WEBP)" });
             }
             childData.profilePictureURL = await updateProfilePicture(child.profilePictureURL, req.file.buffer);
+        }
+        
+        if(parentId){
+            const parent = await AppDataSource.getRepository(Parent).findOne({
+                where: { id: parentId }
+            })
+            
+            if(!parent){
+                return res.status(404).json({message: "Parent doesn't exist"});
+            }
+
+            const currentParentsCount = await AppDataSource.getRepository(ParentChild).count({
+                where: { childId: childId }
+            });
+
+            if(currentParentsCount >= 2){
+                return res.status(400).json({message: "Child already has 2 parents associated"});
+            }
+
+            const existingAssociation = await AppDataSource.getRepository(ParentChild).findOne({
+                where: {
+                    childId: childId,
+                    parentId: parentId
+                }
+            });
+
+            if(existingAssociation){
+                return res.status(400).json({message: "Parent is already associated with this child"});
+            }
         }
 
         const updatedAt = new Date()
@@ -515,6 +558,13 @@ router.put('/:id', upload.single('file'), async (req: Request, res: Response) =>
                     age: age
                 })
             }
+
+           
+            await tx.getRepository(ParentChild).insert({
+                parentId: parentId,
+                childId: childId
+            })
+            
         })
         
         return res.status(200).json({ 
