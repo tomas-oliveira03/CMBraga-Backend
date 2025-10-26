@@ -68,3 +68,24 @@ export async function resetPassword(email: string, name: string){
         `
     });
 }
+
+
+export async function sendFeedbackReminder(
+    parentEmail: string, 
+    parentName: string, 
+    childName: string,
+    activityType: string,
+    feedbackLink: string
+) {
+    await sendEmail({
+        to: parentEmail,
+        subject: `Feedback da atividade do seu filho ${childName} em falta`,
+        html: `
+            <p>Olá ${parentName},</p>
+            <p>O seu filho <strong>${childName}</strong> participou hoje numa atividade.</p>
+            <p>Agradecemos que o ${childName} preencha o questionário de feedback relativo à atividade ${activityType}.</p>
+            <p>Por favor, clique no link abaixo:</p>
+            <a href="${feedbackLink}" style="display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px;">Preencher Avaliação</a>
+        `
+    });
+}
