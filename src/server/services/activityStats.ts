@@ -92,7 +92,7 @@ export async function setActivityStats(activityId: string){
                 const durationSeconds = Math.abs(dropOffStation.arrivedAt.getTime() - pickUpStation.leftAt.getTime()) / 1000;
                 const caloriesBurned = calculateCaloriesBurned(distanceMeters, durationSeconds, activityMode, child);
                 const co2Saved = calculateCO2Saved(distanceMeters);
-                const pointsEarned = calculatePointsEarned(distanceMeters, co2Saved, caloriesBurned);
+                const pointsEarned = calculatePointsEarned(distanceMeters);
 
                 clientStats.push({
                     distanceMeters: distanceMeters,

@@ -91,19 +91,18 @@ export function calculateCO2Saved(distanceMeters: number): number {
   return Math.round(co2Saved);
 }
 
-
+// TODO: Improve calculation logic, take weather, parents, distance into account
+// For each km = 24 points
+// Ignore co2 saved and calories burned for now
 export function calculatePointsEarned(
-    distanceMeters: number,
-    co2SavedGrams: number,
-    caloriesBurned: number
+    distanceMeters: number
 ): number {
-    if (distanceMeters <= 0 && co2SavedGrams <= 0 && caloriesBurned <= 0) return 0;
+    if (distanceMeters <= 0 ) return 0;
 
-    const distancePoints = distanceMeters / 100;  
-    const co2Points = co2SavedGrams / 10;
-    const caloriePoints = caloriesBurned / 5;
+    const distanceKm = distanceMeters / 1000;
+    const pointsPerKm = 24;
+    
+    const totalPoints = distanceKm * pointsPerKm;
 
-    const totalPoints = distancePoints + co2Points + caloriePoints;
-
-    return Math.round(totalPoints);
+    return Math.ceil(totalPoints);
 }
