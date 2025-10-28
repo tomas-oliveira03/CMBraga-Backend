@@ -7,6 +7,8 @@ import { logger } from "@/lib/logger";
 import { calculateCaloriesBurned, calculateCO2Saved, calculatePointsEarned } from "./activity";
 import { ClientStat } from "@/db/entities/ClientStat";
 import { Child } from "@/db/entities/Child";
+import { ParentChild } from "@/db/entities/ParentChild";
+import { ParentActivitySession } from "@/db/entities/ParentActivitySession";
 
 export async function setActivityStats(activityId: string){
     try{
@@ -89,11 +91,30 @@ export async function setActivityStats(activityId: string){
             }
         
             if (pickUpStation && dropOffStation) {
+                // TODO: Check if the parent actually participated in the activity
+                let isEducatorInvolved = false;
+                const parentChildRelations = await AppDataSource.getRepository(ParentChild).find({
+                    where: { childId: childId }
+                });
+                if (parentChildRelations && parentChildRelations.length > 0) {
+                    for (const pc of parentChildRelations) {
+                        const parentActivity = await AppDataSource.getRepository(ParentActivitySession).findOne({
+                            where: {
+                                parentId: pc.parentId,
+                                activitySessionId: activityId
+                            }
+                        });
+                        if (parentActivity) {
+                            isEducatorInvolved = true;
+                            break;
+                        }
+                    }
+                }
                 const distanceMeters = Math.abs(dropOffStation.distanceFromStartMeters - pickUpStation.distanceFromStartMeters);
                 const durationSeconds = Math.abs(dropOffStation.arrivedAt.getTime() - pickUpStation.leftAt.getTime()) / 1000;
                 const caloriesBurned = calculateCaloriesBurned(distanceMeters, durationSeconds, activityMode, child);
                 const co2Saved = calculateCO2Saved(distanceMeters);
-                const pointsEarned = calculatePointsEarned(distanceMeters, activitySessionWeatherType ?? undefined, false, 0);
+                const pointsEarned = calculatePointsEarned(distanceMeters, activitySessionWeatherType ?? undefined, isEducatorInvolved, 0);
 
                 clientStats.push({
                     distanceMeters: distanceMeters,
