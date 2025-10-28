@@ -18,7 +18,7 @@ import { User } from "@/db/entities/User";
 import { Feedback } from "@/db/entities/Feedback";
 import { ParentActivitySession } from "@/db/entities/ParentActivitySession";
 import { Badge } from "@/db/entities/Badge";
-import { BadgeCriteria, StationType } from "@/helpers/types";
+import { BadgeCriteria } from "@/helpers/types";
 import informationHash from "@/lib/information-hash";
 import { Route } from "@/db/entities/Route";
 import { RouteStation } from "@/db/entities/RouteStation";
@@ -144,60 +144,125 @@ async function dbHydration() {
 
     console.log("Creating route and stations from mock_route.json...");
     
-    // Read route data from JSON
-    const routeJsonPath = path.join(__dirname, "mock_route.json");
-    const routeJsonData = fs.readFileSync(routeJsonPath, "utf-8");
-    const routeData = JSON.parse(routeJsonData);
+    // Read all route files from the cicloExpresso directory
+    const routesBaseDir = path.join(__dirname, "/routes/cicloExpresso/json");
+    const routeFiles = fs.readdirSync(routesBaseDir).filter(file => file.endsWith('.json'));
 
-    // 1. Create stations from route stops FIRST
-    const stations: Station[] = [];
+    console.log(`Found ${routeFiles.length} route files to process`);
+
+    let allRoutes: Route[] = [];
+    let allRouteStations: RouteStation[] = [];
     
-    for (let i = 0; i < routeData.stops.length; i++) {
-      const stop = routeData.stops[i];
-      // Use type from JSON directly
-      const station = stationRepo.create({
-        name: stop.name,
-        type: stop.type, // <-- use type from JSON
-        longitude: stop.lon,
-        latitude: stop.lat
+    // Create a map to track stations by name and coordinates
+    const stationMap = new Map<string, Station>();
+    
+    for (const routeFile of routeFiles) {
+      const routeJsonPath = path.join(routesBaseDir, routeFile);
+      const routeJsonData = fs.readFileSync(routeJsonPath, "utf-8");
+      const routeData = JSON.parse(routeJsonData);
+      
+      console.log(`Processing route file: ${routeFile}`);
+      
+      const stations: Station[] = [];
+      
+      for (let i = 0; i < routeData.stops.length; i++) {
+        const stop = routeData.stops[i];
+      
+        const stationKey = `${stop.name}`;
+        
+        let station = stationMap.get(stationKey);
+        
+        if (!station) {
+          const existingStation = await stationRepo.findOne({
+            where: {
+              name: stop.name
+            }
+          });
+          
+          if (existingStation) {
+            station = existingStation;
+            console.log(`♻️  Reusing existing station from DB: ${stop.name}`);
+          } else {
+
+            station = stationRepo.create({
+              name: stop.name,
+              type: stop.type,
+              longitude: stop.lon,
+              latitude: stop.lat
+            });
+            await stationRepo.save(station);
+            console.log(`✨ Created new station: ${stop.name}`);
+          }
+          
+          // Add to map for future reference
+          stationMap.set(stationKey, station);
+        } else {
+          console.log(`♻️  Reusing station from map: ${stop.name}`);
+        }
+        
+        stations.push(station);
+      }
+      
+      console.log(`✅ Processed ${stations.length} stations for ${routeFile}`);
+      
+      // 2. Create Route
+      const routeName = routeFile.replace('.json', '');
+      const route = routeRepo.create({
+        name: routeName,
+        activityType: "ciclo_expresso" as any,
+        distanceMeters: Math.round(routeData.totalDistance * 1000),
+        boundsNorth: routeData.bounds.north,
+        boundsSouth: routeData.bounds.south,
+        boundsEast: routeData.bounds.east,
+        boundsWest: routeData.bounds.west,
+        metadata: routeData.route
       });
-      stations.push(station);
+      await routeRepo.save(route);
+      allRoutes.push(route);
+      console.log(`✅ Created route: ${route.name}`);
+      
+      // 3. Create RouteStations relationships
+      const routeStations = routeData.stops.map((stop: any, index: number) => 
+        routeStationRepo.create({
+          routeId: route.id,
+          stationId: stations[index]!.id,
+          stopNumber: index + 1,
+          distanceFromStartMeters: stop.distanceFromStart * 1000,
+          distanceFromPreviousStationMeters: stop.distanceFromPrevious ? Math.round(stop.distanceFromPrevious * 1000) : 0,
+          timeFromStartMinutes: stop.timeFromStartMinutes
+        })
+      );
+      
+      allRouteStations.push(...routeStations);
     }
-    await stationRepo.save(stations);
-    console.log(`✅ Created ${stations.length} stations`);
 
-    // 2. Create Route
-    const route = routeRepo.create({
-      name: "Rota Pedibus Centro",
-      activityType: "pedibus" as any,
-      distanceMeters: Math.round(routeData.totalDistance * 1000), // Convert km to meters
-      boundsNorth: routeData.bounds.north,
-      boundsSouth: routeData.bounds.south,
-      boundsEast: routeData.bounds.east,
-      boundsWest: routeData.bounds.west,
-      metadata: routeData.route
+    // Save all route-station relationships at once
+    await routeStationRepo.save(allRouteStations);
+    console.log(`✅ Created ${allRouteStations.length} route-station relationships for all routes`);
+    console.log(`✅ Total routes created: ${allRoutes.length}`);
+    console.log(`✅ Total unique stations created: ${stationMap.size}`);
+
+    // Use the first route for the activity session
+    const route = allRoutes[0]!;
+    const stationsForActivity = await routeStationRepo.find({
+      where: { routeId: route.id },
+      order: { stopNumber: 'ASC' }
     });
-    await routeRepo.save(route);
-    console.log(`✅ Created route: ${route.name}`);
-
-    // 3. Create RouteStations relationships
-    const routeStations = routeData.stops.map((stop: any, index: number) => 
-      routeStationRepo.create({
-        routeId: route.id,
-        stationId: stations[index]!.id,
-        stopNumber: index + 1,
-        distanceFromStartMeters: stop.distanceFromStart * 1000, // Convert km to meters
-        distanceFromPreviousStationMeters: stop.distanceFromPrevious ? Math.round(stop.distanceFromPrevious * 1000) : 0,
-        timeFromStartMinutes: stop.timeFromStartMinutes // <-- use timeFromStartMinutes from JSON
-      })
+    
+    const stations = await Promise.all(
+      stationsForActivity.map(rs => stationRepo.findOneBy({ id: rs.stationId }))
     );
-    await routeStationRepo.save(routeStations);
-    console.log(`✅ Created ${routeStations.length} route-station relationships`);
+
+    // Load the route data for the first route to get stop information
+    const firstRouteFile = routeFiles[0]!;
+    const firstRouteJsonPath = path.join(routesBaseDir, firstRouteFile);
+    const firstRouteJsonData = fs.readFileSync(firstRouteJsonPath, "utf-8");
+    const routeData = JSON.parse(firstRouteJsonData);
 
     // 4. Create Activity Session based on the route
     const atividade = activityRepo.create({
-      type: "pedibus" as any,
-      mode: "walk" as any,
+      type: "ciclo_expresso" as any,
+      mode: "bike" as any,
       scheduledAt: new Date(),
       routeId: route.id,
     });
@@ -853,7 +918,7 @@ async function dbHydration() {
     console.log("\n=== HIDRATAÇÃO COMPLETA ===");
     console.log("✅ 1. Criadas " + stations.length + " estações a partir do ficheiro JSON");
     console.log("✅ 2. Criada rota '" + route.name + "' com " + stations.length + " estações");
-    console.log("✅ 3. Criadas " + routeStations.length + " relações rota-estação");
+    console.log("✅ 3. Criadas " + allRouteStations.length + " relações rota-estação");
     console.log("✅ 4. Criada atividade baseada na rota");
     console.log("✅ 5. Criados 10 pais e 10 crianças");
     console.log("✅ 6. Criados " + childHistories.length + " registos de histórico de crianças (3 por criança)");

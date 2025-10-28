@@ -340,6 +340,15 @@
         </Point>
       </Placemark>
       <Placemark>
+        <name>Av. 31 de Janeiro</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -8.413383,41.546082,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
         <name>EB1 Carandá</name>
         <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
         <Point>
@@ -363,15 +372,6 @@
         <Point>
           <coordinates>
             -8.419554,41.548797,0
-          </coordinates>
-        </Point>
-      </Placemark>
-      <Placemark>
-        <name>Av. 31 de Janeiro</name>
-        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
-        <Point>
-          <coordinates>
-            -8.413383,41.546082,0
           </coordinates>
         </Point>
       </Placemark>

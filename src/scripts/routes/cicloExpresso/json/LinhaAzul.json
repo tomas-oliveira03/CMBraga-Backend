@@ -854,12 +854,21 @@
       "type": "regular"
     },
     {
+      "name": "Av. 31 de Janeiro",
+      "lat": 41.546082,
+      "lon": -8.413383,
+      "distanceFromStart": 3.417,
+      "distanceFromPrevious": 0.72,
+      "timeFromStartMinutes": 14,
+      "type": "regular"
+    },
+    {
       "name": "EB1 Carandá",
       "lat": 41.5449449,
       "lon": -8.4161807,
       "distanceFromStart": 3.744,
-      "distanceFromPrevious": 1.046,
-      "timeFromStartMinutes": 14,
+      "distanceFromPrevious": 0.326,
+      "timeFromStartMinutes": 16,
       "type": "regular"
     },
     {
@@ -868,7 +877,7 @@
       "lon": -8.422083,
       "distanceFromStart": 4.574,
       "distanceFromPrevious": 0.83,
-      "timeFromStartMinutes": 16,
+      "timeFromStartMinutes": 18,
       "type": "regular"
     },
     {
@@ -877,15 +886,6 @@
       "lon": -8.419554,
       "distanceFromStart": 4.923,
       "distanceFromPrevious": 0.349,
-      "timeFromStartMinutes": 18,
-      "type": "regular"
-    },
-    {
-      "name": "Av. 31 de Janeiro",
-      "lat": 41.546082,
-      "lon": -8.413383,
-      "distanceFromStart": 3.417,
-      "distanceFromPrevious": 1.506,
       "timeFromStartMinutes": 20,
       "type": "school"
     }

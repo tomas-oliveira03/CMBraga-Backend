@@ -25,6 +25,9 @@ export class ChildActivitySession {
 	@Column({ type: 'varchar' })
 	pickUpStationId!: string;
 
+    @Column({ type: "varchar", nullable: true })
+    transferStationId!: string | null;
+
     @ManyToOne(() => Child)
     child!: Child;
 
