@@ -72,6 +72,8 @@ export async function setActivityStats(activityId: string){
         const activityDate = activity.scheduledAt!
         const clientStats = [];
 
+        const activitySessionWeatherType = activity.weatherType;
+
         for (const [childId, stations] of completeChildStationsMap){
             const pickUpStation = stationInfoMap.get(stations.pickupStationId);
             const dropOffStation = stationInfoMap.get(stations.dropoffStationId);
@@ -86,13 +88,12 @@ export async function setActivityStats(activityId: string){
                 throw new Error("Child not found");
             }
         
-
             if (pickUpStation && dropOffStation) {
                 const distanceMeters = Math.abs(dropOffStation.distanceFromStartMeters - pickUpStation.distanceFromStartMeters);
                 const durationSeconds = Math.abs(dropOffStation.arrivedAt.getTime() - pickUpStation.leftAt.getTime()) / 1000;
                 const caloriesBurned = calculateCaloriesBurned(distanceMeters, durationSeconds, activityMode, child);
                 const co2Saved = calculateCO2Saved(distanceMeters);
-                const pointsEarned = calculatePointsEarned(distanceMeters);
+                const pointsEarned = calculatePointsEarned(distanceMeters, activitySessionWeatherType ?? undefined, false, 0);
 
                 clientStats.push({
                     distanceMeters: distanceMeters,

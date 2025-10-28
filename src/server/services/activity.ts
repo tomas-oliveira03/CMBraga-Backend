@@ -1,4 +1,4 @@
-import { ActivityMode, ChildGender } from "@/helpers/types";
+import { ActivityMode, ChildGender, WeatherType } from "@/helpers/types";
 import { differenceInYears } from "date-fns";
 
 const WALKING_SPEED = 0.8;          // 0.8 m/s
@@ -95,14 +95,34 @@ export function calculateCO2Saved(distanceMeters: number): number {
 // For each km = 24 points
 // Ignore co2 saved and calories burned for now
 export function calculatePointsEarned(
-    distanceMeters: number
+    distanceMeters: number,
+    weatherCondition?: WeatherType,
+    isAccompaniedByParent?: boolean,
+    currentStreak: number = 0
 ): number {
     if (distanceMeters <= 0 ) return 0;
 
     const distanceKm = distanceMeters / 1000;
     const pointsPerKm = 24;
-    
-    const totalPoints = distanceKm * pointsPerKm;
 
-    return Math.ceil(totalPoints);
+    let basePoints = distanceKm * pointsPerKm;
+    let endPoints = basePoints;
+
+    if (weatherCondition === WeatherType.Rain || weatherCondition === WeatherType.Snow || weatherCondition === WeatherType.Thunderstorm) {
+        endPoints += basePoints
+    }
+
+    if (isAccompaniedByParent) {
+        endPoints += basePoints * 0.5;
+    }
+
+    if (currentStreak >= 1 && currentStreak < 5) {
+        endPoints += basePoints * 0.5;
+    }
+
+    else if (currentStreak >= 5) {
+        endPoints += basePoints;
+    }
+
+    return Math.round(endPoints);
 }
