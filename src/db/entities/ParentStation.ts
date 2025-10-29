@@ -8,12 +8,12 @@ import { Parent } from "./Parent";
 export class ParentStation {
     @PrimaryColumn({ type: 'varchar' })
     parentId!: string;
+
+    @PrimaryColumn({ type: 'varchar' })
+    activitySessionId!: string;
     
     @Column({ type: 'varchar' })
     instructorId!: string;
-
-    @Column({ type: 'varchar' })
-    activitySessionId!: string;
 
     @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
     registeredAt!: Date;

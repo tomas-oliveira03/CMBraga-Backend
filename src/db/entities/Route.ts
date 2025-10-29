@@ -2,11 +2,11 @@ import { ActivityType, RoutePoint } from "@/helpers/types";
 import { Check, Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm"
 import { ActivitySession } from "./ActivitySession";
 import { RouteStation } from "./RouteStation";
+import { RouteConnection } from "./RouteConnection";
 
 @Entity()
 @Check(`"activity_type" IN ('pedibus', 'ciclo_expresso')`)
 export class Route {
-
     @PrimaryGeneratedColumn("uuid")
     id!: string;
 
@@ -45,4 +45,10 @@ export class Route {
 
     @OneToMany(() => RouteStation, (routeStation) => routeStation.route)
     routeStations!: RouteStation[];
+
+    @OneToMany(() => RouteConnection, (routeConnection) => routeConnection.fromRoute)
+    fromRouteConnections!: RouteConnection[];
+
+    @OneToMany(() => RouteConnection, (routeConnection) => routeConnection.toRoute)
+    toRouteConnections!: RouteConnection[];
 }

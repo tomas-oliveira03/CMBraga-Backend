@@ -150,13 +150,17 @@ export async function getAllChildrenByPickupStatus(activitySessionId: string, cu
 // isAlreadyDroppedOff = False => not yet dropped off
 export async function getAllChildrenByDroppedOffStatus(activitySessionId: string, currentStationId: string, isAlreadyDroppedOff: boolean){
     const droppedOffChildren = await AppDataSource.getRepository(Child).find({
-        where:{
-            dropOffStationId: currentStationId,
-            childStations:{
+        where: {
+            childActivitySessions: {
+                activitySessionId: activitySessionId,
+                dropOffStationId: currentStationId,
+            },
+            childStations: {
                 activitySessionId: activitySessionId
             }
         },
         relations: {
+            childActivitySessions: true,
             childStations: true
         }
     })
@@ -186,13 +190,17 @@ export async function getAllChildrenYetToBeDroppedOff(activitySessionId: string,
 
     const allChildrenNotInStation = await AppDataSource.getRepository(Child).find({
         where: {
-            dropOffStationId: Not(currentStationId),
+            childActivitySessions: {
+                activitySessionId: activitySessionId,
+                dropOffStationId: Not(currentStationId),
+            },
             childStations: {
                 activitySessionId: activitySessionId
             },
 
         },
         relations: {
+            childActivitySessions: true,
             childStations: true
         }
     })
@@ -217,13 +225,16 @@ export async function getAllChildrenAlreadyDroppedOff(activitySessionId: string,
     
     const allChildrenNotInStation = await AppDataSource.getRepository(Child).find({
         where: {
-            dropOffStationId: Not(currentStationId),
+            childActivitySessions: {
+                activitySessionId: activitySessionId,
+                dropOffStationId: Not(currentStationId),
+            },
             childStations: {
                 activitySessionId: activitySessionId
             },
-
         },
         relations: {
+            childActivitySessions: true,
             childStations: true
         }
     })
@@ -238,5 +249,5 @@ export async function getAllChildrenAlreadyDroppedOff(activitySessionId: string,
 
 
 
-export const stripChildStations = (children: any[]) =>
-  children.map(({ childStations, ...rest }) => rest);
+export const stripChildData = (children: Child[]) =>
+  children.map(({ childStations, childActivitySessions, ...rest }) => rest);

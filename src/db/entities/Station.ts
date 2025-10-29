@@ -5,6 +5,7 @@ import { StationType } from "@/helpers/types";
 import { Child } from "./Child";
 import { ChildActivitySession } from "./ChildActivitySession";
 import { RouteStation } from "./RouteStation";
+import { RouteConnection } from "./RouteConnection";
 
 @Entity()
 @Check(`"type" IN ('regular', 'school')`)
@@ -44,6 +45,9 @@ export class Station {
     @OneToMany(() => ChildActivitySession, childActivitySession => childActivitySession.pickUpStation)
 	pickUpchildActivitySessions!: ChildActivitySession[];
 
-    @OneToMany(() => RouteStation, (routeStation) => routeStation.route)
+    @OneToMany(() => RouteStation, (routeStation) => routeStation.station)
     routeStations!: RouteStation[];
+
+    @OneToMany(() => RouteConnection, (routeConnection) => routeConnection.station)
+    routeConnections!: RouteConnection[];
 }

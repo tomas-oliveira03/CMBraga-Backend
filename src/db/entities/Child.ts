@@ -5,7 +5,6 @@ import { MedicalReport } from "./MedicalReport";
 import { ParentChild } from "./ParentChild";
 import { ChildGender, ChildHealthProblems } from "@/helpers/types";
 import { Station } from "./Station";
-import { ChildActivityRecord } from "./ChildActivityRecord";
 import { Feedback } from "./Feedback";
 import { ClientStat } from "./ClientStat";
 import { ChildHistory } from "./ChildHistory";
@@ -55,9 +54,6 @@ export class Child {
 
 	@OneToMany(() => ChildActivitySession, childActivitySession => childActivitySession.child)
 	childActivitySessions!: ChildActivitySession[];
-
-	@OneToMany(() => ChildActivityRecord, childActivityRecord => childActivityRecord.child)
-	childActivityRecords!: ChildActivitySession[];
 
 	@OneToMany(() => ChildStation, childStation => childStation.child)
 	childStations!: ChildStation[];

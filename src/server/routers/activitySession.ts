@@ -6,6 +6,7 @@ import { ActivitySession } from "@/db/entities/ActivitySession";
 import { ActivityMode, ActivityType } from "@/helpers/types";
 import { Route } from "@/db/entities/Route";
 import { StationActivitySession } from "@/db/entities/StationActivitySession";
+import { findLinkedActivities } from "../services/transfer";
 
 const router = express.Router();
 
@@ -302,13 +303,17 @@ router.post('/', async (req: Request, res: Response) => {
         return res.status(400).json({ message: "Cannot link an activity to a different route type" });
     }
 
+    const { previousActivityId, nextActivityId } = await findLinkedActivities(route, validatedData);
+    console.log({previousActivityId, nextActivityId});
+
     await AppDataSource.transaction(async tx => {
 
         const activityMode = validatedData.type === ActivityType.PEDIBUS ? ActivityMode.WALK : ActivityMode.BIKE;
 
         const activitySession = await tx.getRepository(ActivitySession).insert({
             ...validatedData,
-            mode: activityMode
+            mode: activityMode,
+            activityTransferId: nextActivityId // If exists forward link
         });
         const activitySessionId = activitySession.identifiers[0]?.id;
 
@@ -320,9 +325,14 @@ router.post('/', async (req: Request, res: Response) => {
         }));
 
         await tx.getRepository(StationActivitySession).insert(stationsActivitySession);
+
+        if (previousActivityId) { // If exists backwards link
+            await tx.getRepository(ActivitySession).update(previousActivityId, {
+                activityTransferId: activitySessionId,
+            });
+        }
     });
 
-            
     return res.status(201).json({message: "Activity session created successfully"});
 
   } catch (error) {
@@ -335,116 +345,6 @@ router.post('/', async (req: Request, res: Response) => {
 
     return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
   }
-});
-
-/**
- * @swagger
- * /activity-session/{id}:
- *   put:
- *     summary: Update an activity session
- *     description: Updates an existing activity session. When type is changed, mode is automatically updated.
- *     tags:
- *       - Activity Session
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
- *         description: Activity Session ID (UUID)
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               type:
- *                 type: string
- *                 enum: [pedibus, ciclo_expresso]
- *                 example: "ciclo_expresso"
- *                 description: "Activity type (mode will be auto-updated: pedibus=walk, ciclo_expresso=bike)"
- *               routeId:
- *                 type: string
- *                 example: "c3d4e5f6-g7h8-9012-cdef-34567890123a"
- *                 description: "Associated route ID (UUID)"
- *               scheduledAt:
- *                 type: string
- *                 format: date-time
- *                 example: "2024-01-25T09:00:00.000Z"
- *               startedAt:
- *                 type: string
- *                 format: date-time
- *                 nullable: true
- *                 example: "2024-01-25T09:05:00.000Z"
- *               finishedAt:
- *                 type: string
- *                 format: date-time
- *                 nullable: true
- *                 example: "2024-01-25T10:00:00.000Z"
- *           example:
- *             type: "ciclo_expresso"
- *             routeId: "c3d4e5f6-g7h8-9012-cdef-34567890123a"
- *             startedAt: "2024-01-25T08:05:00.000Z"
- *     responses:
- *       200:
- *         description: Activity session updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Activity session updated successfully"
- *       400:
- *         description: Validation error
- *       404:
- *         description: Activity session not found
- *       500:
- *         description: Internal server error
- */
-router.put('/:id', async (req: Request, res: Response) => {
-    try {
-        const activitySessionId = req.params.id;
-        const validatedData = UpdateActivitySessionSchema.parse(req.body);
-        
-        const activitySession = await AppDataSource.getRepository(ActivitySession).findOne({
-            where: { id: activitySessionId }
-        })
-
-        if (!activitySession) {
-            return res.status(404).json({ message: "Activity session not found" });
-        }
-
-        // Update activity session with updatedAt timestamp
-        if (validatedData.type){
-            await AppDataSource.getRepository(ActivitySession).update(activitySession.id, {
-                ...validatedData,
-                updatedAt: new Date(),
-                mode: validatedData.type === ActivityType.PEDIBUS ? ActivityMode.WALK : ActivityMode.BIKE
-            })
-        }
-        else{
-            await AppDataSource.getRepository(ActivitySession).update(activitySession.id, {
-                ...validatedData,
-                updatedAt: new Date()
-            })
-        }
-
-        return res.status(200).json({ message: "Activity session updated successfully" });
-
-    } catch (error) {
-        if (error instanceof z.ZodError) {
-            return res.status(400).json({ 
-                message: "Validation error", 
-                errors: error.issues 
-            });
-        }
-        
-        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
-    }
 });
 
 /**

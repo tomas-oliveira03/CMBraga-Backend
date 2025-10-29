@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm"
+import { Column, Entity, Index, ManyToOne, PrimaryGeneratedColumn } from "typeorm"
 import { Child } from "./Child";
 
 @Entity()
@@ -6,6 +6,7 @@ export class ChildHistory {
     @PrimaryGeneratedColumn("uuid")
     id!: string;
 
+    @Index()
     @Column({ type: 'varchar' })
     childId!: string;
 

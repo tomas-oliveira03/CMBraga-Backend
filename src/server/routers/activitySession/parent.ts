@@ -180,18 +180,13 @@ router.get('/', async (req: Request, res: Response) => {
  *       500:
  *         description: Internal server error
  */
-router.post('/', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
+router.post('/', authenticate, authorize(UserRole.PARENT), async (req: Request, res: Response) => {
     try {
         const activitySessionId = req.query.activitySessionId;
-        const parentId = req.query.parentId;
         
-        if (!activitySessionId || !parentId || typeof activitySessionId !== 'string' || typeof parentId !== 'string') {
-            return res.status(400).json({ message: "Activity Session ID and Parent ID are required" });
+        if (!activitySessionId || typeof activitySessionId !== 'string') {
+            return res.status(400).json({ message: "Activity Session ID is required" });
         }
-
-        if (!parentId || typeof parentId !== 'string') {
-            return res.status(400).json({ message: "Parent ID is required" });
-        }   
         
         const activitySession = await AppDataSource.getRepository(ActivitySession).findOne({
             where: { id: activitySessionId }
@@ -202,7 +197,7 @@ router.post('/', authenticate, authorize(UserRole.ADMIN), async (req: Request, r
         }
 
         const parent = await AppDataSource.getRepository(Parent).findOne({
-            where: { id: parentId }
+            where: { id: req.user!.userId }
         });
         if (!parent) {
             return res.status(404).json({ message: "Parent not found" });
@@ -213,7 +208,7 @@ router.post('/', authenticate, authorize(UserRole.ADMIN), async (req: Request, r
         }
 
         await AppDataSource.getRepository(ParentActivitySession).insert({
-                parentId: parentId,
+                parentId: req.user!.userId,
                 activitySessionId: activitySessionId
         });
 
@@ -299,13 +294,12 @@ router.post('/', authenticate, authorize(UserRole.ADMIN), async (req: Request, r
  *       500:
  *         description: Internal server error
  */
-router.delete('/', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
+router.delete('/', authenticate, authorize(UserRole.PARENT), async (req: Request, res: Response) => {
     try {
         const activitySessionId = req.query.activitySessionId;
-        const parentId  = req.query.parentId;
 
-        if (!activitySessionId || !parentId || typeof activitySessionId !== 'string' || typeof parentId !== 'string') {
-            return res.status(400).json({ message: "Activity Session ID and Parent ID are required" });
+        if (!activitySessionId || typeof activitySessionId !== 'string') {
+            return res.status(400).json({ message: "Activity Session ID is required" });
         }
 
         const activitySession = await AppDataSource.getRepository(ActivitySession).findOne({
@@ -317,7 +311,7 @@ router.delete('/', authenticate, authorize(UserRole.ADMIN), async (req: Request,
         }
 
         const parent = await AppDataSource.getRepository(Parent).findOne({
-            where: { id: parentId }
+            where: { id: req.user!.userId }
         });
         if (!parent) {
             return res.status(404).json({ message: "Parent not found" });
@@ -326,7 +320,7 @@ router.delete('/', authenticate, authorize(UserRole.ADMIN), async (req: Request,
         // Check if parent is assigned to this activity session
         const existingAssignment = await AppDataSource.getRepository(ParentActivitySession).findOne({
             where: {
-                parentId: parentId,
+                parentId: req.user!.userId,
                 activitySessionId: activitySessionId
             }
         });
@@ -336,7 +330,7 @@ router.delete('/', authenticate, authorize(UserRole.ADMIN), async (req: Request,
 
         // Remove parent from activity session
         await AppDataSource.getRepository(ParentActivitySession).delete({
-                parentId: parentId,
+                parentId: req.user!.userId,
                 activitySessionId: activitySessionId
         });
 

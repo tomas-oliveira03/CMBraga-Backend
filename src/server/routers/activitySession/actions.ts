@@ -2,7 +2,7 @@ import { AppDataSource } from "@/db";
 import express, { Request, Response } from "express";
 import { ActivitySession } from "@/db/entities/ActivitySession";
 import { authenticate, authorize } from "@/server/middleware/auth";
-import { getAllChildrenAlreadyDroppedOff, getAllChildrenAtPickupStation, getAllChildrenByDroppedOffStatus, getAllChildrenByPickupStatus, getAllChildrenLeftToPickUp, getAllChildrenYetToBeDroppedOff, getAllStationsLeftIds, getCurrentStationId, stripChildStations } from "@/server/services/actions";
+import { getAllChildrenAlreadyDroppedOff, getAllChildrenAtPickupStation, getAllChildrenByDroppedOffStatus, getAllChildrenByPickupStatus, getAllChildrenLeftToPickUp, getAllChildrenYetToBeDroppedOff, getAllStationsLeftIds, getCurrentStationId, stripChildData } from "@/server/services/actions";
 import { ChildStationType, UserRole } from "@/helpers/types";
 import { StationActivitySession } from "@/db/entities/StationActivitySession";
 import { Station } from "@/db/entities/Station";
@@ -417,8 +417,8 @@ router.get('/station/pick-up', authenticate, authorize(UserRole.INSTRUCTOR, User
         const allChildrenToBePickedUp = await getAllChildrenByPickupStatus(activitySessionId, currentStationId, allChildrenLeftToPickUp.currentStationChildren, false)
         
         return res.status(200).json({
-            childrenToPickUp: stripChildStations(allChildrenToBePickedUp),
-            upcomingStationChildrenToPickUp: stripChildStations(allChildrenLeftToPickUp.upcomingStationChildren)
+            childrenToPickUp: stripChildData(allChildrenToBePickedUp),
+            upcomingStationChildrenToPickUp: stripChildData(allChildrenLeftToPickUp.upcomingStationChildren)
         })
 
     } catch (error) {
@@ -541,9 +541,9 @@ router.get('/station/still-in', authenticate, authorize(UserRole.INSTRUCTOR, Use
         const allChildrenYetToBeDroppedOff = await getAllChildrenYetToBeDroppedOff(activitySessionId, allStationIdsLeft)
 
         return res.status(200).json({
-            allChildrenAlreadyPickedUp: stripChildStations(allChildrenAlreadyPickedUp),
-            allChildrenToBeDroppedOff: stripChildStations(allChildrenToBeDroppedOff),
-            allChildrenYetToBeDroppedOff: stripChildStations(allChildrenYetToBeDroppedOff)
+            allChildrenAlreadyPickedUp: stripChildData(allChildrenAlreadyPickedUp),
+            allChildrenToBeDroppedOff: stripChildData(allChildrenToBeDroppedOff),
+            allChildrenYetToBeDroppedOff: stripChildData(allChildrenYetToBeDroppedOff)
         })
 
     } catch (error) {
@@ -650,8 +650,8 @@ router.get('/station/drop-off', authenticate, authorize(UserRole.INSTRUCTOR, Use
         const allChildrenAlreadyDroppedOff = await getAllChildrenAlreadyDroppedOff(activitySessionId, currentStationId)
 
         return res.status(200).json({
-            allChildrenDroppedOff: stripChildStations(allChildrenToBeDroppedOff),
-            allChildrenPreviouslyDroppedOff: stripChildStations(allChildrenAlreadyDroppedOff)
+            allChildrenDroppedOff: stripChildData(allChildrenToBeDroppedOff),
+            allChildrenPreviouslyDroppedOff: stripChildData(allChildrenAlreadyDroppedOff)
         })
 
     } catch (error) {
@@ -1491,13 +1491,13 @@ router.post('/child/check-out', authenticate, authorize(UserRole.INSTRUCTOR), as
             return res.status(400).json({ message: "Instructor is not assigned to this activity session" });
         }
 
-        const child = await AppDataSource.getRepository(Child).findOne({
+        const child = await AppDataSource.getRepository(ChildActivitySession).findOne({
             where: { 
-                id: childId,
+                childId: childId,
+                activitySessionId: activitySessionId,
                 dropOffStationId: stationId
             }
         });
-
         if (!child) {
             return res.status(404).json({ message: "Child not found or not at the correct station" });
         }
@@ -1830,13 +1830,13 @@ router.delete('/child/check-out', authenticate, authorize(UserRole.INSTRUCTOR), 
             return res.status(400).json({ message: "Instructor is not assigned to this activity session" });
         }
 
-        const child = await AppDataSource.getRepository(Child).findOne({
+        const child = await AppDataSource.getRepository(ChildActivitySession).findOne({
             where: { 
-                id: childId,
+                childId: childId,
+                activitySessionId: activitySessionId,
                 dropOffStationId: stationId
             }
         });
-
         if (!child) {
             return res.status(404).json({ message: "Child not found or not at the correct station" });
         }
@@ -2325,6 +2325,7 @@ router.delete('/parent/check-in', authenticate, authorize(UserRole.INSTRUCTOR), 
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
+
 
 /**
  * @swagger

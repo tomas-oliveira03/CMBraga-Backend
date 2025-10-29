@@ -6,7 +6,9 @@ import { ChildActivitySession } from "@/db/entities/ChildActivitySession";
 import { ParentChild } from "@/db/entities/ParentChild";
 import { UserRole } from "@/helpers/types";
 import { authenticate, authorize } from "@/server/middleware/auth";
-import { IsNull } from "typeorm";
+import { In, IsNull } from "typeorm";
+import { RouteConnection } from "@/db/entities/RouteConnection";
+import { string } from "zod";
 
 const router = express.Router();
 
@@ -511,41 +513,26 @@ router.post('/:id', authenticate, authorize(UserRole.PARENT), async (req: Reques
         const activitySessionId = req.params.id;
         const { childId, pickUpStationId } = req.body;
 
-        if (!childId || !pickUpStationId) {
+        if (!childId || !pickUpStationId || typeof childId !== 'string' || typeof pickUpStationId !== 'string') {
             return res.status(400).json({ message: "ChildId and PickUpStationId are required" });
         }
 
         const activitySession = await AppDataSource.getRepository(ActivitySession).findOne({
             where: { id: activitySessionId },
             relations: {
-                stationActivitySessions: true
+                stationActivitySessions: true,
+                activityTransfer: true
             }
         });
         if (!activitySession) {
             return res.status(404).json({ message: "Activity session not found" });
         }
         
-        // Check if pickup is within the activity route
-        if (!(activitySession.stationActivitySessions && activitySession.stationActivitySessions.some(sas => sas.stationId === pickUpStationId))) {
-            return res.status(400).json({ message: "Pickup station is not assigned to this activity session" });
-        }
-
         const child = await AppDataSource.getRepository(Child).findOne({
             where: { id: childId }
         });
         if (!child) {
             return res.status(404).json({ message: "Child not found" });
-        }
-
-        if (!(activitySession.stationActivitySessions.some(sas => sas.stationId === child.dropOffStationId))) {
-            return res.status(400).json({ message: "Drop-off station is not assigned to this activity session" });
-        }
-
-        const pickUpStationNumber = activitySession.stationActivitySessions.find(sas => sas.stationId === pickUpStationId)!.stopNumber;
-        const dropOffStationNumber = activitySession.stationActivitySessions.find(sas => sas.stationId === child.dropOffStationId)!.stopNumber;
-
-        if (pickUpStationNumber >= dropOffStationNumber){
-            return res.status(400).json({ message: "Cannot pick up child after or at drop-off station" });
         }
 
         // Check if user is parent of the child
@@ -581,16 +568,87 @@ router.post('/:id', authenticate, authorize(UserRole.PARENT), async (req: Reques
             }
         }
 
-        // Add child to activity session
-        await AppDataSource.getRepository(ChildActivitySession).insert({
-            childId: childId,
-            activitySessionId: activitySessionId,
-            pickUpStationId: pickUpStationId,
-            isLateRegistration: isNormalDeadlineOver,
-            parentId: req.user?.userId
-        });
+        // Activity session doesn't support transfer
+        if (!activitySession.activityTransferId || activitySession.stationActivitySessions.find(sas => sas.stationId === child.dropOffStationId)) {
+            const pickUpStationNumber = activitySession.stationActivitySessions.find(sas => sas.stationId === pickUpStationId)?.stopNumber;
+            const dropOffStationNumber = activitySession.stationActivitySessions.find(sas => sas.stationId === child.dropOffStationId)?.stopNumber;
 
+            if (pickUpStationNumber && dropOffStationNumber && pickUpStationNumber >= dropOffStationNumber){
+                return res.status(400).json({ message: "Cannot pick up child after or at drop-off station" });
+            }
+
+            await AppDataSource.getRepository(ChildActivitySession).insert({
+                childId: childId,
+                activitySessionId: activitySessionId,
+                pickUpStationId: pickUpStationId,
+                dropOffStationId: child.dropOffStationId,
+                isLateRegistration: isNormalDeadlineOver,
+                parentId: req.user?.userId
+            });
+
+            return res.status(201).json({ message: "Child added to activity session successfully" });
+        }
+
+        // Activity session supports transfer
+        let currentSession = activitySession;
+        let pickUp = pickUpStationId;
+        const registrations: Partial<ChildActivitySession>[] = [];
+
+        while (currentSession) {
+            // If there is a transfer, determine the drop-off as the connecting station
+            if (currentSession.activityTransferId) {
+                const routeConnector = await AppDataSource.getRepository(RouteConnection).findOne({
+                    where: {    
+                        fromRouteId: currentSession.routeId,
+                        toRouteId: currentSession.activityTransfer!.routeId
+                    }
+                });
+                if (!routeConnector) {
+                    return res.status(400).json({ message: `Route connection not found from ${currentSession.routeId} to ${currentSession.activityTransfer!.routeId}` });
+                }
+
+                // Add registration for current session (pickUp -> connector station)
+                registrations.push({
+                    childId: childId,
+                    activitySessionId: currentSession.id,
+                    pickUpStationId: pickUp,
+                    dropOffStationId: routeConnector.stationId,
+                    isLateRegistration: isNormalDeadlineOver,
+                    parentId: req.user!.userId
+                });
+
+                // Next session in the chain
+                pickUp = routeConnector.stationId;
+                const nextSession = await AppDataSource.getRepository(ActivitySession).findOne({
+                    where: { 
+                        id: currentSession.activityTransferId 
+                    },
+                    relations: {
+                        stationActivitySessions: true,
+                        activityTransfer: true
+                    }
+                });
+                if (!nextSession) {
+                    return res.status(404).json({ message: `Next activity session not found: ${currentSession.activityTransferId}` });
+                }
+
+                currentSession = nextSession;
+            } else {
+                registrations.push({
+                    childId: childId,
+                    activitySessionId: currentSession.id,
+                    pickUpStationId: pickUp,
+                    dropOffStationId: child.dropOffStationId,
+                    isLateRegistration: isNormalDeadlineOver,
+                    parentId: req.user!.userId
+                });
+                break;
+            }
+        }
+
+        await AppDataSource.getRepository(ChildActivitySession).insert(registrations);
         return res.status(201).json({ message: "Child added to activity session successfully" });
+
 
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
@@ -660,7 +718,11 @@ router.delete('/:id', authenticate, authorize(UserRole.PARENT), async (req: Requ
         }
 
         const activitySession = await AppDataSource.getRepository(ActivitySession).findOne({
-            where: { id: activitySessionId }
+            where: { id: activitySessionId },
+            relations: {
+                stationActivitySessions: true,
+                activityTransfer: true
+            }
         });
         if (!activitySession) {
             return res.status(404).json({ message: "Activity session not found" });
@@ -696,7 +758,40 @@ router.delete('/:id', authenticate, authorize(UserRole.PARENT), async (req: Requ
             return res.status(400).json({ message: "Child is not registered for this activity session" });
         }
 
-        // Remove child from activity session
+        // If activity session supports transfer, remove from all chained sessions
+        if (activitySession.activityTransferId && activitySession.stationActivitySessions.find(sas => sas.stationId !== child.dropOffStationId)) {
+            let currentSession = activitySession;
+            const sessionIdsToDelete: string[] = [];
+
+            while (currentSession) {
+                sessionIdsToDelete.push(currentSession.id);
+
+                if (currentSession.activityTransferId) {
+                    const nextSession = await AppDataSource.getRepository(ActivitySession).findOne({
+                        where: { id: currentSession.activityTransferId },
+                        relations: {
+                            stationActivitySessions: true,
+                            activityTransfer: true
+                        }
+                    });
+                    if (!nextSession) {
+                        break;
+                    }
+                    currentSession = nextSession;
+                } else {
+                    break;
+                }
+            }
+
+            await AppDataSource.getRepository(ChildActivitySession).delete({
+                childId: childId,
+                activitySessionId: In(sessionIdsToDelete)
+            });
+
+            return res.status(200).json({ message: "Child removed from activity session successfully" });
+        }
+
+        // If no transfer, just remove from this session
         await AppDataSource.getRepository(ChildActivitySession).delete({
             childId: childId,
             activitySessionId: activitySessionId

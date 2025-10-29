@@ -4,6 +4,7 @@ import {
     Check,
     Column,
     Entity,
+    JoinColumn,
     ManyToOne,
     OneToMany,
     PrimaryGeneratedColumn
@@ -16,7 +17,6 @@ import { Issue } from "./Issue";
 import { ChildStation } from "./ChildStation";
 import { ActivityMode, ActivityType, WeatherType } from "@/helpers/types";
 import { Instructor } from "./Instructor";
-import { ChildActivityRecord } from "./ChildActivityRecord";
 import { Feedback } from "./Feedback";
 import { Route } from "./Route";
 import { ParentStation } from "./ParentStation";
@@ -34,6 +34,9 @@ export class ActivitySession {
 
     @Column({ type: "varchar" })
     mode!: ActivityMode;
+
+    @Column({ type: 'varchar', nullable: true, default: null })
+    activityTransferId!: string | null;
 
     @Column({ type: "boolean", default: false })
     inLateRegistration!: boolean;
@@ -90,9 +93,6 @@ export class ActivitySession {
     @OneToMany(() => ParentStation, (parentStation) => parentStation.activitySession)
     parentStations!: ParentStation[];
 
-    @OneToMany(() => ChildActivityRecord, childActivityRecord => childActivityRecord.child)
-    childActivityRecords!: ChildActivitySession[];
-
     @OneToMany(() => Feedback, (feedback) => feedback.activitySession)
     feedbacks!: Feedback[];
 
@@ -104,4 +104,9 @@ export class ActivitySession {
 
     @ManyToOne(() => Route)
     route!: Route;
+
+
+    @ManyToOne(() => ActivitySession, { nullable: true })
+    @JoinColumn({ name: 'activity_transfer_id' })
+    activityTransfer!: ActivitySession | null;
 }

@@ -12,10 +12,10 @@ export class ChildActivitySession {
     @PrimaryColumn({ type: 'varchar' })
     activitySessionId!: string;
 
-    @PrimaryColumn({ type: 'varchar' })
+    @Column({ type: 'varchar' })
     parentId!: string;
 
-    @PrimaryColumn({ type: 'boolean' })
+    @Column({ type: 'boolean' })
     isLateRegistration!: boolean;
 
     @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
@@ -25,6 +25,9 @@ export class ChildActivitySession {
 	@Column({ type: 'varchar' })
 	pickUpStationId!: string;
 
+    @Column({ type: 'varchar' })
+	dropOffStationId!: string;
+
     @ManyToOne(() => Child)
     child!: Child;
 
@@ -33,6 +36,9 @@ export class ChildActivitySession {
 
     @ManyToOne(() => Station)
     pickUpStation!: Station;
+
+    @ManyToOne(() => Station)
+    dropOffStation!: Station;
 
     @ManyToOne(() => Parent)
     parent!: Parent;

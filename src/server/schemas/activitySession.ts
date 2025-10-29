@@ -34,6 +34,7 @@ export const CreateActivitySessionSchema = ActivitySessionSchema.omit({
 export const UpdateActivitySessionSchema = ActivitySessionSchema.omit({
     id: true,
     inLateRegistration: true,
+    routeId: true,
     mode: true,
     createdAt: true,
     updatedAt: true,

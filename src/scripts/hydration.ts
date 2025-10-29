@@ -27,6 +27,7 @@ import fs from "fs";
 import path from "path";
 import { selectRandomDefaultProfilePicture, USER_DEFAULT_PROFILE_PICTURES } from "@/helpers/storage";
 import { checkImagesExist, uploadImageBuffer } from "@/server/services/cloud";
+import { RouteConnection } from "@/db/entities/RouteConnection";
 
 
 async function cloudHydration(){
@@ -481,6 +482,7 @@ async function dbHydration() {
           activitySessionId: atividade.id,
           pickUpStationId: pickupStations[pickupStationIndex]!.id,
           parentId: pais[i]!.id,
+          dropOffStationId: criancas[i]!.dropOffStationId,
           isLateRegistration: false,
           registeredAt: yesterday
         })
@@ -505,6 +507,30 @@ async function dbHydration() {
       activitySessionId: atividade.id 
     });
     await issueRepo.save(issue1);
+
+
+
+    // Create RouteConnection 
+    const linhaAzul = await routeRepo.findOne({ where: { name: "LinhaAzul" } });
+    const linhaVermelha = await routeRepo.findOne({ where: { name: "LinhaVermelha" } });
+
+    const mergeStop = await stationRepo.findOne({ where: { name: "Av. 31 de Janeiro" } });
+
+    await AppDataSource.getRepository(RouteConnection).insert([
+      {
+        fromRouteId: linhaAzul!.id,
+        toRouteId: linhaVermelha!.id,
+        stationId: mergeStop!.id
+      },
+      {
+        fromRouteId: linhaVermelha!.id,
+        toRouteId: linhaAzul!.id,
+        stationId: mergeStop!.id
+      }
+    ])
+
+
+
 
     const report1 = reportRepo.create({ 
       childId: criancas[0]!.id, 
