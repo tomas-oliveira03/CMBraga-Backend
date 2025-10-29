@@ -380,7 +380,7 @@ router.post('/end', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Re
  *                 value:
  *                   message: "Activity session not found or no more stations left"
  */
-router.get('/station/pick-up', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
+router.get('/station/pick-up', authenticate, authorize(UserRole.INSTRUCTOR, UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const activitySessionId = req.query.id;
         
@@ -500,7 +500,7 @@ router.get('/station/pick-up', authenticate, authorize(UserRole.INSTRUCTOR), asy
  *                 value:
  *                   message: "Activity session not found or no more stations left"
  */
-router.get('/station/still-in', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
+router.get('/station/still-in', authenticate, authorize(UserRole.INSTRUCTOR, UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const activitySessionId = req.query.id;
         
@@ -615,7 +615,7 @@ router.get('/station/still-in', authenticate, authorize(UserRole.INSTRUCTOR), as
  *                 value:
  *                   message: "Activity session not found or no more stations left"
  */
-router.get('/station/drop-off', authenticate, authorize(UserRole.INSTRUCTOR),async (req: Request, res: Response) => {
+router.get('/station/drop-off', authenticate, authorize(UserRole.INSTRUCTOR, UserRole.ADMIN),async (req: Request, res: Response) => {
     try {
         const activitySessionId = req.query.id;
         
@@ -1133,7 +1133,7 @@ router.post('/station/arrived-at-stop', authenticate, authorize(UserRole.INSTRUC
  *                 value:
  *                   message: "Current station not found"
  */
-router.get('/station/status', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
+router.get('/station/status', authenticate, authorize(UserRole.INSTRUCTOR, UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const activitySessionId = req.query.id;
 
