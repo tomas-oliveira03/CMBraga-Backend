@@ -7,7 +7,6 @@ import { ParentChild } from "@/db/entities/ParentChild";
 import { UserRole } from "@/helpers/types";
 import { authenticate, authorize } from "@/server/middleware/auth";
 import { IsNull } from "typeorm";
-import { validateRouteTransfer } from "@/server/services/routeTransfer";
 
 const router = express.Router();
 
@@ -512,8 +511,8 @@ router.post('/:id', authenticate, authorize(UserRole.PARENT), async (req: Reques
         const activitySessionId = req.params.id;
         const { childId, pickUpStationId } = req.body;
 
-        if (!childId || !pickUpStationId || !activitySessionId) {
-            return res.status(400).json({ message: "ChildId, PickUpStationId, and ActivitySessionId are required" });
+        if (!childId || !pickUpStationId) {
+            return res.status(400).json({ message: "ChildId and PickUpStationId are required" });
         }
 
         const activitySession = await AppDataSource.getRepository(ActivitySession).findOne({
@@ -526,7 +525,7 @@ router.post('/:id', authenticate, authorize(UserRole.PARENT), async (req: Reques
             return res.status(404).json({ message: "Activity session not found" });
         }
         
-        // Check if pickup station is within the activity route
+        // Check if pickup is within the activity route
         if (!(activitySession.stationActivitySessions && activitySession.stationActivitySessions.some(sas => sas.stationId === pickUpStationId))) {
             return res.status(400).json({ message: "Pickup station is not assigned to this activity session" });
         }
@@ -538,19 +537,16 @@ router.post('/:id', authenticate, authorize(UserRole.PARENT), async (req: Reques
             return res.status(404).json({ message: "Child not found" });
         }
 
-        const transferValidation = await validateRouteTransfer(
-            activitySessionId,
-            pickUpStationId,
-            child.dropOffStationId
-        );
-
-        if (!transferValidation.isValid) {
-            return res.status(400).json({ 
-                message: transferValidation.message || "Invalid route configuration",
-                requiresTransfer: transferValidation.requiresTransfer
-            });
+        if (!(activitySession.stationActivitySessions.some(sas => sas.stationId === child.dropOffStationId))) {
+            return res.status(400).json({ message: "Drop-off station is not assigned to this activity session" });
         }
 
+        const pickUpStationNumber = activitySession.stationActivitySessions.find(sas => sas.stationId === pickUpStationId)!.stopNumber;
+        const dropOffStationNumber = activitySession.stationActivitySessions.find(sas => sas.stationId === child.dropOffStationId)!.stopNumber;
+
+        if (pickUpStationNumber >= dropOffStationNumber){
+            return res.status(400).json({ message: "Cannot pick up child after or at drop-off station" });
+        }
 
         // Check if user is parent of the child
         const parentChild = await AppDataSource.getRepository(ParentChild).findOne({
@@ -584,12 +580,12 @@ router.post('/:id', authenticate, authorize(UserRole.PARENT), async (req: Reques
                 isNormalDeadlineOver = true
             }
         }
-        
+
+        // Add child to activity session
         await AppDataSource.getRepository(ChildActivitySession).insert({
             childId: childId,
             activitySessionId: activitySessionId,
             pickUpStationId: pickUpStationId,
-            transferStationId: transferValidation.transferStationId,
             isLateRegistration: isNormalDeadlineOver,
             parentId: req.user?.userId
         });
