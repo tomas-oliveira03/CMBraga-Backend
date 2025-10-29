@@ -27,6 +27,7 @@ import { CreateChildSchema } from "../schemas/child";
 import { webSocketManager } from "../services/websocket";
 import { ChildHistory } from "@/db/entities/ChildHistory";
 import { differenceInYears } from "date-fns";
+import redisClient from "@/lib/redis";
 
 const router = express.Router();
 
@@ -119,7 +120,7 @@ router.post('/login', async (req: Request, res: Response) => {
  * /auth/logout:
  *   post:
  *     summary: User logout
- *     description: Logout user (client-side token removal). Token remains valid until expiration.
+ *     description: Logout user and blacklist JWT token until expiration.
  *     tags:
  *       - Authentication
  *     security:
@@ -146,12 +147,24 @@ router.post('/login', async (req: Request, res: Response) => {
  *                   type: string
  *                   example: "Access token required"
  */
-router.post('/logout', authenticate, (req: Request, res: Response) => {
+router.post('/logout', authenticate, async (req: Request, res: Response) => {
     try {
-        const userId = req.user!.email;
+        const token = req.headers.authorization?.replace('Bearer ', '');
+        if (!token || !req.user) {
+            return res.status(401).json({ message: 'Access token required' });
+        }
 
-        webSocketManager.disconnectUser(userId);
-        
+        // Blacklist token in Redis until its expiration (1 day fallback)
+        const exp = req.user.expirationTime;
+        const now = Math.floor(Date.now() / 1000);
+        const ttl = exp && exp > now ? exp - now : 60 * 60 * 24;
+
+        await redisClient.set(`blacklist:${token}`, "1", ttl);
+
+        if (req.user.email) {
+            webSocketManager.disconnectUser(req.user.email);
+        }
+
         return res.status(200).json({ message: 'Logged out successfully.' });
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
