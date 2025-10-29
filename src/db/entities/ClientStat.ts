@@ -1,6 +1,7 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm"
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn, OneToOne } from "typeorm"
 import { Child } from "./Child";
 import { ActivitySession } from "./ActivitySession";
+import { ParentStat } from "./ParentStat";
 
 @Entity()
 export class ClientStat {
@@ -33,4 +34,7 @@ export class ClientStat {
 
     @ManyToOne(() => ActivitySession)
     activitySession!: ActivitySession;
+
+    @OneToOne(() => ParentStat, (ps) => ps.clientStat, { nullable: true })
+    parentStat!: ParentStat | null;
 }

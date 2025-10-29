@@ -9,6 +9,7 @@ import { ClientStat } from "@/db/entities/ClientStat";
 import { Child } from "@/db/entities/Child";
 import { ParentChild } from "@/db/entities/ParentChild";
 import { ParentStation } from "@/db/entities/ParentStation";
+import { ParentStat } from "@/db/entities/ParentStat";
 
 export async function setActivityStats(activityId: string){
     try{
@@ -72,8 +73,7 @@ export async function setActivityStats(activityId: string){
 
         const activityMode = activity.mode
         const activityDate = activity.scheduledAt!
-        const clientStats = [];
-
+        const insertedClientStatIds: string[] = [];
         const activitySessionWeatherType = activity.weatherType;
 
         for (const [childId, stations] of completeChildStationsMap){
@@ -91,8 +91,7 @@ export async function setActivityStats(activityId: string){
             }
         
             if (pickUpStation && dropOffStation) {
-                // TODO: Check if the parent actually participated in the activity
-                let isEducatorInvolved = false;
+                let educatorsInvolvedIds: string[] = [];
                 const parentChildRelations = await AppDataSource.getRepository(ParentChild).find({
                     where: { childId: childId }
                 });
@@ -105,8 +104,7 @@ export async function setActivityStats(activityId: string){
                             }
                         });
                         if (parentActivity) {
-                            isEducatorInvolved = true;
-                            break;
+                            educatorsInvolvedIds.push(pc.parentId);
                         }
                     }
                 }
@@ -114,9 +112,10 @@ export async function setActivityStats(activityId: string){
                 const durationSeconds = Math.abs(dropOffStation.arrivedAt.getTime() - pickUpStation.leftAt.getTime()) / 1000;
                 const caloriesBurned = calculateCaloriesBurned(distanceMeters, durationSeconds, activityMode, child);
                 const co2Saved = calculateCO2Saved(distanceMeters);
-                const pointsEarned = calculatePointsEarned(distanceMeters, activitySessionWeatherType ?? undefined, isEducatorInvolved, 0);
+                const pointsEarned = calculatePointsEarned(distanceMeters, activitySessionWeatherType ?? undefined, educatorsInvolvedIds.length > 0, 0);
 
-                clientStats.push({
+                // Insert one-by-one and capture the inserted id
+                const clientStatPayload = {
                     distanceMeters: distanceMeters,
                     co2Saved: co2Saved,
                     caloriesBurned: caloriesBurned,
@@ -124,12 +123,32 @@ export async function setActivityStats(activityId: string){
                     activityDate: activityDate,
                     activitySessionId: activity.id,
                     childId: childId
-                });
+                };
+
+                const insertResult = await AppDataSource.getRepository(ClientStat).insert(clientStatPayload);
+                const insertedId = insertResult.identifiers?.[0]?.id;
+
+                if ( educatorsInvolvedIds.length > 0) {
+                    for (const parentId of educatorsInvolvedIds) {
+                        const parentStatPayload = {
+                            clientStatId: insertedId,
+                            parentId: parentId
+                        };
+                        await AppDataSource.getRepository(ParentStat).insert(parentStatPayload);
+                    }
+                }
+
+                if (insertedId) {
+                    insertedClientStatIds.push(insertedId);
+                } else {
+                    logger.debug("ClientStat insert returned no id for child:", childId);
+                }
             }
         }
-
-        if (clientStats.length > 0) {
-            await AppDataSource.getRepository(ClientStat).insert(clientStats);
+        if (insertedClientStatIds.length > 0) {
+            logger.info(`Inserted ${insertedClientStatIds.length} client stats: ${insertedClientStatIds.join(',')}`);
+        } else {
+            logger.info("No client stats were inserted for activity " + activityId);
         }
     }
     catch(error){
