@@ -3,6 +3,7 @@ import { differenceInYears } from "date-fns";
 
 const WALKING_SPEED = 0.8;          // 0.8 m/s
 const BIKING_SPEED = 2.2;           // 2.2 m/s
+const CO2_PER_KM_GRAMS = 120;
 
 export function calculateTimeUntilArrival(
         distanceFromLastStop: number, 
@@ -78,9 +79,6 @@ export function calculateCaloriesBurned(
 
     return Math.round(calories); 
 }
-
-
-const CO2_PER_KM_GRAMS = 120;
 
 export function calculateCO2Saved(distanceMeters: number): number {
   if (distanceMeters <= 0) return 0;

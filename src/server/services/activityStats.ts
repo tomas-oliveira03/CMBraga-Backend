@@ -8,7 +8,7 @@ import { calculateCaloriesBurned, calculateCO2Saved, calculatePointsEarned } fro
 import { ClientStat } from "@/db/entities/ClientStat";
 import { Child } from "@/db/entities/Child";
 import { ParentChild } from "@/db/entities/ParentChild";
-import { ParentActivitySession } from "@/db/entities/ParentActivitySession";
+import { ParentStation } from "@/db/entities/ParentStation";
 
 export async function setActivityStats(activityId: string){
     try{
@@ -98,7 +98,7 @@ export async function setActivityStats(activityId: string){
                 });
                 if (parentChildRelations && parentChildRelations.length > 0) {
                     for (const pc of parentChildRelations) {
-                        const parentActivity = await AppDataSource.getRepository(ParentActivitySession).findOne({
+                        const parentActivity = await AppDataSource.getRepository(ParentStation).findOne({
                             where: {
                                 parentId: pc.parentId,
                                 activitySessionId: activityId
