@@ -179,15 +179,15 @@ async function dbHydration() {
       
       for (let i = 0; i < routeData.stops.length; i++) {
         const stop = routeData.stops[i];
-      
-        const stationKey = `${stop.name}`;
-        
+        const stationKey = `${stop.lat}-${stop.lon}`;
+
         let station = stationMap.get(stationKey);
         
         if (!station) {
           const existingStation = await stationRepo.findOne({
             where: {
-              name: stop.name
+              latitude: stop.lat,
+              longitude: stop.lon
             }
           });
           
