@@ -649,7 +649,7 @@
       "lon": -8.429047,
       "distanceFromStart": 0.526,
       "distanceFromPrevious": 0.526,
-      "timeFromStartMinutes": 2,
+      "timeFromStartMinutes": 4,
       "type": "regular"
     },
     {
@@ -658,16 +658,16 @@
       "lon": -8.421484,
       "distanceFromStart": 1.268,
       "distanceFromPrevious": 0.741,
-      "timeFromStartMinutes": 4,
+      "timeFromStartMinutes": 13,
       "type": "regular"
     },
     {
       "name": "Av. 31 de Janeiro",
-      "lat": 41.545942,
-      "lon": -8.41334,
+      "lat": 41.546082,
+      "lon": -8.413383,
       "distanceFromStart": 2.143,
       "distanceFromPrevious": 0.874,
-      "timeFromStartMinutes": 6,
+      "timeFromStartMinutes": 20,
       "type": "regular"
     },
     {
@@ -676,7 +676,7 @@
       "lon": -8.410452,
       "distanceFromStart": 2.527,
       "distanceFromPrevious": 0.384,
-      "timeFromStartMinutes": 8,
+      "timeFromStartMinutes": 22,
       "type": "regular"
     },
     {
@@ -685,7 +685,7 @@
       "lon": -8.407801,
       "distanceFromStart": 3.017,
       "distanceFromPrevious": 0.489,
-      "timeFromStartMinutes": 10,
+      "timeFromStartMinutes": 24,
       "type": "regular"
     },
     {
@@ -694,7 +694,7 @@
       "lon": -8.410074,
       "distanceFromStart": 3.638,
       "distanceFromPrevious": 0.621,
-      "timeFromStartMinutes": 12,
+      "timeFromStartMinutes": 28,
       "type": "regular"
     },
     {
@@ -703,7 +703,7 @@
       "lon": -8.4126774,
       "distanceFromStart": 3.968,
       "distanceFromPrevious": 0.33,
-      "timeFromStartMinutes": 14,
+      "timeFromStartMinutes": 30,
       "type": "school"
     }
   ],

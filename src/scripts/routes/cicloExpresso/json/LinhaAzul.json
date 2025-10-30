@@ -805,7 +805,7 @@
       "lon": -8.4069383,
       "distanceFromStart": 0.33,
       "distanceFromPrevious": 0.33,
-      "timeFromStartMinutes": 2,
+      "timeFromStartMinutes": 3,
       "type": "regular"
     },
     {
@@ -814,7 +814,7 @@
       "lon": -8.407685,
       "distanceFromStart": 0.591,
       "distanceFromPrevious": 0.261,
-      "timeFromStartMinutes": 4,
+      "timeFromStartMinutes": 5,
       "type": "regular"
     },
     {
@@ -823,7 +823,7 @@
       "lon": -8.405244,
       "distanceFromStart": 0.807,
       "distanceFromPrevious": 0.215,
-      "timeFromStartMinutes": 6,
+      "timeFromStartMinutes": 7,
       "type": "regular"
     },
     {
@@ -832,7 +832,7 @@
       "lon": -8.4033398,
       "distanceFromStart": 1.074,
       "distanceFromPrevious": 0.267,
-      "timeFromStartMinutes": 8,
+      "timeFromStartMinutes": 10,
       "type": "regular"
     },
     {
@@ -841,7 +841,7 @@
       "lon": -8.4048542,
       "distanceFromStart": 2.275,
       "distanceFromPrevious": 1.2,
-      "timeFromStartMinutes": 10,
+      "timeFromStartMinutes": 19,
       "type": "regular"
     },
     {
@@ -850,8 +850,8 @@
       "lon": -8.4080854,
       "distanceFromStart": 2.697,
       "distanceFromPrevious": 0.421,
-      "timeFromStartMinutes": 12,
-      "type": "regular"
+      "timeFromStartMinutes": 22,
+      "type": "school"
     },
     {
       "name": "Av. 31 de Janeiro",
@@ -859,7 +859,7 @@
       "lon": -8.413383,
       "distanceFromStart": 3.417,
       "distanceFromPrevious": 0.72,
-      "timeFromStartMinutes": 14,
+      "timeFromStartMinutes": 25,
       "type": "regular"
     },
     {
@@ -868,8 +868,8 @@
       "lon": -8.4161807,
       "distanceFromStart": 3.744,
       "distanceFromPrevious": 0.326,
-      "timeFromStartMinutes": 16,
-      "type": "regular"
+      "timeFromStartMinutes": 27,
+      "type": "school"
     },
     {
       "name": "R. Marcelino Sá Pires",
@@ -877,7 +877,7 @@
       "lon": -8.422083,
       "distanceFromStart": 4.574,
       "distanceFromPrevious": 0.83,
-      "timeFromStartMinutes": 18,
+      "timeFromStartMinutes": 32,
       "type": "regular"
     },
     {
@@ -886,11 +886,11 @@
       "lon": -8.419554,
       "distanceFromStart": 4.923,
       "distanceFromPrevious": 0.349,
-      "timeFromStartMinutes": 20,
+      "timeFromStartMinutes": 35,
       "type": "school"
     }
   ],
-  "totalDistance": 4.925,
+  "totalDistance": 4.923,
   "bounds": {
     "north": 41.551468,
     "south": 41.540742,
