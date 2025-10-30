@@ -58,7 +58,8 @@ export enum UserRole {
 
 export enum TypeOfChat {
     GROUP_CHAT = 'group_chat',
-    INDIVIDUAL_CHAT = 'individual_chat'
+    INDIVIDUAL_CHAT = 'individual_chat',
+    GENERAL_CHAT = 'general_chat'
 }
 
 

@@ -4,7 +4,7 @@ import { Message } from "./Message";
 import { UserChat } from "./UserChat";
 
 @Entity()
-@Check(`"chat_type" IN ('group_chat', 'individual_chat')`)
+@Check(`"chat_type" IN ('group_chat', 'individual_chat', 'general_chat')`)
 export class Chat {
     @PrimaryGeneratedColumn("uuid")
     id!: string;

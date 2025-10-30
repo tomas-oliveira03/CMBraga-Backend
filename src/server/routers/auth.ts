@@ -28,6 +28,7 @@ import { webSocketManager } from "../services/websocket";
 import { ChildHistory } from "@/db/entities/ChildHistory";
 import { differenceInYears } from "date-fns";
 import redisClient from "@/lib/redis";
+import { addUserToGeneralChat } from "../services/comms";
 
 const router = express.Router();
 
@@ -305,6 +306,8 @@ router.post('/register/admin', async (req: Request, res: Response) => {
         
         // await createPassword(validatedData.email, validatedData.name);
 
+        await addUserToGeneralChat(validatedData.email);
+
         return res.status(201).json({message: "Admin created successfully"});
 
     } catch (error) {
@@ -403,6 +406,7 @@ router.post('/register/instructor', async (req: Request, res: Response) => {
             });
         })
         // await createPassword(validatedData.email, validatedData.name);
+        await addUserToGeneralChat(validatedData.email);
         
         return res.status(201).json({message: "Instructor created successfully"});
 
@@ -508,6 +512,7 @@ router.post('/register/health-professional', async (req: Request, res: Response)
         })
 
         // await createPassword(validatedData.email, validatedData.name);
+        await addUserToGeneralChat(validatedData.email);
 
         return res.status(201).json({message: "Health Professional created successfully"});
         
@@ -613,6 +618,7 @@ router.post('/register/parent', async (req: Request, res: Response) => {
         
         // await createPassword(validatedData.email, validatedData.name);
 
+        await addUserToGeneralChat(validatedData.email);
         return res.status(201).json({message: "Parent created successfully"});
 
     } catch (error) {

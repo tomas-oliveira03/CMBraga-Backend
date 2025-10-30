@@ -3,7 +3,7 @@ import { Message } from "@/db/entities/Message";
 import { User } from "@/db/entities/User";
 import { UserChat } from "@/db/entities/UserChat";
 import { Chat } from "@/db/entities/Chat";
-import { UserRole } from "@/helpers/types";
+import { TypeOfChat, UserRole } from "@/helpers/types";
 
 const MESSAGES_PER_PAGE = 20;
 const USERS_PER_PAGE = 10;
@@ -182,4 +182,58 @@ export function normalizeUsers(users: any[]) {
             role
         };
     });
+}
+
+export async function getOrCreateGeneralChat(): Promise<Chat> {
+  try {
+    
+    let generalChat = await  AppDataSource.getRepository(Chat).findOne({
+      where: { chatType: TypeOfChat.GENERAL_CHAT },
+    });
+
+    if (!generalChat) {
+      const insertResult = await  AppDataSource.getRepository(Chat).insert({
+        chatName: "Chat Geral",
+        chatType: TypeOfChat.GENERAL_CHAT,
+        destinatairePhoto: "default-photo-url",
+      });
+
+      const insertedId = insertResult.identifiers[0]?.id;
+
+      generalChat = await  AppDataSource.getRepository(Chat).findOne({
+        where: { id: insertedId },
+      });
+    }
+
+    return generalChat!;
+  } catch (error) {
+    console.error("Error getting or creating general chat", error);
+    throw new Error("Error getting or creating general chat");
+  }
+}
+
+
+export async function addUserToGeneralChat(userId: string): Promise<void> {
+    try {
+        const generalChat = await getOrCreateGeneralChat();
+
+
+        const existingUserChat = await AppDataSource.getRepository(UserChat).findOne({
+            where: {
+                userId: userId,
+                chatId: generalChat!.id
+            }
+        });
+
+        if (!existingUserChat) {
+            await AppDataSource.getRepository(UserChat).insert({
+                userId: userId,
+                chatId: generalChat!.id
+            });
+            console.log(`User ${userId} added to general chat`);
+        }
+    } catch (error) {
+        console.error("Error adding user to general chat:", error);
+        throw new Error("Failed to add user to general chat");
+    }
 }
