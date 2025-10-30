@@ -5,7 +5,7 @@ import { StationActivitySession } from "@/db/entities/StationActivitySession";
 import { ChildStationType } from "@/helpers/types";
 import { logger } from "@/lib/logger";
 import { calculateCaloriesBurned, calculateCO2Saved, calculatePointsEarned } from "./activity";
-import { ClientStat } from "@/db/entities/ClientStat";
+import { ClientStat } from "@/db/entities/ChildStat";
 import { Child } from "@/db/entities/Child";
 import { ParentChild } from "@/db/entities/ParentChild";
 import { ParentStation } from "@/db/entities/ParentStation";

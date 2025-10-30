@@ -6,7 +6,7 @@ import { ParentChild } from "./ParentChild";
 import { ChildGender, ChildHealthProblems } from "@/helpers/types";
 import { Station } from "./Station";
 import { Feedback } from "./Feedback";
-import { ClientStat } from "./ClientStat";
+import { ChildStat } from "./ChildStat";
 import { ChildHistory } from "./ChildHistory";
 
 @Entity()
@@ -67,8 +67,8 @@ export class Child {
 	@OneToMany(() => Feedback, (feedback) => feedback.child)
 	feedbacks!: Feedback[];
 
-	@OneToMany(() => ClientStat, (cs) => cs.child)
-	clientStats!: ClientStat[];
+	@OneToMany(() => ChildStat, (cs) => cs.child)
+	childStats!: ChildStat[];
 
 	@OneToMany(() => ChildHistory, (ch) => ch.child)
 	childHistory!: ChildHistory[];

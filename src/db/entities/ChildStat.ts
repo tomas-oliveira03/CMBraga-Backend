@@ -1,13 +1,10 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn, OneToOne } from "typeorm"
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn, OneToOne, PrimaryColumn } from "typeorm"
 import { Child } from "./Child";
 import { ActivitySession } from "./ActivitySession";
 import { ParentStat } from "./ParentStat";
 
 @Entity()
-export class ClientStat {
-    @PrimaryGeneratedColumn("uuid")
-    id!: string;
-
+export class ChildStat {
     @Column({ type: 'int' })
     distanceMeters!: number;
 
@@ -23,10 +20,10 @@ export class ClientStat {
     @Column({ type: 'timestamptz' })
     activityDate!: Date;
 
-    @Column({ type: 'varchar' })
+    @PrimaryColumn({ type: 'varchar' })
     activitySessionId!: string;
     
-    @Column({ type: 'varchar', nullable: true })
+    @PrimaryColumn({ type: 'varchar' })
     childId!: string | null;
 
     @ManyToOne(() => Child, { nullable: true })
@@ -35,6 +32,6 @@ export class ClientStat {
     @ManyToOne(() => ActivitySession)
     activitySession!: ActivitySession;
 
-    @OneToOne(() => ParentStat, (ps) => ps.clientStat, { nullable: true })
+    @OneToOne(() => ParentStat, (ps) => ps.childStat, { nullable: true })
     parentStat!: ParentStat | null;
 }

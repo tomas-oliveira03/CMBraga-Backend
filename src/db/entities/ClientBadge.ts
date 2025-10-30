@@ -1,4 +1,4 @@
-import { Entity, PrimaryColumn, ManyToOne, PrimaryGeneratedColumn, Column } from "typeorm"
+import { Entity, PrimaryColumn, ManyToOne, PrimaryGeneratedColumn, Column, Index } from "typeorm"
 import { User } from "./User";
 import { Badge } from "./Badge";
 import { Parent } from "./Parent";
@@ -9,12 +9,15 @@ export class ClientBadge {
     @PrimaryGeneratedColumn("uuid")
     id!: string;
 
+    @Index()
     @Column({ type: 'varchar', nullable: true })
     parentId!: string | null;
 
+    @Index()
     @Column({ type: 'varchar', nullable: true })
     childId!: string | null;
 
+    @Index()
     @Column({ type: 'varchar' })
     badgeId!: string;
 
