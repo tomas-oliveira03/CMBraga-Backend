@@ -3,7 +3,7 @@ import { logger } from '@/lib/logger';
 import { AppDataSource } from '@/db';
 import { ActivitySession } from '@/db/entities/ActivitySession';
 import { Feedback } from '@/db/entities/Feedback';
-import { Not, IsNull } from 'typeorm';
+import { Not, IsNull, Between } from 'typeorm';
 import { sendFeedbackReminder } from '@/server/services/email';
 import { envs } from '@/config';
 
@@ -28,7 +28,7 @@ class FeedbackReminderCron {
 
                 const finishedActivities = await AppDataSource.getRepository(ActivitySession).find({
                     where: {
-                        finishedAt: Not(IsNull())
+                        finishedAt: Between(today, tomorrow),
                     },
                     relations: {
                         childActivitySessions: {
@@ -38,14 +38,9 @@ class FeedbackReminderCron {
                     }
                 });
 
-                const activitiesFinishedToday = finishedActivities.filter(activity => {
-                    const finishedDate = new Date(activity.finishedAt!);
-                    return finishedDate >= today && finishedDate < tomorrow;
-                });
-
                 let emailsSent = 0;
 
-                for (const activity of activitiesFinishedToday) {
+                for (const activity of finishedActivities) {
                     for (const childActivity of activity.childActivitySessions) {
                      
                         const existingFeedback = await AppDataSource.getRepository(Feedback).findOne({

@@ -11,6 +11,8 @@ import multer from 'multer';
 import { deleteFile, uploadFileBuffer } from "../services/cloud";
 import { MAX_KML_SIZE } from "@/helpers/storage";
 import { calculateTimeUntilArrival } from "../services/activity";
+import { RouteConnection } from "@/db/entities/RouteConnection";
+import { In, Not } from "typeorm";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -690,10 +692,41 @@ router.put('/:id', async (req: Request, res: Response) => {
             return res.status(404).json({ message: "Route not found" });
         }
 
-        await AppDataSource.getRepository(Route).update(route.id, {
-            ...validatedData,
-            updatedAt: new Date()
-        });
+        await AppDataSource.transaction(async tx => {
+            const { routeConnector, ...updatedData} = validatedData
+            await tx.getRepository(Route).update(route.id, {
+                ...updatedData,
+                updatedAt: new Date()
+            });
+            
+            // Connector route logic
+            if (validatedData.routeConnector){
+                const connectorRouteExists = await tx.getRepository(Route).findOne({
+                    where: { id: validatedData.routeConnector.routeId }
+                });
+                if (!connectorRouteExists) {
+                    throw new Error("Connector route not found");
+                }
+
+                const connectorStationExists = await tx.getRepository(Station).findOne({
+                    where: { id: validatedData.routeConnector.stationId }
+                });
+                if (!connectorStationExists) {
+                    throw new Error("Connector station not found");
+                }
+
+                await tx.getRepository(RouteConnection).delete({
+                    fromRouteId: route.id,
+                    toRouteId: validatedData.routeConnector.routeId
+                });
+
+                await tx.getRepository(RouteConnection).insert({
+                    fromRouteId: route.id,
+                    toRouteId: validatedData.routeConnector.routeId,
+                    stationId: validatedData.routeConnector.stationId
+                });
+            }
+        })
 
         return res.status(200).json({ message: "Route updated successfully" });
 
@@ -709,6 +742,120 @@ router.put('/:id', async (req: Request, res: Response) => {
     }
 });
 
+/**
+ * @swagger
+ * /route/possible-transfers/{id}:
+ *   get:
+ *     summary: Get all possible transfer routes and stops for a route
+ *     description: Returns a list of all routes that share at least one station with the given route, and for each route, the list of shared stops (station id and name).
+ *     tags:
+ *       - Route
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *         description: Route ID (UUID)
+ *     responses:
+ *       200:
+ *         description: List of possible transfer routes and stops
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     example: "b2c3d4e5-f6g7-8901-bcde-f23456789012"
+ *                   name:
+ *                     type: string
+ *                     example: "Rota Ciclo Expresso Norte"
+ *                   stops:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: string
+ *                           example: "station-uuid-1"
+ *                         name:
+ *                           type: string
+ *                           example: "Estação Central"
+ *       404:
+ *         description: Route not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Route not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
+router.get('/possible-transfers/:id', async (req: Request, res: Response) => {
+    try {
+        const routeId = req.params.id!;
+        const route = await AppDataSource.getRepository(Route).findOne({
+            where: { id: routeId },
+            relations: { routeStations: { station: true } }
+        });
+        if (!route){
+            return res.status(404).json({ message: "Route not found" })
+        }
 
+        const allStations = route.routeStations.map(rs => rs.stationId);
+
+        const allRoutesThatLink = await AppDataSource.getRepository(RouteStation).find({
+            where: {
+                routeId: Not(routeId),
+                stationId: In(allStations)
+            },
+            relations: {
+                route: true,
+                station: true
+            }
+        });
+
+        // Map: routeId -> { id, name, stop }
+        const routeLinksMap: Record<string, { 
+            id: string,
+            name: string,
+            stops: Array<{ id: string, name: string }> }> = {};
+
+        for (const rs of allRoutesThatLink) {
+            if (!routeLinksMap[rs.route.id]) {
+                routeLinksMap[rs.route.id] = {
+                    id: rs.route.id,
+                    name: rs.route.name,
+                    stops: []
+                };
+            }
+            routeLinksMap[rs.route.id]!.stops.push({
+                id: rs.station.id,
+                name: rs.station.name
+            });
+        }
+        const allRouteLinks = Object.values(routeLinksMap);
+
+        return res.status(200).json(allRouteLinks);
+
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+});
 
 export default router;

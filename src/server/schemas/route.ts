@@ -18,7 +18,11 @@ export const RouteSchema = z.object({
     boundsWest: z.number(),
     metadata: z.array(RoutePointSchema),
     createdAt: z.date(),
-    updatedAt: z.date().nullable()
+    updatedAt: z.date().nullable(),
+    routeConnector: z.object({
+        routeId: z.string(),
+        stationId: z.string()
+    }).nullable()
 });
 
 export const InitialUpdateSchema = z.array(z.object({
@@ -37,6 +41,7 @@ export const CreateRouteSchema = RouteSchema.omit({
     metadata: true,
     createdAt: true,
     updatedAt: true,
+    routeConnector: true
 });
 
 export const UpdateRouteSchema = RouteSchema.omit({
