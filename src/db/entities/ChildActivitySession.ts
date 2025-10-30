@@ -12,6 +12,10 @@ export class ChildActivitySession {
     @PrimaryColumn({ type: 'varchar' })
     activitySessionId!: string;
 
+    // Only use for route connectors (all use the first chain activity session)
+    @Column({ type: 'varchar', nullable: true, default: null })
+    chainedActivitySessionId!: string | null;
+
     @Column({ type: 'varchar' })
     parentId!: string;
 

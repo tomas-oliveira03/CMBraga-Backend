@@ -5,11 +5,11 @@ import { StationActivitySession } from "@/db/entities/StationActivitySession";
 import { ChildStationType } from "@/helpers/types";
 import { logger } from "@/lib/logger";
 import { calculateCaloriesBurned, calculateCO2Saved, calculatePointsEarned } from "./activity";
-import { ClientStat } from "@/db/entities/ChildStat";
 import { Child } from "@/db/entities/Child";
 import { ParentChild } from "@/db/entities/ParentChild";
 import { ParentStation } from "@/db/entities/ParentStation";
 import { ParentStat } from "@/db/entities/ParentStat";
+import { ChildStat } from "@/db/entities/ChildStat";
 
 export async function setActivityStats(activityId: string){
     try{
@@ -125,7 +125,7 @@ export async function setActivityStats(activityId: string){
                     childId: childId
                 };
 
-                const insertResult = await AppDataSource.getRepository(ClientStat).insert(clientStatPayload);
+                const insertResult = await AppDataSource.getRepository(ChildStat).insert(clientStatPayload);
                 const insertedId = insertResult.identifiers?.[0]?.id;
 
                 if ( educatorsInvolvedIds.length > 0) {

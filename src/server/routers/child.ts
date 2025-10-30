@@ -2,7 +2,7 @@ import { AppDataSource } from "@/db";
 import { Child } from "@/db/entities/Child";
 import express, { Request, Response } from "express";
 import { UpdateChildSchema } from "../schemas/child";
-import { z } from "zod";
+import { map, z } from "zod";
 import { Station } from "@/db/entities/Station";
 import { StationType } from "@/helpers/types";
 import multer from "multer";
@@ -12,98 +12,13 @@ import { ChildHistory } from "@/db/entities/ChildHistory";
 import { differenceInYears } from "date-fns";
 import { ParentChild } from "@/db/entities/ParentChild";
 import { Parent } from "@/db/entities/Parent";
-import { In } from "typeorm";
+import { In, IsNull } from "typeorm";
 import { ChildActivitySession } from "@/db/entities/ChildActivitySession";
 import { Feedback } from "@/db/entities/Feedback";
+import { UpcomingActivityPayload, ActivitySessionInfo } from "@/helpers/service-types";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
-
-/**
- * @swagger
- * /child/activities/{id}:
- *   get:
- *     summary: Get activities for a child
- *     description: Returns the list of activity registrations for a given child, including the registration timestamp and the related activity session details.
- *     tags:
- *       - Child
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
- *         description: Child ID (UUID)
- *     responses:
- *       200:
- *         description: List of child activity registrations
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   registeredAt:
- *                     type: string
- *                     format: date-time
- *                     example: "2024-01-15T10:30:00.000Z"
- *                   activitySession:
- *                     type: object
- *                     properties:
- *                       id:
- *                         type: string
- *                         example: "b1c2d3e4-f5a6-7890-abcd-111213141516"
- *                       startAt:
- *                         type: string
- *                         format: date-time
- *                         example: "2024-02-20T09:00:00.000Z"
- *                       endAt:
- *                         type: string
- *                         format: date-time
- *                         example: "2024-02-20T10:00:00.000Z"
- *                       name:
- *                         type: string
- *                         example: "Atividade de Expressão" 
- *       404:
- *         description: Child not found
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Child not found"
- */
-router.get('/activities/:id', async (req: Request, res: Response) => {
-    try {
-        const childId = req.params.id;
-        const child = await AppDataSource.getRepository(Child).findOne({
-            where: { id: childId }, 
-            relations: {
-                childActivitySessions: { 
-                    activitySession: true
-                }
-            },
-            select: {
-                childActivitySessions:{
-                    registeredAt: true,
-                    activitySession: true
-                }
-            }
-        })
-        
-        if(!child){
-            return res.status(404).json({ message: "Child not found" });
-        }
-
-        return res.status(200).json(child.childActivitySessions)
-    } catch (error) {
-        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
-    }
-})
 
 /**
  * @swagger
@@ -595,5 +510,239 @@ router.put('/:id', upload.single('file'), async (req: Request, res: Response) =>
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
+
+
+
+/**
+ * @swagger
+ * /child/upcoming-activities/{id}:
+ *   get:
+ *     summary: Get upcoming activities for a child
+ *     description: Returns a list of upcoming activity sessions for a child, grouped by chained activities (bundles) or as singles.
+ *     tags:
+ *       - Child
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *         description: Child ID (UUID)
+ *     responses:
+ *       200:
+ *         description: List of upcoming activities grouped by bundle or single
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 oneOf:
+ *                   - type: object
+ *                     properties:
+ *                       type:
+ *                         type: string
+ *                         enum: [single]
+ *                       activitySessionId:
+ *                         type: string
+ *                       isLateRegistration:
+ *                         type: boolean
+ *                       registeredAt:
+ *                         type: string
+ *                         format: date-time
+ *                       activitySession:
+ *                         type: object
+ *                         properties:
+ *                           type: { type: string }
+ *                           mode: { type: string }
+ *                           scheduledAt: { type: string, format: date-time }
+ *                           expectedDepartureAt: { type: string, format: date-time }
+ *                           expectedArrivalAt: { type: string, format: date-time }
+ *                       route:
+ *                         type: object
+ *                         properties:
+ *                           id: { type: string }
+ *                           name: { type: string }
+ *                       pickUpStation:
+ *                         type: object
+ *                         properties:
+ *                           id: { type: string }
+ *                           name: { type: string }
+ *                       dropOffStation:
+ *                         type: object
+ *                         properties:
+ *                           id: { type: string }
+ *                           name: { type: string }
+ *                       registeredBy:
+ *                         type: object
+ *                         properties:
+ *                           id: { type: string }
+ *                           name: { type: string }
+ *                       chainedInfo:
+ *                         type: string
+ *                         nullable: true
+ *                   - type: object
+ *                     properties:
+ *                       type:
+ *                         type: string
+ *                         enum: [bundle]
+ *                       activities:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             activitySessionId: { type: string }
+ *                             isLateRegistration: { type: boolean }
+ *                             registeredAt: { type: string, format: date-time }
+ *                             activitySession:
+ *                               type: object
+ *                               properties:
+ *                                 type: { type: string }
+ *                                 mode: { type: string }
+ *                                 scheduledAt: { type: string, format: date-time }
+ *                                 expectedDepartureAt: { type: string, format: date-time }
+ *                                 expectedArrivalAt: { type: string, format: date-time }
+ *                             route:
+ *                               type: object
+ *                               properties:
+ *                                 id: { type: string }
+ *                                 name: { type: string }
+ *                             pickUpStation:
+ *                               type: object
+ *                               properties:
+ *                                 id: { type: string }
+ *                                 name: { type: string }
+ *                             dropOffStation:
+ *                               type: object
+ *                               properties:
+ *                                 id: { type: string }
+ *                                 name: { type: string }
+ *                             registeredBy:
+ *                               type: object
+ *                               properties:
+ *                                 id: { type: string }
+ *                                 name: { type: string }
+ *                             chainedInfo:
+ *                               type: string
+ *                               nullable: true
+ *       404:
+ *         description: Child not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Child not found"
+ */
+router.get('/upcoming-activities/:id', async (req: Request, res: Response) => {
+    try {
+        const childId = req.params.id;
+        const child = await AppDataSource.getRepository(Child).findOne({
+            where: { 
+                id: childId,
+                childActivitySessions: {
+                    activitySession: {
+                        startedAt: IsNull()
+                    }
+                }
+            }, 
+            relations: {
+                childActivitySessions: { 
+                    activitySession: {
+                        stationActivitySessions: true,
+                        route: true
+                    },
+                    parent: true,
+                    pickUpStation: true,
+                    dropOffStation: true
+                }
+            }
+        })
+        if(!child){
+            return res.status(404).json({ message: "Child not found" });
+        }
+
+        const responsePayload: ActivitySessionInfo[] = child.childActivitySessions.map(activityData => {
+            return {
+                activitySessionId: activityData.activitySessionId,
+                isLateRegistration: activityData.isLateRegistration,
+                registeredAt: activityData.registeredAt,
+                activitySession: {
+                    type: activityData.activitySession.type,
+                    mode: activityData.activitySession.mode,
+                    scheduledAt: activityData.activitySession.scheduledAt,
+                    expectedDepartureAt: activityData.activitySession.stationActivitySessions.find(sas => sas.stationId === activityData.pickUpStationId)!.scheduledAt,
+                    expectedArrivalAt: activityData.activitySession.stationActivitySessions.find(sas => sas.stationId === activityData.dropOffStationId)!.scheduledAt,
+                },
+                route: {
+                    id: activityData.activitySession.routeId,
+                    name: activityData.activitySession.route.name
+                },
+                pickUpStation: {
+                    id: activityData.pickUpStationId,
+                    name: activityData.pickUpStation.name
+                },
+                dropOffStation: {
+                    id: activityData.dropOffStationId,
+                    name: activityData.dropOffStation.name
+                },
+                registeredBy: {
+                    id: activityData.parentId,
+                    name: activityData.parent.name
+                },
+                chainedInfo: activityData.chainedActivitySessionId
+            };
+        });
+
+        // Group by chainedInfo
+        const grouped: Record<string, ActivitySessionInfo[]> = {};
+        responsePayload.forEach(item => {
+            const key = item.chainedInfo != null ? `chain-${item.chainedInfo}` : `single-${item.activitySessionId}`;
+            if (!grouped[key]) grouped[key] = [];
+            grouped[key].push(item);
+        });
+
+        // Build final payload
+        const finalPayload: UpcomingActivityPayload[] = Object.values(grouped).map(group => {
+            const chainedInfo = group[0]!.chainedInfo;
+            if (chainedInfo !== null && group.length > 1) {
+                // Sort bundle by registeredAt ascending
+                const activities = group.slice().sort((a, b) => {
+                    return a.registeredAt.getTime() - b.registeredAt.getTime();
+                });
+                return {
+                    type: "bundle",
+                    activities
+                };
+            } else {
+                // Single
+                return {
+                    type: "single",
+                    ...group[0]!
+                };
+            }
+        });
+
+        // Sort all by expectedDepartureAt
+        finalPayload.sort((a, b) => {
+            const getExpectedDepartureAt = (item: UpcomingActivityPayload) => {
+                if (item.type === "bundle") {
+                    return item.activities[0]!.activitySession.expectedDepartureAt.getTime();
+                } else {
+                    return item.activitySession.expectedDepartureAt.getTime();
+                }
+            };
+            return getExpectedDepartureAt(a) - getExpectedDepartureAt(b);
+        });
+
+        return res.status(200).json(finalPayload);
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+})
+
+
 
 export default router;

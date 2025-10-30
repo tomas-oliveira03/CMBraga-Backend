@@ -614,7 +614,9 @@ router.post('/:id', authenticate, authorize(UserRole.PARENT), async (req: Reques
                     pickUpStationId: pickUp,
                     dropOffStationId: routeConnector.stationId,
                     isLateRegistration: isNormalDeadlineOver,
-                    parentId: req.user!.userId
+                    parentId: req.user!.userId,
+                    registeredAt: new Date(),
+                    chainedActivitySessionId: activitySessionId
                 });
 
                 // Next session in the chain
@@ -640,7 +642,9 @@ router.post('/:id', authenticate, authorize(UserRole.PARENT), async (req: Reques
                     pickUpStationId: pickUp,
                     dropOffStationId: child.dropOffStationId,
                     isLateRegistration: isNormalDeadlineOver,
-                    parentId: req.user!.userId
+                    parentId: req.user!.userId,
+                    registeredAt: new Date(),
+                    chainedActivitySessionId: activitySessionId
                 });
                 break;
             }
