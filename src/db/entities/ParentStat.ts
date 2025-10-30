@@ -13,9 +13,9 @@ export class ParentStat {
     @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
     createdAt!: Date;
 
-    @ManyToOne(() => Parent, { nullable: false })
+    @ManyToOne(() => Parent)
     parent!: Parent;
 
-    @OneToOne(() => ChildStat, { nullable: false })
+    @OneToOne(() => ChildStat)
     childStat!: ChildStat;
 }

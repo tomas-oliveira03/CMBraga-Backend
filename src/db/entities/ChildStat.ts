@@ -26,7 +26,7 @@ export class ChildStat {
     @PrimaryColumn({ type: 'varchar' })
     childId!: string | null;
 
-    @ManyToOne(() => Child, { nullable: true })
+    @ManyToOne(() => Child)
     child!: Child | null;
 
     @ManyToOne(() => ActivitySession)

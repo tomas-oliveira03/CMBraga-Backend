@@ -76,7 +76,18 @@ async function cloudHydration(){
 async function dbHydration() {
   console.log("Initializing data source...");
   const dataSource = await AppDataSource.initialize();
+  const datafile = path.join(__dirname, "/routes/data.json");
 
+  // Load seed JSON from disk
+  let seedData: any = {};
+  try {
+    const raw = fs.readFileSync(datafile, "utf-8");
+    seedData = JSON.parse(raw);
+    console.log("Loaded seed JSON:", datafile);
+  } catch (err) {
+    console.warn("Could not load seed JSON, proceeding with in-script defaults:", err?.message || err);
+  }
+  
   try {
     // Repositories
     const stationRepo = dataSource.getRepository(Station);
@@ -293,69 +304,147 @@ async function dbHydration() {
     // 6. Create health professional and admin
     const encryptedPassword = informationHash.encrypt("Person23!");
 
-    const hp1 = hpRepo.create({ 
-      name: "Dra. Marta Ramos", 
-      email: "marta.ramos@saude.pt", 
-      password: encryptedPassword, 
-      phone: "912345678",
-      specialty: "pediatrician" as any,
-      activatedAt: new Date(),
-      profilePictureURL: selectRandomDefaultProfilePicture()
-    });
-    await hpRepo.save(hp1);
-
-    await userRepo.save(userRepo.create({
-      id: hp1.email,
-      name: hp1.name,
-      healthProfessionalId: hp1.id,
-      profilePictureURL: hp1.profilePictureURL
-    }));
-
-    const admin = adminRepo.create({ 
-      name: "Admin User", 
-      email: "admin@cmbraga.pt", 
-      password: encryptedPassword,
-      phone: "900000000",
-      activatedAt: new Date(),
-      profilePictureURL: selectRandomDefaultProfilePicture()
-    });
-    await adminRepo.save(admin);
-
-    await userRepo.save(userRepo.create({
-      id: admin.email,
-      name: admin.name,
-      adminId: admin.id,
-      profilePictureURL: admin.profilePictureURL
-    }));
-
-    // 7. Create parents
-    const pais: Parent[] = [];
-    
-    for (let i = 1; i <= 10; i++) {
-      const parent = parentRepo.create({
-        name: `Pai ${i}`,
-        email: `pai${i}@exemplo.com`,
+    // Create health professionals from JSON (fallback to previous single hp if missing)
+    const hpEntities: HealthProfessional[] = [];
+    let hp1: HealthProfessional;
+    if (Array.isArray(seedData.healthProfessionals) && seedData.healthProfessionals.length) {
+      for (const hp of seedData.healthProfessionals) {
+        const hpEnt = hpRepo.create({
+          name: hp.name,
+          email: hp.email,
+          password: encryptedPassword,
+          phone: hp.phone,
+          specialty: hp.specialty as any,
+          activatedAt: new Date(),
+          profilePictureURL: selectRandomDefaultProfilePicture()
+        });
+        hpEntities.push(hpEnt);
+      }
+      await hpRepo.save(hpEntities);
+      for (const hpEnt of hpEntities) {
+        await userRepo.save(userRepo.create({
+          id: hpEnt.email,
+          name: hpEnt.name,
+          healthProfessionalId: hpEnt.id,
+          profilePictureURL: hpEnt.profilePictureURL
+        }));
+      }
+      // Ensure hp1 is set for later usage (fallback to first created HP)
+      hp1 = hpEntities[0]!;
+    } else {
+      // fallback to previous single HP if json missing
+      hp1 = hpRepo.create({
+        name: "Dra. Marta Ramos",
+        email: "marta.ramos@saude.pt",
         password: encryptedPassword,
-        phone: `91${String(i).padStart(7, '0')}`,
-        address: `Rua ${i}, Nº ${i}`,
+        phone: "912345678",
+        specialty: "pediatrician" as any,
         activatedAt: new Date(),
         profilePictureURL: selectRandomDefaultProfilePicture()
       });
-      pais.push(parent);
-    }
-    await parentRepo.save(pais);
-    console.log(`✅ Created ${pais.length} parents`);
-
-    // Create corresponding Users for parents
-    for (const parent of pais) {
+      await hpRepo.save(hp1);
       await userRepo.save(userRepo.create({
-        id: parent.email,
-        name: parent.name,
-        parentId: parent.id,
-        profilePictureURL: parent.profilePictureURL
+        id: hp1.email,
+        name: hp1.name,
+        healthProfessionalId: hp1.id,
+        profilePictureURL: hp1.profilePictureURL
       }));
+      hpEntities.push(hp1);
     }
 
+    // Create admins from JSON (fallback to previous single admin)
+    const adminEntities: Admin[] = [];
+    if (Array.isArray(seedData.admins) && seedData.admins.length) {
+      for (const a of seedData.admins) {
+        const adminEnt = adminRepo.create({
+          name: a.name,
+          email: a.email,
+          password: encryptedPassword,
+          phone: a.phone,
+          activatedAt: new Date(),
+          profilePictureURL: selectRandomDefaultProfilePicture()
+        });
+        adminEntities.push(adminEnt);
+      }
+      await adminRepo.save(adminEntities);
+      for (const adminEnt of adminEntities) {
+        await userRepo.save(userRepo.create({
+          id: adminEnt.email,
+          name: adminEnt.name,
+          adminId: adminEnt.id,
+          profilePictureURL: adminEnt.profilePictureURL
+        }));
+      }
+    } else {
+      const admin = adminRepo.create({
+        name: "Admin User",
+        email: "admin@cmbraga.pt",
+        password: encryptedPassword,
+        phone: "900000000",
+        activatedAt: new Date(),
+        profilePictureURL: selectRandomDefaultProfilePicture()
+      });
+      await adminRepo.save(admin);
+      await userRepo.save(userRepo.create({
+        id: admin.email,
+        name: admin.name,
+        adminId: admin.id,
+        profilePictureURL: admin.profilePictureURL
+      }));
+      adminEntities.push(admin);
+    }
+ 
+    // 7. Create parents from JSON
+    const pais: Parent[] = [];
+    if (Array.isArray(seedData.parents) && seedData.parents.length) {
+      for (const p of seedData.parents) {
+        const parent = parentRepo.create({
+          name: p.name,
+          email: p.email,
+          password: encryptedPassword,
+          phone: p.phone,
+          address: p.address,
+          activatedAt: new Date(),
+          profilePictureURL: selectRandomDefaultProfilePicture()
+        });
+        pais.push(parent);
+      }
+      await parentRepo.save(pais);
+      console.log(`✅ Created ${pais.length} parents (from JSON)`);
+      // create corresponding user entries
+      for (const parent of pais) {
+        await userRepo.save(userRepo.create({
+          id: parent.email,
+          name: parent.name,
+          parentId: parent.id,
+          profilePictureURL: parent.profilePictureURL
+        }));
+      }
+    } else {
+      // fallback to synthetic parents (kept minimal)
+      for (let i = 1; i <= 10; i++) {
+        const parent = parentRepo.create({
+          name: `Pai ${i}`,
+          email: `pai${i}@exemplo.com`,
+          password: encryptedPassword,
+          phone: `91${String(i).padStart(7, '0')}`,
+          address: `Rua ${i}, Nº ${i}`,
+          activatedAt: new Date(),
+          profilePictureURL: selectRandomDefaultProfilePicture()
+        });
+        pais.push(parent);
+      }
+      await parentRepo.save(pais);
+      for (const parent of pais) {
+        await userRepo.save(userRepo.create({
+          id: parent.email,
+          name: parent.name,
+          parentId: parent.id,
+          profilePictureURL: parent.profilePictureURL
+        }));
+      }
+    }
+ 
     // 8. Create children with drop-off at school station (last station)
     const criancas: Child[] = [];
     const schoolStation = stations[stations.length - 1]; // Last station is school
@@ -431,36 +520,60 @@ async function dbHydration() {
     await parentChildRepo.save(parentChildAssociations);
     console.log(`✅ Created ${parentChildAssociations.length} parent-child associations`);
 
-    // 10. Create instructors
-    const instrutores = [
-      instructorRepo.create({ 
-        name: "Instrutor 1", 
-        email: "inst1@cmbraga.pt", 
-        password: encryptedPassword, 
-        phone: "911111111",
-        activatedAt: new Date(),
-        profilePictureURL: selectRandomDefaultProfilePicture()
-      }),
-      instructorRepo.create({ 
-        name: "Instrutor 2", 
-        email: "inst2@cmbraga.pt", 
-        password: encryptedPassword, 
-        phone: "922222222",
-        activatedAt: new Date(),
-        profilePictureURL: selectRandomDefaultProfilePicture()
-      }),
-    ];
-    await instructorRepo.save(instrutores);
-    console.log(`✅ Created ${instrutores.length} instructors`);
-
-    // Create corresponding Users for instructors
-    for (const instructor of instrutores) {
-      await userRepo.save(userRepo.create({
-        id: instructor.email,
-        name: instructor.name,
-        instructorId: instructor.id,
-        profilePictureURL: instructor.profilePictureURL
-      }));
+    // 10. Create instructors from JSON (instructores)
+    const instrutores: Instructor[] = [];
+    if (Array.isArray(seedData.instructores) && seedData.instructores.length) {
+      for (const ins of seedData.instructores) {
+        const instEnt = instructorRepo.create({
+          name: ins.name,
+          email: ins.email,
+          password: encryptedPassword,
+          phone: ins.phone,
+          activatedAt: new Date(),
+          profilePictureURL: selectRandomDefaultProfilePicture()
+        });
+        instrutores.push(instEnt);
+      }
+      await instructorRepo.save(instrutores);
+      console.log(`✅ Created ${instrutores.length} instructors (from JSON)`);
+      for (const instructor of instrutores) {
+        await userRepo.save(userRepo.create({
+          id: instructor.email,
+          name: instructor.name,
+          instructorId: instructor.id,
+          profilePictureURL: instructor.profilePictureURL
+        }));
+      }
+    } else {
+      // fallback to two synthetic instructors
+      const fallbackInstr = [
+        instructorRepo.create({
+          name: "Instrutor 1",
+          email: "inst1@cmbraga.pt",
+          password: encryptedPassword,
+          phone: "911111111",
+          activatedAt: new Date(),
+          profilePictureURL: selectRandomDefaultProfilePicture()
+        }),
+        instructorRepo.create({
+          name: "Instrutor 2",
+          email: "inst2@cmbraga.pt",
+          password: encryptedPassword,
+          phone: "922222222",
+          activatedAt: new Date(),
+          profilePictureURL: selectRandomDefaultProfilePicture()
+        })
+      ];
+      await instructorRepo.save(fallbackInstr);
+      instrutores.push(...fallbackInstr);
+      for (const instructor of fallbackInstr) {
+        await userRepo.save(userRepo.create({
+          id: instructor.email,
+          name: instructor.name,
+          instructorId: instructor.id,
+          profilePictureURL: instructor.profilePictureURL
+        }));
+      }
     }
 
     // 11. Assign instructors to the activity
@@ -540,335 +653,43 @@ async function dbHydration() {
     });
     await reportRepo.save(report1);
 
-    // 15. Create badges
-    const calories1 = badgeRepo.create({
-      name: "Centelha Calórica",
-      description: "Premiado por queimar 100 calorias.",
-      criteria: BadgeCriteria.CALORIES,
-      valueneeded: 100,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Calories1.png"
-    })
+    // 15. Create badges (from seed JSON -> medals)
+    let createdBadgesCount = 0;
+    if (Array.isArray(seedData.medals) && seedData.medals.length) {
+      // Deduplicate medals by name (case-insensitive) to avoid duplicates in the JSON
+      const uniqueMap = new Map<string, any>();
+      for (const m of seedData.medals) {
+        const nameKey = String(m?.name || "").trim().toLowerCase();
+        if (!nameKey) continue;
+        if (!uniqueMap.has(nameKey)) uniqueMap.set(nameKey, m);
+      }
+      const uniqueMedals = Array.from(uniqueMap.values());
 
-    const calories2 = badgeRepo.create({
-      name: "Queimador Urbano",
-      description: "Premiado por queimar 500 calorias.",
-      criteria: BadgeCriteria.CALORIES,
-      valueneeded: 500,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Calories2.png"
-    })
+      const badgesToSave: Badge[] = [];
+      for (const m of uniqueMedals) {
+        // Skip if a badge with the same name already exists in DB
+        const existing = await badgeRepo.findOne({ where: { name: m.name } });
+        if (existing) continue;
 
-    const calories3 = badgeRepo.create({
-      name: "Titã das Calorias",
-      description: "Premiado por queimar 1000 calorias.",
-      criteria: BadgeCriteria.CALORIES,
-      valueneeded: 1000,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Calories3.png"
-    })
-    const calories4 = badgeRepo.create({
-      name: "Força Incansável",
-      description: "Premiado por queimar 5000 calorias.",
-      criteria: BadgeCriteria.CALORIES,
-      valueneeded: 5000,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Calories4.png"
-    })
+        badgesToSave.push(badgeRepo.create({
+          name: m.name,
+          description: m.description,
+          criteria: (BadgeCriteria as any)[m.criteria] || (m.criteria as any),
+          valueneeded: m.valueneeded ?? 0,
+          imageUrl: m.imageUrl
+        }));
+      }
 
-    const calories5 = badgeRepo.create({
-      name: "Devastador de Calorias",
-      description: "Premiado por queimar 10000 calorias.",
-      criteria: BadgeCriteria.CALORIES,
-      valueneeded: 10000,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Calories5.png"
-    })
+      if (badgesToSave.length) {
+        await badgeRepo.save(badgesToSave);
+      }
+      createdBadgesCount = badgesToSave.length;
+    } else {
+      // no medals in JSON - keep previous in-script badges if desired (omitted here)
+      createdBadgesCount = 0;
+    }
 
-    const distance1 = badgeRepo.create({
-      name: "Passo Inicial",
-      description: "Premiado por percorrer 1 km.",
-      criteria: BadgeCriteria.DISTANCE,
-      valueneeded: 1,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Distance1.png"
-    })
-
-    const distance2 = badgeRepo.create({
-      name: "Caminho Alegre",
-      description: "Premiado por percorrer 5 km.",
-      criteria: BadgeCriteria.DISTANCE,
-      valueneeded: 5,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Distance2.png"
-    })
-
-    const distance3 = badgeRepo.create({
-      name: "Explorador de Trilhas",
-      description: "Premiado por percorrer 10 km.",
-      criteria: BadgeCriteria.DISTANCE,
-      valueneeded: 10,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Distance3.png"
-    })
-
-    const distance4 = badgeRepo.create({
-      name: "Aventureiro das Distâncias",
-      description: "Premiado por percorrer 20 km.",
-      criteria: BadgeCriteria.DISTANCE,
-      valueneeded: 20,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Distance4.png"
-    })
-
-    const distance5 = badgeRepo.create({
-      name: "Navegador de Longas",
-      description: "Premiado por percorrer 50 km.",
-      criteria: BadgeCriteria.DISTANCE,
-      valueneeded: 50,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Distance5.png"
-    })
-    
-    const leaderboard1 = badgeRepo.create({
-      name: "Top Dez Distintos",
-      description: "Premiado por estar entre os 10 primeiros em distância.",
-      criteria: BadgeCriteria.LEADERBOARD,
-      valueneeded: 10,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Leaderboard1.png"
-    })
-    const leaderboard2 = badgeRepo.create({
-      name: "Elite dos Cinco",
-      description: "Premiado por estar entre os 5 primeiros em distância.",
-      criteria: BadgeCriteria.LEADERBOARD,
-      valueneeded: 5,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Leaderboard2.png"
-    })
-
-    const leaderboard3 = badgeRepo.create({
-      name: "Número Um Supremo",
-      description: "Premiado por ser o 1º classificado em distância.",
-      criteria: BadgeCriteria.LEADERBOARD,
-      valueneeded: 1,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Leaderboard3.png"
-    })
-    const leaderboard4 = badgeRepo.create({
-      name: "Tricampeão da Rua",
-      description: "Premiado por ser o 1º classificado em distância por 3 vezes.",
-      criteria: BadgeCriteria.LEADERBOARD,
-      valueneeded: 3,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Leaderboard4.png"
-    })
-    
-    const leaderboard5 = badgeRepo.create({
-      name: "Penta Vanguardista",
-      description: "Premiado por ser o 1º classificado em distância por 5 vezes.",
-      criteria: BadgeCriteria.LEADERBOARD,
-      valueneeded: 5,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Leaderboard5.png"
-    })
-    
-    const participation1 = badgeRepo.create({
-      name: "Participante Promissor",
-      description: "Premiado por participar em 3 atividades.",
-      criteria: BadgeCriteria.PARTICIPATION,
-      valueneeded: 3,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Participation1.png"
-    })
-
-    const participation2 = badgeRepo.create({
-      name: "Entusiasta Constante",
-      description: "Premiado por participar em 5 atividades.",
-      criteria: BadgeCriteria.PARTICIPATION,
-      valueneeded: 5,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Participation2.png"
-    })
-    
-    const participation3 = badgeRepo.create({
-      name: "Assíduo Notável",
-      description: "Premiado por participar em 10 atividades.",
-      criteria: BadgeCriteria.PARTICIPATION,
-      valueneeded: 10,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Participation3.png"
-    })
-
-    const participation4 = badgeRepo.create({
-      name: "Veterano do Passeio",
-      description: "Premiado por participar em 20 atividades.",
-      criteria: BadgeCriteria.PARTICIPATION,
-      valueneeded: 20,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Participation4.png"
-    })
-
-    const participation5 = badgeRepo.create({
-      name: "Mestre da Participação",
-      description: "Premiado por participar em 50 atividades.",
-      criteria: BadgeCriteria.PARTICIPATION,
-      valueneeded: 50,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Participation5.png"
-    })
-
-    const points1 = badgeRepo.create({
-      name: "Contador Iniciante",
-      description: "Premiado por acumular 100 pontos.",
-      criteria: BadgeCriteria.POINTS,
-      valueneeded: 100,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Points1.png"
-    })
-
-    const points2 = badgeRepo.create({
-      name: "Acumulador Sagaz",
-      description: "Premiado por acumular 500 pontos.",
-      criteria: BadgeCriteria.POINTS,
-      valueneeded: 500,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Points2.png"
-    })
-
-    const points3 = badgeRepo.create({
-      name: "Pontual Vanguardista",
-      description: "Premiado por acumular 1000 pontos.",
-      criteria: BadgeCriteria.POINTS,
-      valueneeded: 1000,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Points3.png"
-    })
-
-    const points4 = badgeRepo.create({
-      name: "Especialista em Pontos",
-      description: "Premiado por acumular 5000 pontos.",
-      criteria: BadgeCriteria.POINTS,
-      valueneeded: 5000,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Points4.png"
-    })
-
-    const points5 = badgeRepo.create({
-      name: "Lendário dos Pontos",
-      description: "Premiado por acumular 10000 pontos.",
-      criteria: BadgeCriteria.POINTS,
-      valueneeded: 10000,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Points5.png"
-    })
-
-    const special1 = badgeRepo.create({
-      name: "Pequeno Valente",
-      description: "Premiado por uma ação especial",
-      criteria: BadgeCriteria.SPECIAL,
-      valueneeded: 0,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Special1.png"
-    })
-
-    const special2 = badgeRepo.create({
-      name: "Gratidão Brilhante",
-      description: "Premiado por participar de forma especial",
-      criteria: BadgeCriteria.SPECIAL,
-      valueneeded: 0,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Special2.png"
-    })
-
-    const special3 = badgeRepo.create({
-      name: "Aplauso Especial",
-      description: "Premiado por participar de forma especial",
-      criteria: BadgeCriteria.SPECIAL,
-      valueneeded: 0,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Special3.png"
-    })
-
-    const special4 = badgeRepo.create({
-      name: "Campeão Singular",
-      description: "Premiado por uma ação especial",
-      criteria: BadgeCriteria.SPECIAL,
-      valueneeded: 0,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Special4.png"
-    })
-
-    const special5 = badgeRepo.create({
-      name: "Herói Eterno",
-      description: "Premiado por uma ação lendária",
-      criteria: BadgeCriteria.SPECIAL,
-      valueneeded: 0,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Special5.png"
-    })
-
-    const streak1 = badgeRepo.create({
-      name: "Chama Inicial",
-      description: "Premiado por completar 1 atividade consecutiva.",
-      criteria: BadgeCriteria.STREAK,
-      valueneeded: 1,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Streak1.png"
-    })
-    const streak2 = badgeRepo.create({
-      name: "Fogo de Três",
-      description: "Premiado por completar 3 atividades consecutivas.",
-      criteria: BadgeCriteria.STREAK,
-      valueneeded: 3,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Streak2.png"
-    })
-
-    const streak3 = badgeRepo.create({
-      name: "Chama Persistente",
-      description: "Premiado por completar 5 atividades consecutivas.",
-      criteria: BadgeCriteria.STREAK,
-      valueneeded: 5,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Streak3.png"
-    })
-
-    const streak4 = badgeRepo.create({
-      name: "Fagulha Duradoura",
-      description: "Premiado por completar 10 atividades consecutivas.",
-      criteria: BadgeCriteria.STREAK,
-      valueneeded: 10,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Streak4.png"
-    })
-
-    const streak5 = badgeRepo.create({
-      name: "Força Incandescente",
-      description: "Premiado por completar 25 atividades consecutivas.",
-      criteria: BadgeCriteria.STREAK,
-      valueneeded: 25,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Streak5.png"
-    })
-    
-    const weather1 = badgeRepo.create({
-      name: "Clima Amigo",
-      description: "Premiado por completar 1 atividade num clima diferente.",
-      criteria: BadgeCriteria.WEATHER,
-      valueneeded: 1,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Weather1.png"
-    })
-
-    const weather2 = badgeRepo.create({
-      name: "Viajante do Tempo",
-      description: "Premiado por completar 2 atividades em climas diferentes.",
-      criteria: BadgeCriteria.WEATHER,
-      valueneeded: 2,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Weather2.png"
-    })
-    const weather3 = badgeRepo.create({
-      name: "Aventureiro Climático",
-      description: "Premiado por completar 3 atividades em climas diferentes.",
-      criteria: BadgeCriteria.WEATHER,
-      valueneeded: 3,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Weather3.png"
-    })
-
-    const weather4 = badgeRepo.create({
-      name: "Explorador Atmosférico",
-      description: "Premiado por completar 4 atividades em climas diferentes.",
-      criteria: BadgeCriteria.WEATHER,
-      valueneeded: 4,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Weather4.png"
-    })
-
-    const weather5 = badgeRepo.create({
-      name: "Dominador do Tempo",
-      description: "Premiado por completar 5 atividades em climas diferentes.",
-      criteria: BadgeCriteria.WEATHER,
-      valueneeded: 5,
-      imageUrl: "https://res.cloudinary.com/dwffdkytm/image/upload/v1761084977/CMBraga/badges/Weather5.png"
-    })
-
-    const badges = [calories1, calories2, calories3, calories4, calories5,
-      distance1, distance2, distance3, distance4, distance5,
-      leaderboard1, leaderboard2, leaderboard3, leaderboard4, leaderboard5,
-      participation1, participation2, participation3, participation4, participation5,
-      points1, points2, points3, points4, points5,
-      special1, special2, special3, special4, special5,
-      streak1, streak2, streak3, streak4, streak5,
-      weather1, weather2, weather3, weather4, weather5
-    ];
-
-    await badgeRepo.save(badges);
-
-    // 16. Create feedbacks
+    // 16. Create feedbacks (same sample feedbacks as oldhydration)
     const feedback1 = feedbackRepo.create({
       evaluation1: 5,
       evaluation2: 5,
@@ -953,7 +774,7 @@ async function dbHydration() {
     console.log("✅ 9. Crianças distribuídas entre " + pickupStations.length + " estações de recolha");
     console.log("✅ 10. Todas as crianças têm drop-off na escola (última estação)");
     console.log("📍 Distância total da rota: " + route.distanceMeters + " metros");
-    console.log("🏅 Criadas 8 medalhas");
+    console.log("🏅 Criadas " + createdBadgesCount + " medalhas (from JSON)");
     console.log("💬 Criados 5 feedbacks de pais sobre a atividade");
     console.log("📊 Cada criança tem 3 registos de crescimento (6 meses, 3 meses e atual)");
 
