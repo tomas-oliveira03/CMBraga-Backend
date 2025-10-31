@@ -4,7 +4,7 @@ import express, { Request, Response } from "express";
 import { UpdateChildSchema } from "../schemas/child";
 import { map, z } from "zod";
 import { Station } from "@/db/entities/Station";
-import { StationType } from "@/helpers/types";
+import { ChildStationType, StationType } from "@/helpers/types";
 import multer from "multer";
 import { isValidImageFile } from "@/helpers/storage";
 import { updateProfilePicture } from "../services/user";
@@ -12,10 +12,10 @@ import { ChildHistory } from "@/db/entities/ChildHistory";
 import { differenceInYears } from "date-fns";
 import { ParentChild } from "@/db/entities/ParentChild";
 import { Parent } from "@/db/entities/Parent";
-import { In, IsNull } from "typeorm";
+import { In, IsNull, Not } from "typeorm";
 import { ChildActivitySession } from "@/db/entities/ChildActivitySession";
 import { Feedback } from "@/db/entities/Feedback";
-import { UpcomingActivityPayload, ActivitySessionInfo } from "@/helpers/service-types";
+import { PreviousActivityPayload, PreviousActivitySessionInfo, UpcomingActivityPayload, UpcomingActivitySessionInfo } from "@/helpers/service-types";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -639,7 +639,12 @@ router.put('/:id', upload.single('file'), async (req: Request, res: Response) =>
 router.get('/upcoming-activities/:id', async (req: Request, res: Response) => {
     try {
         const childId = req.params.id;
-        const child = await AppDataSource.getRepository(Child).findOne({
+        const childExists = await AppDataSource.getRepository(Child).findOne({ where: { id: childId } })
+        if(!childExists){
+            return res.status(404).json({ message: "Child not found" });
+        }
+
+        const childData = await AppDataSource.getRepository(Child).findOne({
             where: { 
                 id: childId,
                 childActivitySessions: {
@@ -660,11 +665,11 @@ router.get('/upcoming-activities/:id', async (req: Request, res: Response) => {
                 }
             }
         })
-        if(!child){
-            return res.status(404).json({ message: "Child not found" });
+        if (!childData){
+            return res.status(200).json([]);
         }
 
-        const responsePayload: ActivitySessionInfo[] = child.childActivitySessions.map(activityData => {
+        const responsePayload: UpcomingActivitySessionInfo[] = childData.childActivitySessions.map(activityData => {
             return {
                 activitySessionId: activityData.activitySessionId,
                 isLateRegistration: activityData.isLateRegistration,
@@ -697,7 +702,7 @@ router.get('/upcoming-activities/:id', async (req: Request, res: Response) => {
         });
 
         // Group by chainedInfo
-        const grouped: Record<string, ActivitySessionInfo[]> = {};
+        const grouped: Record<string, UpcomingActivitySessionInfo[]> = {};
         responsePayload.forEach(item => {
             const key = item.chainedInfo != null ? `chain-${item.chainedInfo}` : `single-${item.activitySessionId}`;
             if (!grouped[key]) grouped[key] = [];
@@ -743,6 +748,131 @@ router.get('/upcoming-activities/:id', async (req: Request, res: Response) => {
     }
 })
 
+
+
+router.get('/previous-activities/:id', async (req: Request, res: Response) => {
+    try {
+        const childId = req.params.id;
+        const childExists = await AppDataSource.getRepository(Child).findOne({ where: { id: childId } })
+        if(!childExists){
+            return res.status(404).json({ message: "Child not found" });
+        }
+
+        const childData = await AppDataSource.getRepository(Child).findOne({
+            where: { 
+                id: childId,
+                childActivitySessions: {
+                    activitySession: {
+                        finishedAt: Not(IsNull())
+                    }
+                }
+            }, 
+            relations: {
+                childActivitySessions: { 
+                    activitySession: {
+                        stationActivitySessions: true,
+                        route: true,
+                        childStations: true
+                    },
+                    parent: true,
+                    pickUpStation: true,
+                    dropOffStation: true
+                },
+                childStats: true
+            }
+        })
+        if(!childData){
+            return res.status(200).json([]);
+        }
+
+        const responsePayload: PreviousActivitySessionInfo[] = childData.childActivitySessions.map(activityData => {
+            const childStatsActivity = childData.childStats.find(cs => cs.activitySessionId == activityData.activitySessionId)!
+
+            return {
+                activitySessionId: activityData.activitySessionId,
+                isLateRegistration: activityData.isLateRegistration,
+                registeredAt: activityData.registeredAt,
+                activitySession: {
+                    type: activityData.activitySession.type,
+                    mode: activityData.activitySession.mode,
+                    startedAt: activityData.activitySession.startedAt!,
+                    departuredAt: activityData.activitySession.childStations.find(cs => cs.type === ChildStationType.IN && cs.childId === childId)!.registeredAt,
+                    arrivedAt: activityData.activitySession.childStations.find(cs => cs.type === ChildStationType.OUT && cs.childId === childId)!.registeredAt,
+                    weatherTemperature: activityData.activitySession.weatherTemperature,
+                    weatherType: activityData.activitySession.weatherType
+                },
+                route: {
+                    id: activityData.activitySession.routeId,
+                    name: activityData.activitySession.route.name
+                },
+                pickUpStation: {
+                    id: activityData.pickUpStationId,
+                    name: activityData.pickUpStation.name
+                },
+                dropOffStation: {
+                    id: activityData.dropOffStationId,
+                    name: activityData.dropOffStation.name
+                },
+                registeredBy: {
+                    id: activityData.parentId,
+                    name: activityData.parent.name
+                },
+                stats: {
+                    distanceMeters: childStatsActivity.distanceMeters,
+                    co2Saved: childStatsActivity.co2Saved,
+                    caloriesBurned: childStatsActivity.caloriesBurned,
+                    pointsEarned: childStatsActivity.pointsEarned
+                },
+                chainedInfo: activityData.chainedActivitySessionId
+            };
+        });
+
+        // Group by chainedInfo
+        const grouped: Record<string, PreviousActivitySessionInfo[]> = {};
+        responsePayload.forEach(item => {
+            const key = item.chainedInfo != null ? `chain-${item.chainedInfo}` : `single-${item.activitySessionId}`;
+            if (!grouped[key]) grouped[key] = [];
+            grouped[key].push(item);
+        });
+
+        // Build final payload
+        const finalPayload: PreviousActivityPayload[] = Object.values(grouped).map(group => {
+            const chainedInfo = group[0]!.chainedInfo;
+            if (chainedInfo !== null && group.length > 1) {
+                // Sort bundle by registeredAt ascending
+                const activities = group.slice().sort((a, b) => {
+                    return a.registeredAt.getTime() - b.registeredAt.getTime();
+                });
+                return {
+                    type: "bundle",
+                    activities
+                };
+            } else {
+                // Single
+                return {
+                    type: "single",
+                    ...group[0]!
+                };
+            }
+        });
+
+        // Sort all by expectedDepartureAt
+        finalPayload.sort((a, b) => {
+            const getExpectedDepartureAt = (item: PreviousActivityPayload) => {
+                if (item.type === "bundle") {
+                    return item.activities[0]!.activitySession.arrivedAt.getTime();
+                } else {
+                    return item.activitySession.arrivedAt.getTime();
+                }
+            };
+            return getExpectedDepartureAt(b) - getExpectedDepartureAt(a);
+        });
+
+        return res.status(200).json(finalPayload);
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+})
 
 
 export default router;
