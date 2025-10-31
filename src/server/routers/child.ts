@@ -16,6 +16,8 @@ import { In, IsNull, Not } from "typeorm";
 import { ChildActivitySession } from "@/db/entities/ChildActivitySession";
 import { Feedback } from "@/db/entities/Feedback";
 import { OngoingActivityPayload, OngoingActivitySessionInfo, PreviousActivityPayload, PreviousActivitySessionInfo, UpcomingActivityPayload, UpcomingActivitySessionInfo } from "@/helpers/service-types";
+import { ActivitySession } from "@/db/entities/ActivitySession";
+import { RouteConnection } from "@/db/entities/RouteConnection";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -214,7 +216,7 @@ router.get('/:id', async (req: Request, res: Response) => {
             }
         });
 
-        if (!child){
+        if (!child) {
             return res.status(404).json({ message: "Child not found" })
         }
 
@@ -354,7 +356,7 @@ router.put('/:id', upload.single('file'), async (req: Request, res: Response) =>
     try {
         const childId = req.params.id;
         const validatedData = UpdateChildSchema.parse(req.body);
-        
+
         const child = await AppDataSource.getRepository(Child).findOne({
             where: { id: childId }
         })
@@ -362,46 +364,46 @@ router.put('/:id', upload.single('file'), async (req: Request, res: Response) =>
             return res.status(404).json({ message: "Child not found" });
         }
 
-        if(validatedData.dropOffStationId){
+        if (validatedData.dropOffStationId) {
             const station = await AppDataSource.getRepository(Station).findOne({
                 where: {
                     id: validatedData.dropOffStationId,
                     type: StationType.SCHOOL
                 }
             })
-            if(!station){
-                return res.status(404).json({message: "Station does not exist or it isn't labeled as school"});
+            if (!station) {
+                return res.status(404).json({ message: "Station does not exist or it isn't labeled as school" });
             }
         }
 
         const { parentId, removeParentId, dropOffStationId, ...childDataFields } = validatedData;
-        const childData = { 
+        const childData = {
             ...childDataFields,
             profilePictureURL: child.profilePictureURL
         }
-        
-        if (req.file){
-            if (!isValidImageFile(req.file)){
+
+        if (req.file) {
+            if (!isValidImageFile(req.file)) {
                 return res.status(400).json({ message: "File must be a valid image type (JPEG, JPG, PNG, WEBP)" });
             }
             childData.profilePictureURL = await updateProfilePicture(child.profilePictureURL, req.file.buffer);
         }
-        
-        if(parentId){
+
+        if (parentId) {
             const parent = await AppDataSource.getRepository(Parent).findOne({
                 where: { id: parentId }
             })
-            
-            if(!parent){
-                return res.status(404).json({message: "Parent doesn't exist"});
+
+            if (!parent) {
+                return res.status(404).json({ message: "Parent doesn't exist" });
             }
 
             const currentParentsCount = await AppDataSource.getRepository(ParentChild).count({
                 where: { childId: childId }
             });
 
-            if(currentParentsCount >= 2){
-                return res.status(400).json({message: "Child already has 2 parents associated"});
+            if (currentParentsCount >= 2) {
+                return res.status(400).json({ message: "Child already has 2 parents associated" });
             }
 
             const existingAssociation = await AppDataSource.getRepository(ParentChild).findOne({
@@ -411,12 +413,12 @@ router.put('/:id', upload.single('file'), async (req: Request, res: Response) =>
                 }
             });
 
-            if(existingAssociation){
-                return res.status(400).json({message: "Parent is already associated with this child"});
+            if (existingAssociation) {
+                return res.status(400).json({ message: "Parent is already associated with this child" });
             }
         }
 
-        if(removeParentId){
+        if (removeParentId) {
             const parentAssociation = await AppDataSource.getRepository(ParentChild).findOne({
                 where: {
                     childId: childId,
@@ -424,16 +426,16 @@ router.put('/:id', upload.single('file'), async (req: Request, res: Response) =>
                 }
             });
 
-            if(!parentAssociation){
-                return res.status(404).json({message: "Parent is not associated with this child"});
+            if (!parentAssociation) {
+                return res.status(404).json({ message: "Parent is not associated with this child" });
             }
 
             const parentsNumber = await AppDataSource.getRepository(ParentChild).count({
                 where: { childId: childId }
             });
 
-            if(parentsNumber === 1){
-                return res.status(400).json({message: "Cannot remove parent: child must have at least one parent"});
+            if (parentsNumber === 1) {
+                return res.status(400).json({ message: "Cannot remove parent: child must have at least one parent" });
             }
 
             const activitiesNumber = await AppDataSource.getRepository(ChildActivitySession).count({
@@ -443,8 +445,8 @@ router.put('/:id', upload.single('file'), async (req: Request, res: Response) =>
                 }
             });
 
-            if(activitiesNumber > 0){
-                return res.status(400).json({message: "Cannot remove parent: child has activities registered by this parent"});
+            if (activitiesNumber > 0) {
+                return res.status(400).json({ message: "Cannot remove parent: child has activities registered by this parent" });
             }
 
             const feedbackNumber = await AppDataSource.getRepository(Feedback).count({
@@ -454,8 +456,8 @@ router.put('/:id', upload.single('file'), async (req: Request, res: Response) =>
                 }
             });
 
-            if(feedbackNumber > 0){
-                return res.status(400).json({message: "Cannot remove parent: parent has submitted feedback for this child"});
+            if (feedbackNumber > 0) {
+                return res.status(400).json({ message: "Cannot remove parent: parent has submitted feedback for this child" });
             }
         }
 
@@ -468,7 +470,7 @@ router.put('/:id', upload.single('file'), async (req: Request, res: Response) =>
 
             const age = differenceInYears(updatedAt, child.dateOfBirth);
 
-            if(childData.heightCentimeters || childData.weightKilograms){
+            if (childData.heightCentimeters || childData.weightKilograms) {
                 await tx.getRepository(ChildHistory).insert({
                     childId: childId,
                     heightCentimeters: childData.heightCentimeters || child.heightCentimeters,
@@ -477,22 +479,22 @@ router.put('/:id', upload.single('file'), async (req: Request, res: Response) =>
                 })
             }
 
-            if(parentId){
+            if (parentId) {
                 await tx.getRepository(ParentChild).insert({
                     parentId: parentId,
                     childId: childId
                 })
             }
 
-            if(removeParentId){
+            if (removeParentId) {
                 await tx.getRepository(ParentChild).delete({
                     parentId: removeParentId,
                     childId: childId
                 })
             }
         })
-        
-        return res.status(200).json({ 
+
+        return res.status(200).json({
             id: childId,
             name: childData.name,
             profilePictureURL: req.file ? childData.profilePictureURL : undefined,
@@ -501,15 +503,220 @@ router.put('/:id', upload.single('file'), async (req: Request, res: Response) =>
 
     } catch (error) {
         if (error instanceof z.ZodError) {
-            return res.status(400).json({ 
-                message: "Validation error", 
-                errors: error.issues 
+            return res.status(400).json({
+                message: "Validation error",
+                errors: error.issues
             });
         }
-        
+
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
+
+
+/**
+ * @swagger
+ * /child/available-activities/{id}:
+ *   get:
+ *     summary: Get available activities for a child
+ *     description: Returns a list of upcoming activity sessions that the child can register for, including connector information if applicable.
+ *     tags:
+ *       - Child
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *         description: Child ID (UUID)
+ *     responses:
+ *       200:
+ *         description: List of available activities for registration
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                   type:
+ *                     type: string
+ *                   mode:
+ *                     type: string
+ *                   inLateRegistration:
+ *                     type: boolean
+ *                   scheduledAt:
+ *                     type: string
+ *                     format: date-time
+ *                   route:
+ *                     type: object
+ *                     properties:
+ *                       id: { type: string }
+ *                       name: { type: string }
+ *                   requiresConnector:
+ *                     type: boolean
+ *                   connector:
+ *                     type: object
+ *                     nullable: true
+ *                     properties:
+ *                       route:
+ *                         type: object
+ *                         properties:
+ *                           id: { type: string }
+ *                           name: { type: string }
+ *                       station:
+ *                         type: object
+ *                         properties:
+ *                           id: { type: string }
+ *                           name: { type: string }
+ *       404:
+ *         description: Child not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Child not found"
+ */
+router.get('/available-activities/:id', async (req: Request, res: Response) => {
+    try {
+        const childId = req.params.id!;
+        const child = await AppDataSource.getRepository(Child).findOne({ where: { id: childId } })
+        if (!child) {
+            return res.status(404).json({ message: "Child not found" });
+        }
+
+        const allFutureActivitySessions = await AppDataSource.getRepository(ActivitySession).find({
+            where: {
+                startedAt: IsNull()
+            },
+            relations: {
+                stationActivitySessions: {
+                    station: true
+                },
+                route: true,
+                childActivitySessions: true
+            }
+        })
+
+        const filteredActivitySessionsNotParticipating = allFutureActivitySessions.filter(
+            afac => !afac.childActivitySessions.some(cas => cas.childId === childId)
+        );
+
+
+        const allRouteConnectors = await AppDataSource.getRepository(RouteConnection).find({
+            relations: {
+                toRoute: true
+            }
+        })
+
+        const futureActivitySessionsSingleRoute = filteredActivitySessionsNotParticipating.filter(activitySession => {
+            return activitySession.stationActivitySessions.some(sas => sas.stationId === child.dropOffStationId)
+        });
+
+
+        const futureActivitySessionsConnectorRoute = filteredActivitySessionsNotParticipating.filter(activitySession => {
+            const isInSingleRoute = futureActivitySessionsSingleRoute.includes(activitySession);
+            if (isInSingleRoute || !activitySession.activityTransferId) return false;
+
+            // Find the transfer target session
+            const transferTarget = futureActivitySessionsSingleRoute.find(
+                a => a.id === activitySession.activityTransferId
+            );
+            if (!transferTarget) return false;
+
+            // Find the route connection between the current route and target route
+            const connector = allRouteConnectors.find(conn =>
+                conn.fromRouteId === activitySession.routeId &&
+                conn.toRouteId === transferTarget.routeId
+            );
+            if (!connector) return false;
+
+            // Find the stopNumber for the connector station on the target route
+            const connectorStationStop = transferTarget.stationActivitySessions
+                .find(sas => sas.stationId === connector.stationId)?.stopNumber;
+
+            // Find the stopNumber for the child's drop-off station
+            const dropOffStop = transferTarget.stationActivitySessions
+                .find(sas => sas.stationId === child.dropOffStationId)?.stopNumber;
+
+            // Keep only if connector comes before drop-off stop
+            return (
+                connectorStationStop != null &&
+                dropOffStop != null &&
+                connectorStationStop < dropOffStop
+            );
+        });
+
+
+        const combined = [
+            ...futureActivitySessionsSingleRoute.map(activitySession => ({
+                id: activitySession.id,
+                type: activitySession.type,
+                mode: activitySession.mode,
+                inLateRegistration: activitySession.inLateRegistration,
+                scheduledAt: activitySession.scheduledAt,
+                route: {
+                    id: activitySession.route.id,
+                    name: activitySession.route.name
+                },
+                requiresConnector: false
+            })),
+            
+            ...futureActivitySessionsConnectorRoute.map(activitySession => {
+                const transferTarget = futureActivitySessionsSingleRoute.find(
+                    a => a.id === activitySession.activityTransferId
+                );
+                const connector = allRouteConnectors.find(conn =>
+                    conn.fromRouteId === activitySession.routeId &&
+                    conn.toRouteId === transferTarget?.routeId
+                );
+                const connectorStation = transferTarget?.stationActivitySessions.find(
+                    sas => sas.stationId === connector?.stationId
+                )?.station;
+
+                return {
+                    id: activitySession.id,
+                    type: activitySession.type,
+                    mode: activitySession.mode,
+                    inLateRegistration: activitySession.inLateRegistration,
+                    scheduledAt: activitySession.scheduledAt,
+                    route: {
+                        id: activitySession.route.id,
+                        name: activitySession.route.name
+                    },
+                    requiresConnector: true,
+                    connector: connector && connectorStation
+                        ? {
+                            route: {
+                                id: connector.toRoute.id,
+                                name: connector.toRoute.name
+                            },
+                            station: {
+                                id: connectorStation.id,
+                                name: connectorStation.name
+                            }
+                        }
+                        : undefined
+                };
+            })
+        ];
+
+        const responsePayload = combined.sort(
+            (a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime()
+        );
+
+
+        return res.status(200).json(responsePayload)
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+})
 
 
 
@@ -640,21 +847,21 @@ router.get('/upcoming-activities/:id', async (req: Request, res: Response) => {
     try {
         const childId = req.params.id;
         const childExists = await AppDataSource.getRepository(Child).findOne({ where: { id: childId } })
-        if(!childExists){
+        if (!childExists) {
             return res.status(404).json({ message: "Child not found" });
         }
 
         const childData = await AppDataSource.getRepository(Child).findOne({
-            where: { 
+            where: {
                 id: childId,
                 childActivitySessions: {
                     activitySession: {
                         startedAt: IsNull()
                     }
                 }
-            }, 
+            },
             relations: {
-                childActivitySessions: { 
+                childActivitySessions: {
                     activitySession: {
                         stationActivitySessions: true,
                         route: true
@@ -665,7 +872,7 @@ router.get('/upcoming-activities/:id', async (req: Request, res: Response) => {
                 }
             }
         })
-        if (!childData){
+        if (!childData) {
             return res.status(200).json([]);
         }
 
@@ -876,12 +1083,12 @@ router.get('/ongoing-activities/:id', async (req: Request, res: Response) => {
     try {
         const childId = req.params.id;
         const childExists = await AppDataSource.getRepository(Child).findOne({ where: { id: childId } })
-        if(!childExists){
+        if (!childExists) {
             return res.status(404).json({ message: "Child not found" });
         }
 
         const childData = await AppDataSource.getRepository(Child).findOne({
-            where: { 
+            where: {
                 id: childId,
                 childActivitySessions: {
                     activitySession: {
@@ -889,9 +1096,9 @@ router.get('/ongoing-activities/:id', async (req: Request, res: Response) => {
                         finishedAt: IsNull()
                     }
                 }
-            }, 
+            },
             relations: {
-                childActivitySessions: { 
+                childActivitySessions: {
                     activitySession: {
                         stationActivitySessions: true,
                         route: true,
@@ -903,7 +1110,7 @@ router.get('/ongoing-activities/:id', async (req: Request, res: Response) => {
                 }
             }
         })
-        if (!childData){
+        if (!childData) {
             return res.status(200).json([]);
         }
 
@@ -1131,21 +1338,21 @@ router.get('/previous-activities/:id', async (req: Request, res: Response) => {
     try {
         const childId = req.params.id;
         const childExists = await AppDataSource.getRepository(Child).findOne({ where: { id: childId } })
-        if(!childExists){
+        if (!childExists) {
             return res.status(404).json({ message: "Child not found" });
         }
 
         const childData = await AppDataSource.getRepository(Child).findOne({
-            where: { 
+            where: {
                 id: childId,
                 childActivitySessions: {
                     activitySession: {
                         finishedAt: Not(IsNull())
                     }
                 }
-            }, 
+            },
             relations: {
-                childActivitySessions: { 
+                childActivitySessions: {
                     activitySession: {
                         stationActivitySessions: true,
                         route: true,
@@ -1158,7 +1365,7 @@ router.get('/previous-activities/:id', async (req: Request, res: Response) => {
                 childStats: true
             }
         })
-        if(!childData){
+        if (!childData) {
             return res.status(200).json([]);
         }
 

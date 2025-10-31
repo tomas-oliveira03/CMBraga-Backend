@@ -304,7 +304,6 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     const { previousActivityId, nextActivityId } = await findLinkedActivities(route, validatedData);
-    console.log({previousActivityId, nextActivityId});
 
     await AppDataSource.transaction(async tx => {
 

@@ -736,10 +736,15 @@ router.put('/:id', async (req: Request, res: Response) => {
                     throw new Error("Connector station not found");
                 }
 
-                await tx.getRepository(RouteConnection).delete({
-                    fromRouteId: route.id,
-                    toRouteId: validatedData.routeConnector.routeId
+                const connectorExists = await tx.getRepository(RouteConnection).findOne({
+                    where: {
+                        fromRouteId: route.id,
+                        toRouteId: validatedData.routeConnector.routeId,
+                    }
                 });
+                if(connectorExists){
+                    throw new Error("This route already has a connector, cannot be changed");
+                }
 
                 await tx.getRepository(RouteConnection).insert({
                     fromRouteId: route.id,

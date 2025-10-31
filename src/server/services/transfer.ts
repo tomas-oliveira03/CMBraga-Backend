@@ -72,7 +72,6 @@ export async function findLinkedActivities(
 
         const linkedStopTime = getStationTime(linkedActivity.scheduledAt, linkedStop.timeFromStartMinutes);
         const diffMinutes = (linkedStopTime.getTime() - thisStopTime.getTime()) / 60000;
-        console.log(diffMinutes)
         if (diffMinutes >= 0 && diffMinutes <= 20) {
           nextActivityId = linkedActivity.id;
           break;
