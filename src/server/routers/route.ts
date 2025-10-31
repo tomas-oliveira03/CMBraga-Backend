@@ -308,9 +308,30 @@ router.get('/:id', async (req: Request, res: Response) => {
  *             schema:
  *               type: object
  *               properties:
- *                 message:
+ *                 id:
  *                   type: string
- *                   example: "Route created successfully"
+ *                   example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *                 stops:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         example: "station-uuid-1"
+ *                       name:
+ *                         type: string
+ *                         example: "Estação Central"
+ *                       stopNumber:
+ *                         type: integer
+ *                         example: 1
+ *                       typeofStation:
+ *                         type: string
+ *                         enum: [regular, school]
+ *                         example: "school"
+ *                       expectedTimeOfArrivalFromStartMinutes:
+ *                         type: integer
+ *                         example: 5
  *       400:
  *         description: Validation error or missing/invalid file
  *         content:
@@ -381,7 +402,7 @@ router.post('/', upload.single('file'), async (req: Request, res: Response) => {
             id: string,
             name: string,
             stopNumber: number,
-            typeofStation: string,
+            typeofStation: StationType,
             expectedTimeOfArrivalFromStartMinutes: number
         }> = [];
 
