@@ -207,9 +207,20 @@ router.post('/', authenticate, authorize(UserRole.PARENT), async (req: Request, 
             return res.status(404).json({ message: "Cannot register on an ongoing or past activity" });
         }
 
-        await AppDataSource.getRepository(ParentActivitySession).insert({
+        // Check if parent is assigned to this activity session
+        const existingAssignment = await AppDataSource.getRepository(ParentActivitySession).findOne({
+            where: {
                 parentId: req.user!.userId,
                 activitySessionId: activitySessionId
+            }
+        });
+        if (existingAssignment) {
+            return res.status(400).json({ message: "Parent is already assigned to this activity session" });
+        }
+
+        await AppDataSource.getRepository(ParentActivitySession).insert({
+            parentId: req.user!.userId,
+            activitySessionId: activitySessionId
         });
 
         return res.status(201).json({ message: "Parent assigned to activity session successfully" });
