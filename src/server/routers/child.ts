@@ -15,7 +15,7 @@ import { Parent } from "@/db/entities/Parent";
 import { In, IsNull, Not } from "typeorm";
 import { ChildActivitySession } from "@/db/entities/ChildActivitySession";
 import { Feedback } from "@/db/entities/Feedback";
-import { PreviousActivityPayload, PreviousActivitySessionInfo, UpcomingActivityPayload, UpcomingActivitySessionInfo } from "@/helpers/service-types";
+import { OngoingActivityPayload, OngoingActivitySessionInfo, PreviousActivityPayload, PreviousActivitySessionInfo, UpcomingActivityPayload, UpcomingActivitySessionInfo } from "@/helpers/service-types";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -749,7 +749,384 @@ router.get('/upcoming-activities/:id', async (req: Request, res: Response) => {
 })
 
 
+/**
+ * @swagger
+ * /child/ongoing-activities/{id}:
+ *   get:
+ *     summary: Get ongoing activities for a child
+ *     description: Returns a list of ongoing activity sessions for a child, grouped by chained activities (bundles) or as singles.
+ *     tags:
+ *       - Child
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *         description: Child ID (UUID)
+ *     responses:
+ *       200:
+ *         description: List of ongoing activities grouped by bundle or single
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 oneOf:
+ *                   - type: object
+ *                     properties:
+ *                       type: { type: string, enum: [single] }
+ *                       activitySessionId: { type: string }
+ *                       isLateRegistration: { type: boolean }
+ *                       registeredAt: { type: string, format: date-time }
+ *                       activitySession:
+ *                         type: object
+ *                         properties:
+ *                           type: { type: string }
+ *                           mode: { type: string }
+ *                           startedAt: { type: string, format: date-time }
+ *                           expectedDepartureAt: { type: string, format: date-time }
+ *                           departuredAt: { type: string, format: date-time, nullable: true }
+ *                           expectedArrivalAt: { type: string, format: date-time }
+ *                           arrivedAt: { type: string, format: date-time, nullable: true }
+ *                           weatherTemperature: { type: number, nullable: true }
+ *                           weatherType: { type: string, nullable: true }
+ *                       route:
+ *                         type: object
+ *                         properties:
+ *                           id: { type: string }
+ *                           name: { type: string }
+ *                       pickUpStation:
+ *                         type: object
+ *                         properties:
+ *                           id: { type: string }
+ *                           name: { type: string }
+ *                       dropOffStation:
+ *                         type: object
+ *                         properties:
+ *                           id: { type: string }
+ *                           name: { type: string }
+ *                       registeredBy:
+ *                         type: object
+ *                         properties:
+ *                           id: { type: string }
+ *                           name: { type: string }
+ *                       chainedInfo:
+ *                         type: string
+ *                         nullable: true
+ *                   - type: object
+ *                     properties:
+ *                       type: { type: string, enum: [bundle] }
+ *                       activities:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             activitySessionId: { type: string }
+ *                             isLateRegistration: { type: boolean }
+ *                             registeredAt: { type: string, format: date-time }
+ *                             activitySession:
+ *                               type: object
+ *                               properties:
+ *                                 type: { type: string }
+ *                                 mode: { type: string }
+ *                                 startedAt: { type: string, format: date-time }
+ *                                 expectedDepartureAt: { type: string, format: date-time }
+ *                                 departuredAt: { type: string, format: date-time, nullable: true }
+ *                                 expectedArrivalAt: { type: string, format: date-time }
+ *                                 arrivedAt: { type: string, format: date-time, nullable: true }
+ *                                 weatherTemperature: { type: number, nullable: true }
+ *                                 weatherType: { type: string, nullable: true }
+ *                             route:
+ *                               type: object
+ *                               properties:
+ *                                 id: { type: string }
+ *                                 name: { type: string }
+ *                             pickUpStation:
+ *                               type: object
+ *                               properties:
+ *                                 id: { type: string }
+ *                                 name: { type: string }
+ *                             dropOffStation:
+ *                               type: object
+ *                               properties:
+ *                                 id: { type: string }
+ *                                 name: { type: string }
+ *                             registeredBy:
+ *                               type: object
+ *                               properties:
+ *                                 id: { type: string }
+ *                                 name: { type: string }
+ *                             chainedInfo:
+ *                               type: string
+ *                               nullable: true
+ *       404:
+ *         description: Child not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Child not found"
+ */
+router.get('/ongoing-activities/:id', async (req: Request, res: Response) => {
+    try {
+        const childId = req.params.id;
+        const childExists = await AppDataSource.getRepository(Child).findOne({ where: { id: childId } })
+        if(!childExists){
+            return res.status(404).json({ message: "Child not found" });
+        }
 
+        const childData = await AppDataSource.getRepository(Child).findOne({
+            where: { 
+                id: childId,
+                childActivitySessions: {
+                    activitySession: {
+                        startedAt: Not(IsNull()),
+                        finishedAt: IsNull()
+                    }
+                }
+            }, 
+            relations: {
+                childActivitySessions: { 
+                    activitySession: {
+                        stationActivitySessions: true,
+                        route: true,
+                        childStations: true
+                    },
+                    parent: true,
+                    pickUpStation: true,
+                    dropOffStation: true
+                }
+            }
+        })
+        if (!childData){
+            return res.status(200).json([]);
+        }
+
+        const responsePayload: OngoingActivitySessionInfo[] = childData.childActivitySessions.map(activityData => {
+            return {
+                activitySessionId: activityData.activitySessionId,
+                isLateRegistration: activityData.isLateRegistration,
+                registeredAt: activityData.registeredAt,
+                activitySession: {
+                    type: activityData.activitySession.type,
+                    mode: activityData.activitySession.mode,
+                    startedAt: activityData.activitySession.startedAt!,
+                    expectedDepartureAt: activityData.activitySession.stationActivitySessions.find(sas => sas.stationId === activityData.pickUpStationId)!.scheduledAt,
+                    departuredAt: activityData.activitySession.childStations.find(cs => cs.type === ChildStationType.IN && cs.childId === childId)?.registeredAt || null,
+                    expectedArrivalAt: activityData.activitySession.stationActivitySessions.find(sas => sas.stationId === activityData.dropOffStationId)!.scheduledAt,
+                    arrivedAt: activityData.activitySession.childStations.find(cs => cs.type === ChildStationType.OUT && cs.childId === childId)?.registeredAt || null,
+                    weatherTemperature: activityData.activitySession.weatherTemperature,
+                    weatherType: activityData.activitySession.weatherType
+                },
+                route: {
+                    id: activityData.activitySession.routeId,
+                    name: activityData.activitySession.route.name
+                },
+                pickUpStation: {
+                    id: activityData.pickUpStationId,
+                    name: activityData.pickUpStation.name
+                },
+                dropOffStation: {
+                    id: activityData.dropOffStationId,
+                    name: activityData.dropOffStation.name
+                },
+                registeredBy: {
+                    id: activityData.parentId,
+                    name: activityData.parent.name
+                },
+                chainedInfo: activityData.chainedActivitySessionId
+            };
+        });
+
+        // Group by chainedInfo
+        const grouped: Record<string, OngoingActivitySessionInfo[]> = {};
+        responsePayload.forEach(item => {
+            const key = item.chainedInfo != null ? `chain-${item.chainedInfo}` : `single-${item.activitySessionId}`;
+            if (!grouped[key]) grouped[key] = [];
+            grouped[key].push(item);
+        });
+
+        // Build final payload
+        const finalPayload: OngoingActivityPayload[] = Object.values(grouped).map(group => {
+            const chainedInfo = group[0]!.chainedInfo;
+            if (chainedInfo !== null && group.length > 1) {
+                // Sort bundle by registeredAt ascending
+                const activities = group.slice().sort((a, b) => {
+                    return a.registeredAt.getTime() - b.registeredAt.getTime();
+                });
+                return {
+                    type: "bundle",
+                    activities
+                };
+            } else {
+                // Single
+                return {
+                    type: "single",
+                    ...group[0]!
+                };
+            }
+        });
+
+        // Sort all by expectedDepartureAt
+        finalPayload.sort((a, b) => {
+            const getExpectedDepartureAt = (item: OngoingActivityPayload) => {
+                if (item.type === "bundle") {
+                    return item.activities[0]!.activitySession.expectedDepartureAt.getTime();
+                } else {
+                    return item.activitySession.expectedDepartureAt.getTime();
+                }
+            };
+            return getExpectedDepartureAt(a) - getExpectedDepartureAt(b);
+        });
+
+        return res.status(200).json(finalPayload);
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+})
+
+
+/**
+ * @swagger
+ * /child/previous-activities/{id}:
+ *   get:
+ *     summary: Get previous activities for a child
+ *     description: Returns a list of previous activity sessions for a child, grouped by chained activities (bundles) or as singles.
+ *     tags:
+ *       - Child
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *         description: Child ID (UUID)
+ *     responses:
+ *       200:
+ *         description: List of previous activities grouped by bundle or single
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 oneOf:
+ *                   - type: object
+ *                     properties:
+ *                       type:
+ *                         type: string
+ *                         enum: [single]
+ *                       activitySessionId:
+ *                         type: string
+ *                       isLateRegistration:
+ *                         type: boolean
+ *                       registeredAt:
+ *                         type: string
+ *                         format: date-time
+ *                       activitySession:
+ *                         type: object
+ *                         properties:
+ *                           type: { type: string }
+ *                           mode: { type: string }
+ *                           startedAt: { type: string, format: date-time }
+ *                           departuredAt: { type: string, format: date-time }
+ *                           arrivedAt: { type: string, format: date-time }
+ *                           finishedAt: { type: string, format: date-time }
+ *                           weatherTemperature: { type: number, nullable: true }
+ *                           weatherType: { type: string, nullable: true }
+ *                       route:
+ *                         type: object
+ *                         properties:
+ *                           id: { type: string }
+ *                           name: { type: string }
+ *                       pickUpStation:
+ *                         type: object
+ *                         properties:
+ *                           id: { type: string }
+ *                           name: { type: string }
+ *                       dropOffStation:
+ *                         type: object
+ *                         properties:
+ *                           id: { type: string }
+ *                           name: { type: string }
+ *                       registeredBy:
+ *                         type: object
+ *                         properties:
+ *                           id: { type: string }
+ *                           name: { type: string }
+ *                       stats:
+ *                         type: object
+ *                         properties:
+ *                           distanceMeters: { type: number, nullable: true }
+ *                           co2Saved: { type: number, nullable: true }
+ *                           caloriesBurned: { type: number, nullable: true }
+ *                           pointsEarned: { type: number, nullable: true }
+ *                       chainedInfo:
+ *                         type: string
+ *                         nullable: true
+ *                   - type: object
+ *                     properties:
+ *                       type:
+ *                         type: string
+ *                         enum: [bundle]
+ *                       activities:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             activitySessionId: { type: string }
+ *                             isLateRegistration: { type: boolean }
+ *                             registeredAt: { type: string, format: date-time }
+ *                             activitySession:
+ *                               type: object
+ *                               properties:
+ *                                 type: { type: string }
+ *                                 mode: { type: string }
+ *                                 startedAt: { type: string, format: date-time }
+ *                                 departuredAt: { type: string, format: date-time }
+ *                                 arrivedAt: { type: string, format: date-time }
+ *                                 finishedAt: { type: string, format: date-time }
+ *                                 weatherTemperature: { type: number, nullable: true }
+ *                                 weatherType: { type: string, nullable: true }
+ *                             route:
+ *                               type: object
+ *                               properties:
+ *                                 id: { type: string }
+ *                                 name: { type: string }
+ *                             pickUpStation:
+ *                               type: object
+ *                               properties:
+ *                                 id: { type: string }
+ *                                 name: { type: string }
+ *                             dropOffStation:
+ *                               type: object
+ *                               properties:
+ *                                 id: { type: string }
+ *                                 name: { type: string }
+ *                             registeredBy:
+ *                               type: object
+ *                               properties:
+ *                                 id: { type: string }
+ *                                 name: { type: string }
+ *                             chainedInfo:
+ *                               type: string
+ *                               nullable: true
+ *       404:
+ *         description: Child not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Child not found"
+ */
 router.get('/previous-activities/:id', async (req: Request, res: Response) => {
     try {
         const childId = req.params.id;
@@ -786,7 +1163,7 @@ router.get('/previous-activities/:id', async (req: Request, res: Response) => {
         }
 
         const responsePayload: PreviousActivitySessionInfo[] = childData.childActivitySessions.map(activityData => {
-            const childStatsActivity = childData.childStats.find(cs => cs.activitySessionId == activityData.activitySessionId)!
+            const childStatsActivity = childData.childStats.find(cs => cs.activitySessionId == activityData.activitySessionId)
 
             return {
                 activitySessionId: activityData.activitySessionId,
@@ -798,6 +1175,7 @@ router.get('/previous-activities/:id', async (req: Request, res: Response) => {
                     startedAt: activityData.activitySession.startedAt!,
                     departuredAt: activityData.activitySession.childStations.find(cs => cs.type === ChildStationType.IN && cs.childId === childId)!.registeredAt,
                     arrivedAt: activityData.activitySession.childStations.find(cs => cs.type === ChildStationType.OUT && cs.childId === childId)!.registeredAt,
+                    finishedAt: activityData.activitySession.finishedAt!,
                     weatherTemperature: activityData.activitySession.weatherTemperature,
                     weatherType: activityData.activitySession.weatherType
                 },
@@ -818,10 +1196,10 @@ router.get('/previous-activities/:id', async (req: Request, res: Response) => {
                     name: activityData.parent.name
                 },
                 stats: {
-                    distanceMeters: childStatsActivity.distanceMeters,
-                    co2Saved: childStatsActivity.co2Saved,
-                    caloriesBurned: childStatsActivity.caloriesBurned,
-                    pointsEarned: childStatsActivity.pointsEarned
+                    distanceMeters: childStatsActivity?.distanceMeters || null,
+                    co2Saved: childStatsActivity?.co2Saved || null,
+                    caloriesBurned: childStatsActivity?.caloriesBurned || null,
+                    pointsEarned: childStatsActivity?.pointsEarned || null
                 },
                 chainedInfo: activityData.chainedActivitySessionId
             };
