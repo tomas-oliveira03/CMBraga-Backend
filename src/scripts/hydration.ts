@@ -78,7 +78,6 @@ async function dbHydration() {
   const dataSource = await AppDataSource.initialize();
   const datafile = path.join(__dirname, "/routes/data.json");
 
-  // Load seed JSON from disk
   let seedData: any = {};
   try {
     const raw = fs.readFileSync(datafile, "utf-8");
@@ -154,9 +153,8 @@ async function dbHydration() {
       }
     }
 
-    console.log("Creating route and stations from mock_route.json...");
+    console.log("Creating routes and stations...");
     
-    // Read all route files from the cicloExpresso directory
     const routesBaseDir = path.join(__dirname, "/routes/cicloExpresso/json");
     const routeFiles = fs.readdirSync(routesBaseDir).filter(file => file.endsWith('.json'));
 
@@ -164,10 +162,9 @@ async function dbHydration() {
 
     let allRoutes: Route[] = [];
     let allRouteStations: RouteStation[] = [];
-    
-    // Create a map to track stations by name and coordinates
     const stationMap = new Map<string, Station>();
     
+    // Process all routes
     for (const routeFile of routeFiles) {
       const routeJsonPath = path.join(routesBaseDir, routeFile);
       const routeJsonData = fs.readFileSync(routeJsonPath, "utf-8");
@@ -185,17 +182,13 @@ async function dbHydration() {
         
         if (!station) {
           const existingStation = await stationRepo.findOne({
-            where: {
-              latitude: stop.lat,
-              longitude: stop.lon
-            }
+            where: { latitude: stop.lat, longitude: stop.lon }
           });
           
           if (existingStation) {
             station = existingStation;
-            console.log(`♻️  Reusing existing station from DB: ${stop.name}`);
+            console.log(`♻️  Reusing existing station: ${stop.name}`);
           } else {
-
             station = stationRepo.create({
               name: stop.name,
               type: stop.type,
@@ -206,7 +199,6 @@ async function dbHydration() {
             console.log(`✨ Created new station: ${stop.name}`);
           }
           
-          // Add to map for future reference
           stationMap.set(stationKey, station);
         } else {
           console.log(`♻️  Reusing station from map: ${stop.name}`);
@@ -215,9 +207,6 @@ async function dbHydration() {
         stations.push(station);
       }
       
-      console.log(`✅ Processed ${stations.length} stations for ${routeFile}`);
-      
-      // 2. Create Route
       const routeName = routeFile.replace('.json', '');
       const route = routeRepo.create({
         name: routeName,
@@ -233,7 +222,6 @@ async function dbHydration() {
       allRoutes.push(route);
       console.log(`✅ Created route: ${route.name}`);
       
-      // 3. Create RouteStations relationships
       const routeStations = routeData.stops.map((stop: any, index: number) => 
         routeStationRepo.create({
           routeId: route.id,
@@ -248,65 +236,27 @@ async function dbHydration() {
       allRouteStations.push(...routeStations);
     }
 
-    // Save all route-station relationships at once
     await routeStationRepo.save(allRouteStations);
-    console.log(`✅ Created ${allRouteStations.length} route-station relationships for all routes`);
-    console.log(`✅ Total routes created: ${allRoutes.length}`);
-    console.log(`✅ Total unique stations created: ${stationMap.size}`);
+    console.log(`✅ Created ${allRouteStations.length} route-station relationships`);
+    console.log(`✅ Total routes: ${allRoutes.length}, Total stations: ${stationMap.size}`);
 
-    // Use the first route for the activity session
-    const route = allRoutes[0]!;
-    const stationsForActivity = await routeStationRepo.find({
-      where: { routeId: route.id },
-      order: { stopNumber: 'ASC' }
-    });
-    
-    const stations = await Promise.all(
-      stationsForActivity.map(rs => stationRepo.findOneBy({ id: rs.stationId }))
-    );
+    // Create route connections
+    const linhaAzul = allRoutes.find(r => r.name === "LinhaAzul");
+    const linhaVermelha = allRoutes.find(r => r.name === "LinhaVermelha");
+    const mergeStop = await stationRepo.findOne({ where: { name: "Av. 31 de Janeiro" } });
 
-    // Load the route data for the first route to get stop information
-    const firstRouteFile = routeFiles[0]!;
-    const firstRouteJsonPath = path.join(routesBaseDir, firstRouteFile);
-    const firstRouteJsonData = fs.readFileSync(firstRouteJsonPath, "utf-8");
-    const routeData = JSON.parse(firstRouteJsonData);
-
-    // 4. Create Activity Session based on the route
-    const atividade = activityRepo.create({
-      type: "ciclo_expresso" as any,
-      mode: "bike" as any,
-      scheduledAt: new Date(),
-      routeId: route.id,
-    });
-    await activityRepo.save(atividade);
-    console.log(`✅ Created activity session: ${atividade.id}`);
-
-    // 5. Create station-activity sessions (from route stations)
-    const stationActivitySessions = [];
-    const now = new Date();
-    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    
-    for (let i = 0; i < stations.length; i++) {
-      const stop = routeData.stops[i];
-      stationActivitySessions.push(
-        stationActivityRepo.create({
-          stationId: stations[i]!.id,
-          activitySessionId: atividade.id,
-          stopNumber: i + 1,
-          // Use timeFromStartMinutes to calculate scheduled time
-          scheduledAt: new Date(yesterday.getTime() + (stop.timeFromStartMinutes * 60 * 1000)),
-        })
-      );
+    if (linhaAzul && linhaVermelha && mergeStop) {
+      await AppDataSource.getRepository(RouteConnection).insert([
+        { fromRouteId: linhaAzul.id, toRouteId: linhaVermelha.id, stationId: mergeStop.id },
+        { fromRouteId: linhaVermelha.id, toRouteId: linhaAzul.id, stationId: mergeStop.id }
+      ]);
+      console.log(`✅ Created route connections at ${mergeStop.name}`);
     }
-    await stationActivityRepo.save(stationActivitySessions);
-    console.log(`✅ Created ${stationActivitySessions.length} station-activity sessions`);
 
-    // 6. Create health professional and admin
+    // Create users (admins, instructors, parents, health professionals)
     const encryptedPassword = informationHash.encrypt("Person23!");
 
-    // Create health professionals from JSON (fallback to previous single hp if missing)
     const hpEntities: HealthProfessional[] = [];
-    let hp1: HealthProfessional;
     if (Array.isArray(seedData.healthProfessionals) && seedData.healthProfessionals.length) {
       for (const hp of seedData.healthProfessionals) {
         const hpEnt = hpRepo.create({
@@ -329,30 +279,8 @@ async function dbHydration() {
           profilePictureURL: hpEnt.profilePictureURL
         }));
       }
-      // Ensure hp1 is set for later usage (fallback to first created HP)
-      hp1 = hpEntities[0]!;
-    } else {
-      // fallback to previous single HP if json missing
-      hp1 = hpRepo.create({
-        name: "Dra. Marta Ramos",
-        email: "marta.ramos@saude.pt",
-        password: encryptedPassword,
-        phone: "912345678",
-        specialty: "pediatrician" as any,
-        activatedAt: new Date(),
-        profilePictureURL: selectRandomDefaultProfilePicture()
-      });
-      await hpRepo.save(hp1);
-      await userRepo.save(userRepo.create({
-        id: hp1.email,
-        name: hp1.name,
-        healthProfessionalId: hp1.id,
-        profilePictureURL: hp1.profilePictureURL
-      }));
-      hpEntities.push(hp1);
     }
 
-    // Create admins from JSON (fallback to previous single admin)
     const adminEntities: Admin[] = [];
     if (Array.isArray(seedData.admins) && seedData.admins.length) {
       for (const a of seedData.admins) {
@@ -375,26 +303,8 @@ async function dbHydration() {
           profilePictureURL: adminEnt.profilePictureURL
         }));
       }
-    } else {
-      const admin = adminRepo.create({
-        name: "Admin User",
-        email: "admin@cmbraga.pt",
-        password: encryptedPassword,
-        phone: "900000000",
-        activatedAt: new Date(),
-        profilePictureURL: selectRandomDefaultProfilePicture()
-      });
-      await adminRepo.save(admin);
-      await userRepo.save(userRepo.create({
-        id: admin.email,
-        name: admin.name,
-        adminId: admin.id,
-        profilePictureURL: admin.profilePictureURL
-      }));
-      adminEntities.push(admin);
     }
- 
-    // 7. Create parents from JSON
+
     const pais: Parent[] = [];
     if (Array.isArray(seedData.parents) && seedData.parents.length) {
       for (const p of seedData.parents) {
@@ -410,31 +320,6 @@ async function dbHydration() {
         pais.push(parent);
       }
       await parentRepo.save(pais);
-      console.log(`✅ Created ${pais.length} parents (from JSON)`);
-      // create corresponding user entries
-      for (const parent of pais) {
-        await userRepo.save(userRepo.create({
-          id: parent.email,
-          name: parent.name,
-          parentId: parent.id,
-          profilePictureURL: parent.profilePictureURL
-        }));
-      }
-    } else {
-      // fallback to synthetic parents (kept minimal)
-      for (let i = 1; i <= 10; i++) {
-        const parent = parentRepo.create({
-          name: `Pai ${i}`,
-          email: `pai${i}@exemplo.com`,
-          password: encryptedPassword,
-          phone: `91${String(i).padStart(7, '0')}`,
-          address: `Rua ${i}, Nº ${i}`,
-          activatedAt: new Date(),
-          profilePictureURL: selectRandomDefaultProfilePicture()
-        });
-        pais.push(parent);
-      }
-      await parentRepo.save(pais);
       for (const parent of pais) {
         await userRepo.save(userRepo.create({
           id: parent.email,
@@ -444,83 +329,7 @@ async function dbHydration() {
         }));
       }
     }
- 
-    // 8. Create children with drop-off at school station (last station)
-    const criancas: Child[] = [];
-    const schoolStation = stations[stations.length - 1]; // Last station is school
 
-    for (let i = 0; i < 10; i++) {
-      const child = childRepo.create({
-        name: `Criança ${i + 1}`,
-        gender: i % 2 === 0 ? "male" as any : "female" as any,
-        school: "Escola Básica",
-        schoolGrade: (i % 6) + 1,
-        dropOffStationId: schoolStation!.id,
-        dateOfBirth: new Date(`2015-0${(i % 9) + 1}-15`),
-        heightCentimeters: 120 + (i * 3), // Heights from 120cm to 147cm
-        weightKilograms: 25 + (i * 2), // Weights from 25kg to 43kg
-        profilePictureURL: selectRandomDefaultProfilePicture()
-      });
-      criancas.push(child);
-    }
-    await childRepo.save(criancas);
-    console.log(`✅ Created ${criancas.length} children`);
-
-    // 8.1. Create child history records (tracking growth over time)
-    const childHistories: ChildHistory[] = [];
-    const currentDate = new Date();
-    
-    for (const child of criancas) {
-      // Calculate age from date of birth
-      const birthDate = new Date(child.dateOfBirth);
-      const age = currentDate.getFullYear() - birthDate.getFullYear();
-      
-      // Create 3 historical records for each child (simulating measurements over 6 months)
-      // 6 months ago
-      childHistories.push(
-        childHistoryRepo.create({
-          childId: child.id,
-          heightCentimeters: child.heightCentimeters - 6,
-          weightKilograms: child.weightKilograms - 3,
-          age: age - 1,
-          createdAt: new Date(currentDate.getTime() - 180 * 24 * 60 * 60 * 1000)
-        })
-      );
-      
-      // 3 months ago
-      childHistories.push(
-        childHistoryRepo.create({
-          childId: child.id,
-          heightCentimeters: child.heightCentimeters - 3,
-          weightKilograms: child.weightKilograms - 1,
-          age: age,
-          createdAt: new Date(currentDate.getTime() - 90 * 24 * 60 * 60 * 1000)
-        })
-      );
-      
-      // Current measurements
-      childHistories.push(
-        childHistoryRepo.create({
-          childId: child.id,
-          heightCentimeters: child.heightCentimeters,
-          weightKilograms: child.weightKilograms,
-          age: age,
-          createdAt: currentDate
-        })
-      );
-    }
-    
-    await childHistoryRepo.save(childHistories);
-    console.log(`✅ Created ${childHistories.length} child history records (${childHistories.length / criancas.length} per child)`);
-
-    // 9. Create parent-child relationships
-    const parentChildAssociations = criancas.map((c, i) =>
-      parentChildRepo.create({ parentId: pais[i]!.id, childId: c.id })
-    );
-    await parentChildRepo.save(parentChildAssociations);
-    console.log(`✅ Created ${parentChildAssociations.length} parent-child associations`);
-
-    // 10. Create instructors from JSON (instructores)
     const instrutores: Instructor[] = [];
     if (Array.isArray(seedData.instructores) && seedData.instructores.length) {
       for (const ins of seedData.instructores) {
@@ -535,7 +344,6 @@ async function dbHydration() {
         instrutores.push(instEnt);
       }
       await instructorRepo.save(instrutores);
-      console.log(`✅ Created ${instrutores.length} instructors (from JSON)`);
       for (const instructor of instrutores) {
         await userRepo.save(userRepo.create({
           id: instructor.email,
@@ -544,119 +352,363 @@ async function dbHydration() {
           profilePictureURL: instructor.profilePictureURL
         }));
       }
-    } else {
-      // fallback to two synthetic instructors
-      const fallbackInstr = [
-        instructorRepo.create({
-          name: "Instrutor 1",
-          email: "inst1@cmbraga.pt",
-          password: encryptedPassword,
-          phone: "911111111",
-          activatedAt: new Date(),
-          profilePictureURL: selectRandomDefaultProfilePicture()
-        }),
-        instructorRepo.create({
-          name: "Instrutor 2",
-          email: "inst2@cmbraga.pt",
-          password: encryptedPassword,
-          phone: "922222222",
-          activatedAt: new Date(),
-          profilePictureURL: selectRandomDefaultProfilePicture()
-        })
-      ];
-      await instructorRepo.save(fallbackInstr);
-      instrutores.push(...fallbackInstr);
-      for (const instructor of fallbackInstr) {
-        await userRepo.save(userRepo.create({
-          id: instructor.email,
-          name: instructor.name,
-          instructorId: instructor.id,
-          profilePictureURL: instructor.profilePictureURL
-        }));
-      }
     }
 
-    // 11. Assign instructors to the activity
-    await instructorActivityRepo.save([
-      instructorActivityRepo.create({ instructorId: instrutores[0]!.id, activitySessionId: atividade.id }),
-      instructorActivityRepo.create({ instructorId: instrutores[1]!.id, activitySessionId: atividade.id }),
-    ]);
-    console.log(`✅ Assigned instructors to activity session`);
+    console.log(`✅ Created ${hpEntities.length} health professionals, ${adminEntities.length} admins, ${pais.length} parents, ${instrutores.length} instructors`);
 
-    // 12. Register children to the activity (distributed among pickup stations, excluding school)
-    const pickupStations = stations.slice(0, -1); // All stations except the last one (school)
-    const childActivityRegistrations = [];
+    // Create children (20 children for variety)
+    const criancas: Child[] = [];
+    const allStations = Array.from(stationMap.values());
+    const schoolStations = allStations.filter(s => s.type === "school");
     
-    for (let i = 0; i < criancas.length; i++) {
-      const pickupStationIndex = i % pickupStations.length;
-      childActivityRegistrations.push(
-        childActivityRepo.create({
-          childId: criancas[i]!.id,
-          activitySessionId: atividade.id,
-          pickUpStationId: pickupStations[pickupStationIndex]!.id,
-          parentId: pais[i]!.id,
-          dropOffStationId: criancas[i]!.dropOffStationId,
-          isLateRegistration: false,
-          registeredAt: yesterday
+    for (let i = 0; i < 20; i++) {
+      const schoolStation = schoolStations[i % schoolStations.length] || allStations[allStations.length - 1];
+      const child = childRepo.create({
+        name: `Criança ${i + 1}`,
+        gender: i % 2 === 0 ? "male" as any : "female" as any,
+        school: `Escola ${schoolStation!.name}`,
+        schoolGrade: (i % 6) + 1,
+        dropOffStationId: schoolStation!.id,
+        dateOfBirth: new Date(`201${5 + (i % 4)}-0${(i % 9) + 1}-${10 + (i % 15)}`),
+        heightCentimeters: 110 + (i * 2),
+        weightKilograms: 20 + i,
+        profilePictureURL: selectRandomDefaultProfilePicture()
+      });
+      criancas.push(child);
+    }
+    await childRepo.save(criancas);
+
+    // Create child history
+    const childHistories: ChildHistory[] = [];
+    const currentDate = new Date();
+    for (const child of criancas) {
+      const birthDate = new Date(child.dateOfBirth);
+      const age = currentDate.getFullYear() - birthDate.getFullYear();
+      
+      childHistories.push(
+        childHistoryRepo.create({
+          childId: child.id,
+          heightCentimeters: child.heightCentimeters - 6,
+          weightKilograms: child.weightKilograms - 3,
+          age: age - 1,
+          createdAt: new Date(currentDate.getTime() - 180 * 24 * 60 * 60 * 1000)
+        }),
+        childHistoryRepo.create({
+          childId: child.id,
+          heightCentimeters: child.heightCentimeters - 3,
+          weightKilograms: child.weightKilograms - 1,
+          age: age,
+          createdAt: new Date(currentDate.getTime() - 90 * 24 * 60 * 60 * 1000)
+        }),
+        childHistoryRepo.create({
+          childId: child.id,
+          heightCentimeters: child.heightCentimeters,
+          weightKilograms: child.weightKilograms,
+          age: age,
+          createdAt: currentDate
         })
       );
     }
-    await childActivityRepo.save(childActivityRegistrations);
-    console.log(`✅ Registered ${childActivityRegistrations.length} children to activity session`);
+    await childHistoryRepo.save(childHistories);
 
-    // 13. Register first parent to activity session
-    const parentActivityRegistration = parentActivityRepo.create({
-      parentId: pais[0]!.id,
-      activitySessionId: atividade.id,
-      registeredAt: yesterday
+    // Create parent-child relationships
+    const parentChildAssociations = criancas.map((c, i) =>
+      parentChildRepo.create({ parentId: pais[i % pais.length]!.id, childId: c.id })
+    );
+    await parentChildRepo.save(parentChildAssociations);
+    console.log(`✅ Created ${criancas.length} children with history and parent associations`);
+
+    // ===== CREATE COMPREHENSIVE ACTIVITY SCENARIOS =====
+    const now = new Date();
+    const baseDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 0, 0); // 8:00 AM today
+    
+    // Helper to create consistent station activity sessions
+    async function createStationActivitySessions(
+      activityId: string,
+      routeId: string,
+      baseTime: Date
+    ) {
+      const routeStations = await routeStationRepo.find({
+        where: { routeId },
+        order: { stopNumber: 'ASC' }
+      });
+      
+      const sessions = routeStations.map(rs =>
+        stationActivityRepo.create({
+          stationId: rs.stationId,
+          activitySessionId: activityId,
+          stopNumber: rs.stopNumber,
+          scheduledAt: new Date(baseTime.getTime() + (rs.timeFromStartMinutes * 60 * 1000))
+        })
+      );
+      
+      await stationActivityRepo.save(sessions);
+      return sessions;
+    }
+
+    // SCENARIO 1: Future activity WITHOUT transfer (Linha Azul)
+    const futureActivity1 = activityRepo.create({
+      type: "ciclo_expresso" as any,
+      mode: "bike" as any,
+      scheduledAt: new Date(baseDate.getTime() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
+      routeId: linhaAzul!.id,
+      inLateRegistration: false
     });
-    await parentActivityRepo.save(parentActivityRegistration);
+    await activityRepo.save(futureActivity1);
+    await createStationActivitySessions(futureActivity1.id, linhaAzul!.id, futureActivity1.scheduledAt);
+    await instructorActivityRepo.save([
+      instructorActivityRepo.create({ instructorId: instrutores[0]!.id, activitySessionId: futureActivity1.id }),
+      instructorActivityRepo.create({ instructorId: instrutores[1]!.id, activitySessionId: futureActivity1.id })
+    ]);
+    
+    // Register 5 children
+    for (let i = 0; i < 5; i++) {
+      const child = criancas[i]!;
+      await childActivityRepo.save(childActivityRepo.create({
+        childId: child.id,
+        activitySessionId: futureActivity1.id,
+        pickUpStationId: (await routeStationRepo.findOne({ where: { routeId: linhaAzul!.id, stopNumber: (i % 3) + 1 } }))!.stationId,
+        dropOffStationId: child.dropOffStationId,
+        isLateRegistration: false,
+        parentId: pais[i % pais.length]!.id,
+        registeredAt: new Date(baseDate.getTime() - 3 * 24 * 60 * 60 * 1000)
+      }));
+    }
 
-    // 14. Create sample issues and medical reports
-    const issue1 = issueRepo.create({ 
-      description: "Criança com dificuldade respiratória durante o percurso", 
-      imageURLs: USER_DEFAULT_PROFILE_PICTURES, 
-      instructorId: instrutores[0]!.id, 
-      activitySessionId: atividade.id 
+    // SCENARIO 2: Future activity WITH transfer (Linha Azul -> Linha Vermelha)
+    const futureActivity2a = activityRepo.create({
+      type: "ciclo_expresso" as any,
+      mode: "bike" as any,
+      scheduledAt: new Date(baseDate.getTime() + 3 * 24 * 60 * 60 * 1000), // 3 days from now, 8:00 AM
+      routeId: linhaAzul!.id,
+      inLateRegistration: false
     });
-    await issueRepo.save(issue1);
-
-
-
-    // Create RouteConnection 
-    const linhaAzul = await routeRepo.findOne({ where: { name: "LinhaAzul" } });
-    const linhaVermelha = await routeRepo.findOne({ where: { name: "LinhaVermelha" } });
-
-    const mergeStop = await stationRepo.findOne({ where: { name: "Av. 31 de Janeiro" } });
-
-    await AppDataSource.getRepository(RouteConnection).insert([
-      {
-        fromRouteId: linhaAzul!.id,
-        toRouteId: linhaVermelha!.id,
-        stationId: mergeStop!.id
-      },
-      {
-        fromRouteId: linhaVermelha!.id,
-        toRouteId: linhaAzul!.id,
-        stationId: mergeStop!.id
-      }
-    ])
-
-
-
-
-    const report1 = reportRepo.create({ 
-      childId: criancas[0]!.id, 
-      healthProfessionalId: hp1.id, 
-      diagnosis: "Alergia sazonal", 
-      recommendations: null 
+    await activityRepo.save(futureActivity2a);
+    
+    const futureActivity2b = activityRepo.create({
+      type: "ciclo_expresso" as any,
+      mode: "bike" as any,
+      scheduledAt: new Date(baseDate.getTime() + 3 * 24 * 60 * 60 * 1000 + 30 * 60 * 1000), // Same day, 30 min offset
+      routeId: linhaVermelha!.id,
+      inLateRegistration: false
     });
-    await reportRepo.save(report1);
+    await activityRepo.save(futureActivity2b);
+    
+    // Link activities (transfer)
+    futureActivity2a.activityTransferId = futureActivity2b.id;
+    await activityRepo.save(futureActivity2a);
+    
+    await createStationActivitySessions(futureActivity2a.id, linhaAzul!.id, futureActivity2a.scheduledAt);
+    await createStationActivitySessions(futureActivity2b.id, linhaVermelha!.id, futureActivity2b.scheduledAt);
+    
+    await instructorActivityRepo.save([
+      instructorActivityRepo.create({ instructorId: instrutores[0]!.id, activitySessionId: futureActivity2a.id }),
+      instructorActivityRepo.create({ instructorId: instrutores[1]!.id, activitySessionId: futureActivity2b.id })
+    ]);
+    
+    // Register 3 children with transfer
+    for (let i = 5; i < 8; i++) {
+      const child = criancas[i]!;
+      const pickupStation = (await routeStationRepo.findOne({ where: { routeId: linhaAzul!.id, stopNumber: 1 } }))!.stationId;
+      
+      await childActivityRepo.save([
+        childActivityRepo.create({
+          childId: child.id,
+          activitySessionId: futureActivity2a.id,
+          pickUpStationId: pickupStation,
+          dropOffStationId: mergeStop!.id,
+          isLateRegistration: false,
+          parentId: pais[i % pais.length]!.id,
+          registeredAt: new Date(baseDate.getTime() - 2 * 24 * 60 * 60 * 1000),
+          chainedActivitySessionId: futureActivity2a.id
+        }),
+        childActivityRepo.create({
+          childId: child.id,
+          activitySessionId: futureActivity2b.id,
+          pickUpStationId: mergeStop!.id,
+          dropOffStationId: child.dropOffStationId,
+          isLateRegistration: false,
+          parentId: pais[i % pais.length]!.id,
+          registeredAt: new Date(baseDate.getTime() - 2 * 24 * 60 * 60 * 1000),
+          chainedActivitySessionId: futureActivity2a.id
+        })
+      ]);
+    }
 
-    // 15. Create badges (from seed JSON -> medals)
+    // SCENARIO 3: Ongoing activity (started 30 min ago, not finished)
+    const ongoingActivity = activityRepo.create({
+      type: "ciclo_expresso" as any,
+      mode: "bike" as any,
+      scheduledAt: new Date(now.getTime() - 30 * 60 * 1000), // Started 30 min ago
+      routeId: linhaAzul!.id,
+      inLateRegistration: false,
+      startedAt: new Date(now.getTime() - 30 * 60 * 1000),
+      startedById: instrutores[0]!.id
+    });
+    await activityRepo.save(ongoingActivity);
+    await createStationActivitySessions(ongoingActivity.id, linhaAzul!.id, ongoingActivity.scheduledAt);
+    await instructorActivityRepo.save(
+      instructorActivityRepo.create({ instructorId: instrutores[0]!.id, activitySessionId: ongoingActivity.id })
+    );
+    
+    // Register and check-in 4 children
+    for (let i = 8; i < 12; i++) {
+      const child = criancas[i]!;
+      const pickupStationRS = await routeStationRepo.findOne({ where: { routeId: linhaAzul!.id, stopNumber: (i % 3) + 1 } });
+      
+      await childActivityRepo.save(childActivityRepo.create({
+        childId: child.id,
+        activitySessionId: ongoingActivity.id,
+        pickUpStationId: pickupStationRS!.stationId,
+        dropOffStationId: child.dropOffStationId,
+        isLateRegistration: false,
+        parentId: pais[i % pais.length]!.id,
+        registeredAt: new Date(ongoingActivity.scheduledAt.getTime() - 24 * 60 * 60 * 1000)
+      }));
+      
+      // Check-in at pickup station
+      await childStationRepo.save(childStationRepo.create({
+        childId: child.id,
+        stationId: pickupStationRS!.stationId,
+        activitySessionId: ongoingActivity.id,
+        type: "in" as any,
+        instructorId: instrutores[0]!.id,
+        registeredAt: new Date(now.getTime() - 20 * 60 * 1000)
+      }));
+    }
+
+    // SCENARIO 4: Finished activity (completed yesterday)
+    const finishedActivity = activityRepo.create({
+      type: "ciclo_expresso" as any,
+      mode: "bike" as any,
+      scheduledAt: new Date(baseDate.getTime() - 24 * 60 * 60 * 1000), // Yesterday 8:00 AM
+      routeId: linhaVermelha!.id,
+      inLateRegistration: false,
+      startedAt: new Date(baseDate.getTime() - 24 * 60 * 60 * 1000),
+      startedById: instrutores[1]!.id,
+      finishedAt: new Date(baseDate.getTime() - 24 * 60 * 60 * 1000 + 90 * 60 * 1000), // 1.5h later
+      finishedById: instrutores[1]!.id
+    });
+    await activityRepo.save(finishedActivity);
+    await createStationActivitySessions(finishedActivity.id, linhaVermelha!.id, finishedActivity.scheduledAt);
+    await instructorActivityRepo.save(
+      instructorActivityRepo.create({ instructorId: instrutores[1]!.id, activitySessionId: finishedActivity.id })
+    );
+    
+    // Register 6 children with full check-in/out
+    for (let i = 12; i < 18; i++) {
+      const child = criancas[i]!;
+      const pickupStationRS = await routeStationRepo.findOne({ where: { routeId: linhaVermelha!.id, stopNumber: 1 } });
+      const dropoffStationRS = await routeStationRepo.findOne({ 
+        where: { routeId: linhaVermelha!.id },
+        order: { stopNumber: 'DESC' }
+      });
+      
+      await childActivityRepo.save(childActivityRepo.create({
+        childId: child.id,
+        activitySessionId: finishedActivity.id,
+        pickUpStationId: pickupStationRS!.stationId,
+        dropOffStationId: child.dropOffStationId,
+        isLateRegistration: false,
+        parentId: pais[i % pais.length]!.id,
+        registeredAt: new Date(finishedActivity.scheduledAt.getTime() - 48 * 60 * 60 * 1000)
+      }));
+      
+      // Check-in
+      await childStationRepo.save(childStationRepo.create({
+        childId: child.id,
+        stationId: pickupStationRS!.stationId,
+        activitySessionId: finishedActivity.id,
+        type: "in" as any,
+        instructorId: instrutores[1]!.id,
+        registeredAt: new Date(finishedActivity.startedAt!.getTime() + 5 * 60 * 1000)
+      }));
+      
+      // Check-out
+      await childStationRepo.save(childStationRepo.create({
+        childId: child.id,
+        stationId: child.dropOffStationId,
+        activitySessionId: finishedActivity.id,
+        type: "out" as any,
+        instructorId: instrutores[1]!.id,
+        registeredAt: new Date(finishedActivity.finishedAt!.getTime() - 10 * 60 * 1000)
+      }));
+    }
+    
+    // Add feedbacks for finished activity
+    for (let i = 12; i < 15; i++) {
+      await feedbackRepo.save(feedbackRepo.create({
+        evaluation1: 4 + (i % 2),
+        evaluation2: 4 + (i % 2),
+        evaluation3: 4,
+        evaluation4: 5,
+        evaluation5: 4 + (i % 2),
+        textFeedback: `Feedback da criança ${i + 1}: Atividade muito boa!`,
+        overallRating: 4 + (i % 2),
+        activitySessionId: finishedActivity.id,
+        childId: criancas[i]!.id,
+        parentId: pais[i % pais.length]!.id,
+        submitedAt: new Date(finishedActivity.finishedAt!.getTime() + 2 * 60 * 60 * 1000)
+      }));
+    }
+
+    // SCENARIO 5: Future activity in late registration
+    const lateRegActivity = activityRepo.create({
+      type: "ciclo_expresso" as any,
+      mode: "bike" as any,
+      scheduledAt: new Date(baseDate.getTime() + 12 * 60 * 60 * 1000), // Today at 8:00 PM (12h from now)
+      routeId: linhaAzul!.id,
+      inLateRegistration: true
+    });
+    await activityRepo.save(lateRegActivity);
+    await createStationActivitySessions(lateRegActivity.id, linhaAzul!.id, lateRegActivity.scheduledAt);
+    await instructorActivityRepo.save(
+      instructorActivityRepo.create({ instructorId: instrutores[0]!.id, activitySessionId: lateRegActivity.id })
+    );
+    
+    // Register 2 children (one normal, one late)
+    await childActivityRepo.save([
+      childActivityRepo.create({
+        childId: criancas[18]!.id,
+        activitySessionId: lateRegActivity.id,
+        pickUpStationId: (await routeStationRepo.findOne({ where: { routeId: linhaAzul!.id, stopNumber: 1 } }))!.stationId,
+        dropOffStationId: criancas[18]!.dropOffStationId,
+        isLateRegistration: false,
+        parentId: pais[18 % pais.length]!.id,
+        registeredAt: new Date(baseDate.getTime() - 24 * 60 * 60 * 1000)
+      }),
+      childActivityRepo.create({
+        childId: criancas[19]!.id,
+        activitySessionId: lateRegActivity.id,
+        pickUpStationId: (await routeStationRepo.findOne({ where: { routeId: linhaAzul!.id, stopNumber: 2 } }))!.stationId,
+        dropOffStationId: criancas[19]!.dropOffStationId,
+        isLateRegistration: true,
+        parentId: pais[19 % pais.length]!.id,
+        registeredAt: new Date(now.getTime() - 2 * 60 * 60 * 1000) // 2h ago
+      })
+    ]);
+
+    // Create sample issue
+    await issueRepo.save(issueRepo.create({
+      description: "Criança com dificuldade respiratória durante o percurso",
+      imageURLs: USER_DEFAULT_PROFILE_PICTURES,
+      instructorId: instrutores[0]!.id,
+      activitySessionId: finishedActivity.id
+    }));
+
+    // Create medical report
+    if (hpEntities.length > 0) {
+      await reportRepo.save(reportRepo.create({
+        childId: criancas[0]!.id,
+        healthProfessionalId: hpEntities[0]!.id,
+        diagnosis: "Alergia sazonal",
+        recommendations: "Evitar exposição a pólen"
+      }));
+    }
+
+    // Create badges from JSON
     let createdBadgesCount = 0;
     if (Array.isArray(seedData.medals) && seedData.medals.length) {
-      // Deduplicate medals by name (case-insensitive) to avoid duplicates in the JSON
       const uniqueMap = new Map<string, any>();
       for (const m of seedData.medals) {
         const nameKey = String(m?.name || "").trim().toLowerCase();
@@ -667,7 +719,6 @@ async function dbHydration() {
 
       const badgesToSave: Badge[] = [];
       for (const m of uniqueMedals) {
-        // Skip if a badge with the same name already exists in DB
         const existing = await badgeRepo.findOne({ where: { name: m.name } });
         if (existing) continue;
 
@@ -684,101 +735,26 @@ async function dbHydration() {
         await badgeRepo.save(badgesToSave);
       }
       createdBadgesCount = badgesToSave.length;
-    } else {
-      // no medals in JSON - keep previous in-script badges if desired (omitted here)
-      createdBadgesCount = 0;
     }
 
-    // 16. Create feedbacks (same sample feedbacks as oldhydration)
-    const feedback1 = feedbackRepo.create({
-      evaluation1: 5,
-      evaluation2: 5,
-      evaluation3: 4,
-      evaluation4: 5,
-      evaluation5: 5,
-      textFeedback: "Excelente atividade! O meu filho adorou a experiência e chegou a casa muito entusiasmado.",
-      overallRating: 5,
-      activitySessionId: atividade.id,
-      childId: criancas[0]!.id,
-      parentId: pais[0]!.id,
-      submitedAt: new Date("2024-04-01T20:00:00.000Z")
-    });
+    console.log("\n=== 🎉 HIDRATAÇÃO COMPLETA ===");
+    console.log(`✅ Rotas: ${allRoutes.length}`);
+    console.log(`✅ Estações únicas: ${stationMap.size}`);
+    console.log(`✅ Relações rota-estação: ${allRouteStations.length}`);
+    console.log(`✅ Utilizadores: ${hpEntities.length} HP, ${adminEntities.length} admins, ${pais.length} pais, ${instrutores.length} instrutores`);
+    console.log(`✅ Crianças: ${criancas.length} (com ${childHistories.length} registos de histórico)`);
+    console.log(`\n📅 ATIVIDADES CRIADAS:`);
+    console.log(`   1️⃣  Futura SEM transbordo (daqui a 2 dias) - 5 crianças registadas`);
+    console.log(`   2️⃣  Futura COM transbordo (daqui a 3 dias) - 3 crianças com transbordo`);
+    console.log(`   3️⃣  Em curso (iniciada há 30 min) - 4 crianças com check-in`);
+    console.log(`   4️⃣  Finalizada (ontem) - 6 crianças com check-in/out completo + 3 feedbacks`);
+    console.log(`   5️⃣  Futura em inscrição tardia (hoje à noite) - 2 crianças (1 normal, 1 tardia)`);
+    console.log(`\n🏅 Badges: ${createdBadgesCount}`);
+    console.log(`💬 Feedbacks: 3 (atividade finalizada)`);
+    console.log(`⚠️  Issues: 1`);
+    console.log(`🏥 Medical Reports: 1`);
 
-    const feedback2 = feedbackRepo.create({
-      evaluation1: 4,
-      evaluation2: 4,
-      evaluation3: 5,
-      evaluation4: 4,
-      evaluation5: 4,
-      textFeedback: "Muito boa organização. Os instrutores foram muito atenciosos e cuidadosos.",
-      overallRating: 4,
-      activitySessionId: atividade.id,
-      childId: criancas[1]!.id,
-      parentId: pais[1]!.id,
-      submitedAt: new Date("2024-04-01T20:30:00.000Z")
-    });
-
-    const feedback3 = feedbackRepo.create({
-      evaluation1: 5,
-      evaluation2: 4,
-      evaluation3: 4,
-      evaluation4: 5,
-      evaluation5: 5,
-      textFeedback: "Ótima iniciativa! A criança fez exercício e ainda aprendeu sobre a cidade.",
-      overallRating: 5,
-      activitySessionId: atividade.id,
-      childId: criancas[2]!.id,
-      parentId: pais[2]!.id,
-      submitedAt: new Date("2024-04-01T21:00:00.000Z")
-    });
-
-    const feedback4 = feedbackRepo.create({
-      evaluation1: 3,
-      evaluation2: 4,
-      evaluation3: 3,
-      evaluation4: 4,
-      evaluation5: 3,
-      textFeedback: "Foi bom, mas o percurso podia ser um pouco mais curto para crianças mais novas.",
-      overallRating: 3,
-      activitySessionId: atividade.id,
-      childId: criancas[3]!.id,
-      parentId: pais[3]!.id,
-      submitedAt: new Date("2024-04-01T21:30:00.000Z")
-    });
-
-    const feedback5 = feedbackRepo.create({
-      evaluation1: 5,
-      evaluation2: 5,
-      evaluation3: 5,
-      evaluation4: 5,
-      evaluation5: 5,
-      textFeedback: "Perfeito! Seguro, divertido e educativo. Recomendo a todos os pais!",
-      overallRating: 5,
-      activitySessionId: atividade.id,
-      childId: criancas[4]!.id,
-      parentId: pais[4]!.id,
-      submitedAt: new Date("2024-04-02T08:00:00.000Z")
-    });
-
-    await feedbackRepo.save([feedback1, feedback2, feedback3, feedback4, feedback5]);
-
-    console.log("\n=== HIDRATAÇÃO COMPLETA ===");
-    console.log("✅ 1. Criadas " + stations.length + " estações a partir do ficheiro JSON");
-    console.log("✅ 2. Criada rota '" + route.name + "' com " + stations.length + " estações");
-    console.log("✅ 3. Criadas " + allRouteStations.length + " relações rota-estação");
-    console.log("✅ 4. Criada atividade baseada na rota");
-    console.log("✅ 5. Criados 10 pais e 10 crianças");
-    console.log("✅ 6. Criados " + childHistories.length + " registos de histórico de crianças (3 por criança)");
-    console.log("✅ 7. Criados 2 instrutores");
-    console.log("✅ 8. Instrutores e crianças registados na atividade");
-    console.log("✅ 9. Crianças distribuídas entre " + pickupStations.length + " estações de recolha");
-    console.log("✅ 10. Todas as crianças têm drop-off na escola (última estação)");
-    console.log("📍 Distância total da rota: " + route.distanceMeters + " metros");
-    console.log("🏅 Criadas " + createdBadgesCount + " medalhas (from JSON)");
-    console.log("💬 Criados 5 feedbacks de pais sobre a atividade");
-    console.log("📊 Cada criança tem 3 registos de crescimento (6 meses, 3 meses e atual)");
-
-    console.log("Seeding finished.");
+    console.log("\n✅ Seeding finished with comprehensive, consistent data!");
   } catch (err) {
     console.error("Seeding error:", err);
   } finally {
@@ -786,7 +762,6 @@ async function dbHydration() {
     console.log("Data source destroyed. Done.");
   }
 }
-
 
 async function seed() {
   await cloudHydration();
