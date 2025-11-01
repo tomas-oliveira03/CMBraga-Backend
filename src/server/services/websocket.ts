@@ -111,8 +111,12 @@ class WebSocketManager {
     addUserToChatRoom(roomId: string, userId: string): void {
         const userIds = this.chatRooms.get(roomId);
         if (userIds) {
-            userIds.push(userId);
-            logger.websocket(`Added user ${userId} to chat room ${roomId}`);
+            if (!userIds.includes(userId)) {
+                userIds.push(userId);
+                logger.websocket(`Added user ${userId} to chat room ${roomId}`);
+            } else {
+                logger.websocket(`User ${userId} already in chat room ${roomId}`);
+            }
         } else {
             logger.websocket(`Chat room ${roomId} not found`);
         }
