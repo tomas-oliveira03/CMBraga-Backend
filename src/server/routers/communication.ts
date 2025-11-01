@@ -3,7 +3,7 @@ import { AppDataSource } from "@/db";
 import { CommunicationSchema, MessageSchema } from "../schemas/communication";
 import { z } from "zod";
 import { webSocketManager } from "../services/websocket";
-import { authenticate } from "../middleware/auth";
+import { authenticate, authorize } from "@/server/middleware/auth";
 import { NotificationType } from "@/helpers/types";
 
 import { Message } from "@/db/entities/Message";
@@ -12,22 +12,21 @@ import { UserChat } from "@/db/entities/UserChat";
 import { Chat } from "@/db/entities/Chat";
 import { TypeOfChat } from "@/helpers/types";
 
-import { checkIfChatAlreadyExists, checkIfUserInChat, checkIfUserExists, checkIfChatExists, getMessagesFromChat, getChat } from "../services/comms";
+import { checkIfChatAlreadyExists, checkIfUserInChat, checkIfUserExists, checkIfChatExists, getMessagesFromChat, getChat, checkIfEmailsExist } from "../services/comms";
 import { webSocketEvents } from "../services/websocket-events";
 import informationHash from "@/lib/information-hash";
-
 const router = express.Router();
-
-// TODO: Add access control not based in user passed in the request, but authenticated user
 
 /**
  * @swagger
  * /communication:
  *   post:
  *     summary: Create a new communication
- *     description: Creates a new communication conversation with an empty messages array.
+ *     description: Creates a new communication conversation with an empty messages array. The authenticated user is automatically added as a member; do not include the authenticated user's email in the members list.
  *     tags:
  *       - Communication
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -40,24 +39,18 @@ const router = express.Router();
  *               members:
  *                 type: array
  *                 items:
- *                   type: object
- *                   properties:
- *                     email:
- *                       type: string
- *                       example: "user@example.com"
- *                     name:
- *                       type: string
- *                       example: "John Doe"
+ *                   type: string
+ *                   format: email
+ *                   example: "user@example.com"
+ *                 description: Array of member email addresses (exclude the authenticated user's email).
  *               chatName:
  *                 type: string
  *                 example: "Project Team"
  *                 description: The name of the chat (required for group chats).
  *           example:
  *             members:
- *               - email: "user1@example.com"
- *                 name: "John Doe"
- *               - email: "user2@example.com"
- *                 name: "Jane Doe"
+ *               - "user1@example.com"
+ *               - "user2@example.com"
  *             chatName: "Project Team"
  *     responses:
  *       201:
@@ -69,38 +62,60 @@ const router = express.Router();
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "Conversation created successfully"
- *                 conversationId:
+ *                 chatId:
  *                   type: string
- *                   example: "conversation-id"
+ *                   format: uuid
  *                 chatType:
  *                   type: string
- *                   example: "GROUP_CHAT"
+ *                   enum: [group_chat, individual_chat, general_chat]
+ *             example:
+ *               message: "Conversation created successfully"
+ *               chatId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *               chatType: "group_chat"
  *       400:
  *         description: Validation error or conversation already exists.
+ *       401:
+ *         description: Authentication required.
  *       500:
  *         description: Internal server error.
  */
-router.post("/", async (req: Request, res: Response) => {
+router.post("/", authenticate, async (req: Request, res: Response) => {
     try {
+        if (!req.user || !req.user.email) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+        const userEmail = req.user.email;
+
+        // parse with new schema: members is an array of email strings
         const parsed = CommunicationSchema.parse(req.body);
 
-        // Check if there is at least 2 members
-        if (parsed.members.length < 2) {
-            return res.status(400).json({ message: "At least two members are required to create a conversation" });
+        // sanitize members: remove any occurrence of the authenticated user's email and deduplicate
+        const rawMembers: string[] = Array.isArray(parsed.members) ? parsed.members : [];
+        const filtered = rawMembers.filter(m => typeof m === "string" && m.trim().length > 0 && m !== userEmail);
+        const uniqueMembers = Array.from(new Set(filtered));
+
+        if (uniqueMembers.length < 1) {
+            return res.status(400).json({ message: "At least one member (other than the authenticated user) is required to create a conversation" });
         }
 
-        // Ensure chatName is provided for group chats
-        if (parsed.members.length > 2 && !parsed.chatName) {
+        // determine total members including the authenticated user
+        const members_emails = [...uniqueMembers, userEmail];
+        const num_members = members_emails.length;
+
+        // group chats (more than 2 people) require a chatName
+        if (num_members > 2 && !parsed.chatName) {
             return res.status(400).json({ message: "A chat name must be provided for group chats" });
         }
 
-        const exists = await checkIfChatAlreadyExists(parsed.members.map(m => m.email));
+        const allExist = await checkIfEmailsExist(members_emails);
+        if (!allExist) {
+            return res.status(400).json({ message: "One or more specified users do not exist" });
+        }
+
+        const exists = await checkIfChatAlreadyExists(members_emails);
         if (exists !== null) {
             return res.status(400).json({ message: "Conversation already exists", chatId: exists.id });
         }
-
-        const num_members = parsed.members.length;
 
         const newChat = {
             chatType: num_members > 2 ? TypeOfChat.GROUP_CHAT : TypeOfChat.INDIVIDUAL_CHAT,
@@ -110,19 +125,18 @@ router.post("/", async (req: Request, res: Response) => {
         };
 
         let conversationId: string | undefined;
-
         await AppDataSource.transaction(async tx => {
 
             const chat = await tx.getRepository(Chat).insert(newChat);
             conversationId = chat.identifiers[0]?.id
 
-            const userChatEntries = parsed.members.map(member => ({
-                userId: member.email,
+            const userChatEntries = members_emails.map(member => ({
+                userId: member,
                 chatId: conversationId,
             }));
 
             // Create new chat room in WebSocket manager
-            webSocketEvents.addNewChatRoom(conversationId!, parsed.members.map(m => m.email));
+            webSocketEvents.addNewChatRoom(conversationId!, members_emails);
 
             await tx.getRepository(UserChat).insert(userChatEntries);
         });
@@ -141,17 +155,19 @@ router.post("/", async (req: Request, res: Response) => {
  * @swagger
  * /communication/messages/{conversationId}:
  *   post:
- *     summary: Add a message to a conversation
- *     description: Adds a new message to an existing communication conversation.
+ *     summary: Add a message to a conversation (authenticated user)
+ *     description: Adds a new message to an existing communication conversation. The sender is the authenticated user; do not provide senderId in the request body.
  *     tags:
  *       - Communication
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: conversationId
  *         required: true
  *         schema:
  *           type: string
- *           example: "conversation-id"
+ *           format: uuid
  *         description: The ID of the conversation.
  *     requestBody:
  *       required: true
@@ -160,29 +176,20 @@ router.post("/", async (req: Request, res: Response) => {
  *           schema:
  *             type: object
  *             required:
- *               - senderId
- *               - senderName
  *               - content
  *             properties:
- *               senderId:
- *                 type: string
- *                 example: "user@example.com"
- *                 description: The user's email used as identifier.
- *               senderName:
- *                 type: string
- *                 example: "John Doe"
  *               content:
  *                 type: string
  *                 example: "Hello, how are you?"
  *           example:
- *             senderId: "user@example.com"
- *             senderName: "John Doe"
  *             content: "Hello, how are you?"
  *     responses:
  *       201:
  *         description: Message sent successfully.
  *       400:
- *         description: Validation error or missing conversationId.
+ *         description: Validation error, missing conversationId, or sender does not exist.
+ *       401:
+ *         description: Authentication required.
  *       403:
  *         description: Sender is not a member of the conversation.
  *       404:
@@ -190,51 +197,51 @@ router.post("/", async (req: Request, res: Response) => {
  *       500:
  *         description: Internal server error.
  */
-router.post("/messages/:conversationId", async (req: Request, res: Response) => {
+router.post("/messages/:conversationId", authenticate, async (req: Request, res: Response) => {
     try {
+        if (!req.user || !req.user.email) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+
+        const senderId = req.user.email;
         const { conversationId } = req.params;
 
         if (!conversationId) {
             return res.status(400).json({ message: "conversationId is required" });
         }
 
-        // Validate request body with MessageSchema
         const parsed = MessageSchema.parse(req.body);
-        const sender_id = parsed.senderId;
+        const sender_id = senderId;
 
-        // Check if user exists
         const userExists = await checkIfUserExists(sender_id);
         if (!userExists) {
             return res.status(400).json({ message: "Sender does not exist" });
         }
 
-        // Check if conversation exists
         const chatExists = await getChat(conversationId)
         if (!chatExists) {
             return res.status(404).json({ message: "Conversation not found" });
         }
 
-        // Check if sender is part of the chat
         const isUserInChat = await checkIfUserInChat(sender_id, conversationId);
         if (!isUserInChat) {
             return res.status(403).json({ message: "Sender is not a member of the conversation" });
         }
 
-        // Create a new message
+        const user = await AppDataSource.getRepository(User).findOne({ where: { id: sender_id } });
+        const senderName = user ? user.name : "Unknown";
+
         const newMessage = {
             content: informationHash.encrypt(parsed.content),
             timestamp: new Date(),
             chatId: conversationId,
-            senderId: sender_id,
-            senderName: parsed.senderName,
+            senderId: sender_id
         };
 
         await AppDataSource.getRepository(Message).insert(newMessage);
 
-        // Send WebSocket notification to room members
         webSocketEvents.sendMessageToChatRoom(conversationId, chatExists.chatType, chatExists.chatName, sender_id, parsed.content);
         
-
         return res.status(201).json({ message: "Message sent successfully" });
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
@@ -249,6 +256,8 @@ router.post("/messages/:conversationId", async (req: Request, res: Response) => 
  *     description: Retrieves encrypted messages from a conversation with pagination. On first page (jump=0), also returns chat members and chat name.
  *     tags:
  *       - Communication
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: conversationId
@@ -277,133 +286,68 @@ router.post("/messages/:conversationId", async (req: Request, res: Response) => 
  *               properties:
  *                 messages:
  *                   type: array
- *                   description: Array of messages in the conversation (decrypted content)
  *                   items:
  *                     type: object
  *                     properties:
  *                       content:
  *                         type: string
- *                         example: "Hello, how are you?"
- *                         description: The decrypted message content
+ *                         description: Decrypted message content
  *                       senderName:
  *                         type: string
- *                         example: "John Doe"
- *                         description: Name of the message sender
  *                       timestamp:
  *                         type: string
  *                         format: date-time
- *                         example: "2023-10-01T12:00:00.000Z"
- *                         description: When the message was sent (ISO 8601 format)
  *                 members:
  *                   type: array
- *                   description: Chat members information (only returned when jump=0)
+ *                   nullable: true
  *                   items:
  *                     type: object
  *                     properties:
  *                       name:
  *                         type: string
- *                         example: "Jane Smith"
- *                         description: Member's full name
  *                       email:
  *                         type: string
  *                         format: email
- *                         example: "jane.smith@example.com"
- *                         description: Member's email address (user ID)
  *                       profilePictureURL:
  *                         type: string
- *                         format: uri
- *                         example: "https://storage.example.com/profiles/user-123.jpg"
- *                         description: URL to member's profile picture
  *                 chatName:
  *                   type: string
  *                   nullable: true
- *                   example: "Project Team"
- *                   description: Name of the chat (only for group chats, null for individual chats, returned when jump=0)
- *             examples:
- *               firstPageGroupChat:
- *                 summary: First page of a group chat (jump=0)
- *                 value:
- *                   messages:
- *                     - content: "Let's schedule a meeting for tomorrow"
- *                       senderName: "John Doe"
- *                       timestamp: "2023-10-01T14:30:00.000Z"
- *                     - content: "Great idea! I'm available after 2pm"
- *                       senderName: "Jane Smith"
- *                       timestamp: "2023-10-01T14:25:00.000Z"
- *                     - content: "Hello team!"
- *                       senderName: "Bob Johnson"
- *                       timestamp: "2023-10-01T12:00:00.000Z"
- *                   members:
- *                     - name: "Jane Smith"
- *                       email: "jane.smith@example.com"
- *                       profilePictureURL: "https://storage.example.com/profiles/jane.jpg"
- *                     - name: "Bob Johnson"
- *                       email: "bob.johnson@example.com"
- *                       profilePictureURL: "https://storage.example.com/profiles/bob.jpg"
- *                   chatName: "Project Team"
- *               firstPageIndividualChat:
- *                 summary: First page of an individual chat (jump=0)
- *                 value:
- *                   messages:
- *                     - content: "See you tomorrow!"
- *                       senderName: "Alice Brown"
- *                       timestamp: "2023-10-01T16:45:00.000Z"
- *                     - content: "Thanks for the help!"
- *                       senderName: "John Doe"
- *                       timestamp: "2023-10-01T16:40:00.000Z"
- *                   members:
- *                     - name: "Alice Brown"
- *                       email: "alice.brown@example.com"
- *                       profilePictureURL: "https://storage.example.com/profiles/alice.jpg"
- *                   chatName: null
- *               subsequentPage:
- *                 summary: Subsequent page (jump=1 or higher)
- *                 value:
- *                   messages:
- *                     - content: "Good morning everyone"
- *                       senderName: "Bob Johnson"
- *                       timestamp: "2023-09-30T09:15:00.000Z"
- *                     - content: "Have a great weekend!"
- *                       senderName: "Jane Smith"
- *                       timestamp: "2023-09-29T17:30:00.000Z"
  *       400:
  *         description: Missing or invalid conversationId parameter
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Missing conversationId parameter"
+ *       401:
+ *         description: Authentication required
+ *       403:
+ *         description: Forbidden - user not a member
  *       404:
  *         description: Conversation not found or has no messages
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Communication not found"
  *       500:
  *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Failed to retrieve messages from chat"
  */
-router.get("/:conversationId", async (req: Request, res: Response) => {
+router.get("/chat/:conversationId", authenticate, async (req: Request, res: Response) => {
     try {
+        if (!req.user || !req.user.email) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+
+        const senderId = req.user.email;
         const { conversationId } = req.params;
-        const jump = parseInt(req.query.jump as string) || 0;
+
         if (!conversationId) {
             return res.status(400).json({ message: "Missing conversationId parameter" });
         }
+
+        const validation = z.string().uuid().safeParse(conversationId);
+        if (!validation.success) {
+            return res.status(400).json({ message: "Invalid conversationId: must be a valid UUID" });
+        }
+
+        const isInChat = await checkIfUserInChat(senderId, conversationId);
+        if (!isInChat) {
+            return res.status(403).json({ message: "Forbidden: You are not a member of this conversation" });
+        }
+
+        const jump = parseInt(req.query.jump as string) || 0;
         const chatData = await getMessagesFromChat(conversationId, jump);
 
         if (!chatData.messages || chatData.messages.length === 0) {
@@ -422,27 +366,23 @@ router.get("/:conversationId", async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /communication/chats/{userId}:
+ * /communication/my-chats:
  *   get:
- *     summary: Get chats for a user
- *     description: Retrieves a paginated list of chats for a specific user (userId is the user's email), sorted by the most recent message.
+ *     summary: Get chats for the authenticated user
+ *     description: Retrieves a paginated list of chats for the authenticated user, sorted by the most recent message. Uses the authenticated user's email as the identifier.
  *     tags:
  *       - Communication
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
- *       - in: path
- *         name: userId
- *         required: true
- *         schema:
- *           type: string
- *           example: "user@example.com"
- *         description: The email of the user.
  *       - in: query
  *         name: page
  *         required: false
  *         schema:
  *           type: integer
+ *           default: 1
  *           example: 1
- *         description: The page number for pagination.
+ *         description: The page number for pagination (1-based). Default is 1.
  *     responses:
  *       200:
  *         description: Chats retrieved successfully.
@@ -458,29 +398,49 @@ router.get("/:conversationId", async (req: Request, res: Response) => {
  *                     properties:
  *                       chatId:
  *                         type: string
- *                         example: "chat-id"
+ *                       chatType:
+ *                         type: string
+ *                       chatName:
+ *                         type: string
+ *                         nullable: true
  *                       messageContent:
  *                         type: string
- *                         example: "Hello, how are you?"
- *                       sender:
+ *                         nullable: true
+ *                       senderName:
  *                         type: string
- *                         example: "John Doe"
+ *                         nullable: true
  *                       timestamp:
  *                         type: string
  *                         format: date-time
- *                         example: "2023-10-01T12:00:00Z"
+ *                         nullable: true
+ *                       members:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             name:
+ *                               type: string
+ *                             email:
+ *                               type: string
+ *                             profilePictureURL:
+ *                               type: string
  *                 page:
  *                   type: integer
  *                   example: 1
+ *       401:
+ *         description: Unauthorized - authentication required.
  *       404:
  *         description: User not found.
  *       500:
  *         description: Internal server error.
  */
-router.get("/chats/:userId", async (req: Request, res: Response) => {
+router.get("/my-chats", authenticate, async (req: Request, res: Response) => {
     try {
-        const { userId } = req.params;
-        // Safe parse to allow 0 as a valid page value
+        if (!req.user || !req.user.email) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+
+        const userId = req.user.email;
         const rawPage = req.query.page;
         let page = 1;
         if (rawPage !== undefined) {
@@ -506,6 +466,20 @@ router.get("/chats/:userId", async (req: Request, res: Response) => {
         const sortedChats = await Promise.all(
             chats.map(async chat => {
                 const mostRecentMessage = chat.messages?.[0];
+
+                // decrypt message content if present
+                const messageContent = mostRecentMessage ? informationHash.decrypt(mostRecentMessage.content) : null;
+
+                // fetch sender name if senderId exists
+                let senderName: string | null = null;
+                if (mostRecentMessage?.senderId) {
+                    const senderUser = await AppDataSource.getRepository(User).findOne({
+                        where: { id: mostRecentMessage.senderId },
+                        select: { name: true }
+                    });
+                    senderName = senderUser ? senderUser.name : null;
+                }
+
                 const members = await AppDataSource.getRepository(UserChat)
                     .createQueryBuilder("userChat")
                     .innerJoinAndSelect("userChat.user", "user")
@@ -523,8 +497,8 @@ router.get("/chats/:userId", async (req: Request, res: Response) => {
                     chatId: chat.id,
                     chatType: chat.chatType,
                     chatName: chat.chatName,
-                    messageContent: mostRecentMessage?.content || null,
-                    sender: mostRecentMessage?.senderName || null,
+                    messageContent: messageContent,
+                    senderName: senderName,
                     timestamp: mostRecentMessage?.timestamp || null,
                     members: memberDetails,
                 };

@@ -6,9 +6,23 @@ import { Chat } from "@/db/entities/Chat";
 import { TypeOfChat, UserRole } from "@/helpers/types";
 import informationHash from "@/lib/information-hash";
 import { webSocketEvents } from "./websocket-events";
+import { In } from "typeorm";
 
 const MESSAGES_PER_PAGE = 20;
 const USERS_PER_PAGE = 10;
+
+export async function checkIfEmailsExist(emails: string[]): Promise<boolean> {
+    try {
+        const users = await AppDataSource.getRepository(User)
+            .createQueryBuilder("user")
+            .where("user.id IN (:...emails)", { emails })
+            .getMany();
+        return users.length === emails.length;
+    } catch (error) {
+        console.error("Error checking if emails exist:", error);
+        throw new Error("Failed to check if emails exist");
+    }
+}
 
 export async function checkIfChatAlreadyExists(usersIDs: string[]): Promise<Chat | null> {
     try {
@@ -86,7 +100,7 @@ export async function getChat(chatId: string): Promise<Chat | null> {
     }
 }
 
-export async function getMessagesFromChat(chatId: string, page: number): Promise<{ messages: Partial<Message>[], members?: { name: string, email: string, profilePictureURL: string }[], chatName?: string }> {
+export async function getMessagesFromChat(chatId: string, page: number): Promise<{ messages: { informationHash: string, senderName: string | null, timestamp: Date }[], members?: { name: string, email: string, profilePictureURL: string }[], chatName?: string }> {
     try {
         const query = AppDataSource.getRepository(Message)
             .createQueryBuilder("message")
@@ -101,11 +115,21 @@ export async function getMessagesFromChat(chatId: string, page: number): Promise
 
         const messages = await query.getMany();
 
-        // Map messages to exclude senderId, chatId, and id
-        const mappedMessages = messages.map(({ content, timestamp, senderName }) => ({
+        // Fetch sender names in bulk and map them by id
+        const senderIds = Array.from(new Set(messages.map(m => m.senderId).filter(Boolean)));
+        let userMap = new Map<string, User>();
+        if (senderIds.length > 0) {
+            const users = await AppDataSource.getRepository(User).find({
+                where: { id: In(senderIds) }
+            });
+            userMap = new Map(users.map(u => [u.id, u]));
+        }
+
+        // Map messages to include decrypted content and senderName
+        const mappedMessages = messages.map(({ content, timestamp, senderId }) => ({
             informationHash: informationHash.decrypt(content),
-            timestamp,
-            senderName,
+            senderName: userMap.get(senderId ?? "")?.name ?? null,
+            timestamp
         }));
 
         if (page === 0) {
