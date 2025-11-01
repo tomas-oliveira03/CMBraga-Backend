@@ -9,6 +9,123 @@ import { In } from "typeorm";
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * /activity-session/instructor/all/{id}:
+ *   get:
+ *     summary: Get all instructors with assignment status for an activity session
+ *     description: Returns a list of all instructors in the system with a flag indicating whether each instructor is assigned to the specified activity session. Useful for displaying instructor selection UI.
+ *     tags:
+ *       - Activity Session - Instructors
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *           example: "c56ad528-3522-4557-8b34-a787a50900b7"
+ *         description: Activity Session ID (UUID)
+ *     responses:
+ *       200:
+ *         description: List of all instructors with assignment status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   instructorId:
+ *                     type: string
+ *                     format: uuid
+ *                     example: "1bee5237-02ea-4f5c-83f3-bfe6e5a19756"
+ *                     description: Unique identifier of the instructor
+ *                   instructorName:
+ *                     type: string
+ *                     example: "João Silva"
+ *                     description: Full name of the instructor
+ *                   profilePictureURL:
+ *                     type: string
+ *                     format: uri
+ *                     example: "https://storage.example.com/profiles/instructor-123.jpg"
+ *                     description: URL to the instructor's profile picture
+ *                   isAssigned:
+ *                     type: boolean
+ *                     example: true
+ *                     description: True if the instructor is already assigned to this activity session, false otherwise
+ *             examples:
+ *               mixedAssignments:
+ *                 summary: Mix of assigned and unassigned instructors
+ *                 value:
+ *                   - instructorId: "1bee5237-02ea-4f5c-83f3-bfe6e5a19756"
+ *                     instructorName: "João Silva"
+ *                     profilePictureURL: "https://storage.example.com/profiles/joao.jpg"
+ *                     isAssigned: true
+ *                   - instructorId: "2abc1234-12ab-34cd-56ef-123456789012"
+ *                     instructorName: "Maria Santos"
+ *                     profilePictureURL: "https://storage.example.com/profiles/maria.jpg"
+ *                     isAssigned: true
+ *                   - instructorId: "3def5678-90gh-12ij-34kl-567890123456"
+ *                     instructorName: "Pedro Costa"
+ *                     profilePictureURL: "https://storage.example.com/profiles/pedro.jpg"
+ *                     isAssigned: false
+ *                   - instructorId: "4ghi7890-12jk-34lm-56no-678901234567"
+ *                     instructorName: "Ana Ferreira"
+ *                     profilePictureURL: "https://storage.example.com/profiles/ana.jpg"
+ *                     isAssigned: false
+ *               allUnassigned:
+ *                 summary: No instructors assigned yet
+ *                 value:
+ *                   - instructorId: "1bee5237-02ea-4f5c-83f3-bfe6e5a19756"
+ *                     instructorName: "João Silva"
+ *                     profilePictureURL: "https://storage.example.com/profiles/joao.jpg"
+ *                     isAssigned: false
+ *                   - instructorId: "2abc1234-12ab-34cd-56ef-123456789012"
+ *                     instructorName: "Maria Santos"
+ *                     profilePictureURL: "https://storage.example.com/profiles/maria.jpg"
+ *                     isAssigned: false
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
+router.get('/all/:id', async (req: Request, res: Response) => {
+    try {
+        const activityId = req.params.id;
+
+        const instructors = await AppDataSource.getRepository(Instructor).find();
+
+        const instructorActivitySession = await AppDataSource.getRepository(InstructorActivitySession).find({
+            where: {
+                instructorId: In(instructors.map(instructor => instructor.id)),
+                activitySessionId: activityId
+            }
+        });
+
+        const instructorsWithFlags = instructors.map(instructor => {
+                    const isAssigned = instructorActivitySession.some(
+                        ias => ias.instructorId === instructor.id
+                    );
+                    return {
+                        instructorId : instructor.id,
+                        instructorName: instructor.name,
+                        profilePictureURL: instructor.profilePictureURL,
+                        isAssigned: isAssigned                    
+                    };
+                });
+
+                return res.status(200).json(instructorsWithFlags);
+        } catch(error){
+            return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+        } 
+});
 
 /**
  * @swagger
@@ -75,7 +192,6 @@ const router = express.Router();
  *                   type: string
  *                   example: "Activity not found"
  */
-// Get all instructors from an activity
 router.get('/:id', async (req: Request, res: Response) => {
     try {
         const activityId = req.params.id;
@@ -160,7 +276,6 @@ router.get('/:id', async (req: Request, res: Response) => {
  *       500:
  *         description: Internal server error
  */
-// Assign instructors to an activity
 router.post('/:id', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const activitySessionId = req.params.id;
