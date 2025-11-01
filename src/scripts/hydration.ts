@@ -417,7 +417,6 @@ async function dbHydration() {
             timestamp: new Date(Date.now() - Math.random() * 2 * 60 * 60 * 1000), // Random time within last 2 hours
             chatId: generalChat.id,
             senderId: msg.sender,
-            senderName: user.name
           });
         }
       }
