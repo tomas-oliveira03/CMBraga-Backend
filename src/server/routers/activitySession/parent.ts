@@ -13,7 +13,7 @@ const router = express.Router();
  * /activity-session/parent:
  *   get:
  *     summary: Get all parents from a specific activity session
- *     description: Returns a list of all parent activity sessions for a specific activity session ID
+ *     description: Returns a list of all parent activity sessions for a specific activity session ID.
  *     tags:
  *       - Activity Session - Parents
  *     parameters:
@@ -26,7 +26,7 @@ const router = express.Router();
  *         description: Activity Session ID (UUID)
  *     responses:
  *       200:
- *         description: List of parent activity sessions for the specified activity
+ *         description: List of parent activity sessions for the specified activity session
  *         content:
  *           application/json:
  *             schema:
@@ -112,8 +112,8 @@ router.get('/', async (req: Request, res: Response) => {
  * @swagger
  * /activity-session/parent:
  *   post:
- *     summary: Assign a parent to an activity session
- *     description: Assigns a parent to a specific activity session. Only admins can perform this action.
+ *     summary: Assign the authenticated parent to an activity session
+ *     description: Assigns the currently authenticated parent (from the JWT) to a specific activity session. Only authenticated users with the parent role can perform this action.
  *     tags:
  *       - Activity Session - Parents
  *     security:
@@ -126,13 +126,6 @@ router.get('/', async (req: Request, res: Response) => {
  *           type: string
  *           example: "c56ad528-3522-4557-8b34-a787a50900b7"
  *         description: Activity Session ID (UUID)
- *       - in: query
- *         name: parentId
- *         required: true
- *         schema:
- *           type: string
- *           example: "1bee5237-02ea-4f5c-83f3-bfe6e5a19756"
- *         description: Parent ID (UUID)
  *     responses:
  *       201:
  *         description: Parent successfully assigned to activity session
@@ -145,7 +138,7 @@ router.get('/', async (req: Request, res: Response) => {
  *                   type: string
  *                   example: "Parent assigned to activity session successfully"
  *       400:
- *         description: Missing required parameters
+ *         description: Missing required parameter or validation error
  *         content:
  *           application/json:
  *             schema:
@@ -153,14 +146,11 @@ router.get('/', async (req: Request, res: Response) => {
  *               properties:
  *                 message:
  *                   type: string
- *               examples:
- *                 missing_params:
- *                   value:
- *                     message: "Activity Session ID and Parent ID are required"
+ *                   example: "Activity Session ID is required"
  *       401:
  *         description: Authentication required
  *       403:
- *         description: Admin role required
+ *         description: Parent role required
  *       404:
  *         description: Activity session or parent not found
  *         content:
@@ -234,8 +224,8 @@ router.post('/', authenticate, authorize(UserRole.PARENT), async (req: Request, 
  * @swagger
  * /activity-session/parent:
  *   delete:
- *     summary: Remove a parent from an activity session
- *     description: Removes a parent from a specific activity session. Only admins can perform this action.
+ *     summary: Remove the authenticated parent from an activity session
+ *     description: Removes the currently authenticated parent (from the JWT) from a specific activity session. Only authenticated users with the parent role can perform this action.
  *     tags:
  *       - Activity Session - Parents
  *     security:
@@ -248,13 +238,6 @@ router.post('/', authenticate, authorize(UserRole.PARENT), async (req: Request, 
  *           type: string
  *           example: "c56ad528-3522-4557-8b34-a787a50900b7"
  *         description: Activity Session ID (UUID)
- *       - in: query
- *         name: parentId
- *         required: true
- *         schema:
- *           type: string
- *           example: "1bee5237-02ea-4f5c-83f3-bfe6e5a19756"
- *         description: Parent ID (UUID)
  *     responses:
  *       200:
  *         description: Parent successfully removed from activity session
@@ -267,7 +250,7 @@ router.post('/', authenticate, authorize(UserRole.PARENT), async (req: Request, 
  *                   type: string
  *                   example: "Parent removed from activity session successfully"
  *       400:
- *         description: Missing required parameters or parent not assigned
+ *         description: Missing required parameter or parent not assigned
  *         content:
  *           application/json:
  *             schema:
@@ -278,14 +261,14 @@ router.post('/', authenticate, authorize(UserRole.PARENT), async (req: Request, 
  *               examples:
  *                 missing_params:
  *                   value:
- *                     message: "Activity Session ID and Parent ID are required"
+ *                     message: "Activity Session ID is required"
  *                 not_assigned:
  *                   value:
  *                     message: "Parent is not assigned to this activity session"
  *       401:
  *         description: Authentication required
  *       403:
- *         description: Admin role required
+ *         description: Parent role required
  *       404:
  *         description: Activity session or parent not found
  *         content:

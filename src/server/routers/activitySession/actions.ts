@@ -16,6 +16,7 @@ import { Parent } from "@/db/entities/Parent";
 import { ParentActivitySession } from "@/db/entities/ParentActivitySession";
 import { ParentStation } from "@/db/entities/ParentStation";
 import { RouteSchema } from "@/server/schemas/route";
+import { awardBadgesAfterActivity } from "@/server/services/badge";
 
 const router = express.Router();
 
@@ -306,6 +307,7 @@ router.post('/end', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Re
         })
 
         setActivityStats(activitySessionId)
+        await awardBadgesAfterActivity(activitySessionId);
 
         return res.status(200).json({ message: "Activity finished successfully" });
     } catch (error) {

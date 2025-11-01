@@ -5,6 +5,9 @@ import { ParentStat } from "./ParentStat";
 
 @Entity()
 export class ChildStat {
+    @PrimaryGeneratedColumn("uuid")
+    id!: string;
+
     @Column({ type: 'int' })
     distanceMeters!: number;
 
@@ -20,10 +23,10 @@ export class ChildStat {
     @Column({ type: 'timestamptz' })
     activityDate!: Date;
 
-    @PrimaryColumn({ type: 'varchar' })
+    @Column({ type: 'varchar' })
     activitySessionId!: string;
-    
-    @PrimaryColumn({ type: 'varchar' })
+
+    @Column({ type: 'varchar' })
     childId!: string | null;
 
     @ManyToOne(() => Child)
