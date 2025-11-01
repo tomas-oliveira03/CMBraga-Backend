@@ -1,10 +1,10 @@
 import { WebSocket } from 'ws';
 import { UserRole } from '@/helpers/types';
 import { logger } from '@/lib/logger';
-import { userConnectedToWebsocket } from './websocket-events';
 import { WebSocketMessage } from '@/helpers/websocket-types';
 import { AppDataSource } from '@/db';
 import { Chat } from '@/db/entities/Chat';
+import { webSocketEvents } from './websocket-events';
 
 class WebSocketManager {
     private connections: Map<string, WebSocket> = new Map();
@@ -37,7 +37,7 @@ class WebSocketManager {
             this.connections.delete(userId);
         });
 
-        userConnectedToWebsocket(userId);
+        webSocketEvents.userConnectedToWebsocket(userId);
     }
 
     // Send message to specific user

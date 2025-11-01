@@ -305,6 +305,7 @@ router.post('/', async (req: Request, res: Response) => {
 
     const { previousActivityId, nextActivityId } = await findLinkedActivities(route, validatedData);
 
+    let activitySessionId: string = '';
     await AppDataSource.transaction(async tx => {
 
         const activityMode = validatedData.type === ActivityType.PEDIBUS ? ActivityMode.WALK : ActivityMode.BIKE;
@@ -314,7 +315,7 @@ router.post('/', async (req: Request, res: Response) => {
             mode: activityMode,
             activityTransferId: nextActivityId // If exists forward link
         });
-        const activitySessionId = activitySession.identifiers[0]?.id;
+        activitySessionId = activitySession.identifiers[0]?.id;
 
         const stationsActivitySession = route.routeStations.map(station => ({
             stationId: station.stationId,
@@ -332,7 +333,7 @@ router.post('/', async (req: Request, res: Response) => {
         }
     });
 
-    return res.status(201).json({message: "Activity session created successfully"});
+    return res.status(201).json({ id: activitySessionId });
 
   } catch (error) {
     if (error instanceof z.ZodError) {

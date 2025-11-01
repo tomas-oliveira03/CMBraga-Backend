@@ -13,7 +13,7 @@ import { Chat } from "@/db/entities/Chat";
 import { TypeOfChat } from "@/helpers/types";
 
 import { checkIfChatAlreadyExists, checkIfUserInChat, checkIfUserExists, checkIfChatExists, getMessagesFromChat, getChat } from "../services/comms";
-import { addNewChatRoom, sendMessageToChatRoom } from "../services/websocket-events";
+import { webSocketEvents } from "../services/websocket-events";
 
 const router = express.Router();
 
@@ -121,7 +121,7 @@ router.post("/", async (req: Request, res: Response) => {
             }));
 
             // Create new chat room in WebSocket manager
-            addNewChatRoom(conversationId!, parsed.members.map(m => m.email));
+            webSocketEvents.addNewChatRoom(conversationId!, parsed.members.map(m => m.email));
 
             await tx.getRepository(UserChat).insert(userChatEntries);
         });
@@ -231,7 +231,7 @@ router.post("/messages/:conversationId", async (req: Request, res: Response) => 
         await AppDataSource.getRepository(Message).insert(newMessage);
 
         // Send WebSocket notification to room members
-        sendMessageToChatRoom(conversationId, chatExists.chatType, chatExists.chatName, sender_id, parsed.content);
+        webSocketEvents.sendMessageToChatRoom(conversationId, chatExists.chatType, chatExists.chatName, sender_id, parsed.content);
         
 
         return res.status(201).json({ message: "Message sent successfully" });

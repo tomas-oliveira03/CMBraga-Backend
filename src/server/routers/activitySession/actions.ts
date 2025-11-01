@@ -17,6 +17,8 @@ import { ParentActivitySession } from "@/db/entities/ParentActivitySession";
 import { ParentStation } from "@/db/entities/ParentStation";
 import { RouteSchema } from "@/server/schemas/route";
 import { awardBadgesAfterActivity } from "@/server/services/badge";
+import { setAllInstructorsInActivityRedis } from "@/server/services/activity";
+import { webSocketEvents } from "@/server/services/websocket-events";
 
 const router = express.Router();
 
@@ -149,6 +151,9 @@ router.post('/start', authenticate, authorize(UserRole.INSTRUCTOR), async (req: 
             weatherType: weatherData?.weatherType ?? null,
             startedById: req.user?.userId 
         });
+
+        await setAllInstructorsInActivityRedis(activitySessionId)
+        webSocketEvents.sendActivityStarted(activitySessionId, req.user!.email)
 
         return res.status(200).json(firstStation);
     } catch (error) {
@@ -307,7 +312,9 @@ router.post('/end', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Re
         })
 
         setActivityStats(activitySessionId)
-        await awardBadgesAfterActivity(activitySessionId);
+        awardBadgesAfterActivity(activitySessionId);
+        webSocketEvents.sendActivityEnded(activitySessionId, req.user!.email);
+
 
         return res.status(200).json({ message: "Activity finished successfully" });
     } catch (error) {
@@ -765,6 +772,10 @@ router.post('/station/next-stop', authenticate, authorize(UserRole.INSTRUCTOR), 
             return res.status(404).json({ message: "Activity session doesn't exist" });
         }
 
+        if (!activitySession.startedAt){
+            return res.status(404).json({ message: "Activity session hasn't started yet" });
+        }
+
         if (!(activitySession.instructorActivitySessions && activitySession.instructorActivitySessions.some(ias => ias.instructorId === req.user?.userId))) {
             return res.status(400).json({ message: "Instructor is not assigned to this activity session" });
         }
@@ -939,6 +950,10 @@ router.post('/station/arrived-at-stop', authenticate, authorize(UserRole.INSTRUC
 
         if (!activitySession){
             return res.status(404).json({ message: "Activity session doesn't exist" });
+        }
+
+        if (!activitySession.startedAt){
+            return res.status(404).json({ message: "Activity session hasn't started yet" });
         }
 
         if (!(activitySession.instructorActivitySessions && activitySession.instructorActivitySessions.some(ias => ias.instructorId === req.user?.userId))) {
@@ -1545,7 +1560,7 @@ router.post('/child/check-out', authenticate, authorize(UserRole.INSTRUCTOR), as
         })
 
         if(alreadyCheckedOut){
-            res.status(400).json({ message : "Child already checked-out"})
+            return res.status(400).json({ message : "Child already checked-out"})
         }
 
         await AppDataSource.getRepository(ChildStation).insert({
@@ -1879,7 +1894,7 @@ router.delete('/child/check-out', authenticate, authorize(UserRole.INSTRUCTOR), 
         })
 
         if(!alreadyCheckedOut){
-            res.status(400).json({ message : "Child not checked-out"})
+            return res.status(400).json({ message : "Child not checked-out"})
         }
 
         await AppDataSource.getRepository(ChildStation).delete({

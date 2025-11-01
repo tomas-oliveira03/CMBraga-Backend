@@ -1,4 +1,8 @@
+import { AppDataSource } from "@/db";
+import { Instructor } from "@/db/entities/Instructor";
+import { InstructorActivitySession } from "@/db/entities/InstructorActivitySession";
 import { ActivityMode, ChildGender, WeatherType } from "@/helpers/types";
+import redisClient from "@/lib/redis";
 import { differenceInYears } from "date-fns";
 
 const WALKING_SPEED = 0.8;          // 0.8 m/s
@@ -123,4 +127,50 @@ export function calculatePointsEarned(
     }
 
     return Math.round(endPoints);
+}
+
+
+export async function setAllInstructorsInActivityRedis(activityId: string) {
+    const instructors = await AppDataSource.getRepository(InstructorActivitySession).find({
+        where: {
+            activitySessionId: activityId
+        },
+        relations: {
+            instructor: true
+        }
+    });
+
+    const instructorsEmails = instructors.map(instructor => instructor.instructor.email);
+
+    const redisKey = `activity:${activityId}:instructors`;
+    const TWO_HOURS = 2 * 60 * 60;
+
+    await redisClient.set(redisKey, JSON.stringify(instructorsEmails), TWO_HOURS);
+}
+
+
+export async function getAllInstructorsInActivityToNotify(activityId: string, senderInstructorEmail: string): Promise<string[]> {
+    const redisKey = `activity:${activityId}:instructors`;
+    const allInstructorsRedis = await redisClient.get(redisKey);
+
+    if (allInstructorsRedis) {
+        const parsedInstructors: string[] = JSON.parse(allInstructorsRedis);
+        return parsedInstructors.filter(email => email !== senderInstructorEmail);
+    }
+
+    const allInstructorsDB = await AppDataSource.getRepository(InstructorActivitySession).find({
+        where: {
+            activitySessionId: activityId
+        },
+        relations: {
+            instructor: true
+        }
+    });
+
+    const instructorsEmails = allInstructorsDB.map(i => i.instructor.email);
+
+    const TWO_HOURS = 2 * 60 * 60;
+    await redisClient.set(redisKey, JSON.stringify(instructorsEmails), TWO_HOURS);
+
+    return instructorsEmails.filter(email => email !== senderInstructorEmail);
 }
