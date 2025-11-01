@@ -1190,10 +1190,6 @@ router.get('/station/status', authenticate, authorize(UserRole.INSTRUCTOR, UserR
             return res.status(404).json({ message: "Activity session doesn't exist" });
         }
 
-        if (!(activitySession.instructorActivitySessions && activitySession.instructorActivitySessions.some(ias => ias.instructorId === req.user?.userId))) {
-            return res.status(400).json({ message: "Instructor is not assigned to this activity session" });
-        }
-
         const allStationIdsLeft = await getAllStationsLeftIds(activitySessionId)
          if (!activitySession.startedAt){
             return res.status(203).json({ message: "Activity not started yet" });
