@@ -131,7 +131,7 @@ export async function setActivityStats(activityId: string){
                 if ( educatorsInvolvedIds.length > 0) {
                     for (const parentId of educatorsInvolvedIds) {
                         const parentStatPayload = {
-                            clientStatId: insertedId,
+                            childStatId: insertedId,
                             parentId: parentId
                         };
                         await AppDataSource.getRepository(ParentStat).insert(parentStatPayload);

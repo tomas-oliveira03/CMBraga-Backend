@@ -6,6 +6,7 @@ import { Badge } from "@/db/entities/Badge";
 import { ClientBadge } from "@/db/entities/ClientBadge";
 import { In, IsNull, Not } from "typeorm";
 import { BadgeCriteria } from "@/helpers/types";
+import { logger } from "@/lib/logger";
 
 export type Stat = {
     childId?: string;
@@ -69,9 +70,8 @@ export async function awardBadgesAfterActivity(activityId: string) {
             });
             const enrichedParentStats: ParentStat[] = [];
             for (const ps of parentDBStats) {
-                const childStatId = (ps as any).childStatId;
+                const childStatId = ps.childStatId;
                 if (!childStatId) {
-                    console.warn("ParentStat has no childStatId, skipping", ps);
                     continue;
                 }
                 const childStat = await AppDataSource.getRepository(ChildStat).findOne({
@@ -79,16 +79,15 @@ export async function awardBadgesAfterActivity(activityId: string) {
                     relations: { activitySession: true }
                 });
                 if (!childStat) {
-                    console.warn(`ChildStat ${childStatId} not found for ParentStat, skipping`, ps);
                     continue;
                 }
-                (ps as any).childStat = childStat;
+                ps.childStat = childStat;
                 enrichedParentStats.push(ps);
             }
 
             const activitySessionMap: Map<string, ParentStat[]> = new Map();
             for (const ps of enrichedParentStats) {
-                const activitySessionId = (ps as any).childStat.activitySessionId;
+                const activitySessionId = ps.childStat.activitySessionId;
                 if (!activitySessionMap.has(activitySessionId)) {
                     activitySessionMap.set(activitySessionId, []);
                 }
@@ -99,7 +98,7 @@ export async function awardBadgesAfterActivity(activityId: string) {
             for (const [activitySessionId, pStats] of activitySessionMap) {
                 let bestChildStat: ChildStat | null = null;
                 for (const ps of pStats) {
-                    const cs = (ps as any).childStat;
+                    const cs = ps.childStat;
                     if (!cs) continue;
                     if (bestChildStat == null || (cs.pointsEarned ?? 0) > (bestChildStat.pointsEarned ?? 0)) {
                         bestChildStat = cs;
@@ -125,8 +124,6 @@ export async function awardBadgesAfterActivity(activityId: string) {
                 totalPointsEarned: Array.from(activityToChildStat.values()).reduce((sum, cs) => sum + (cs.pointsEarned || 0), 0),
             };
 
-            console.log(`Parent ${pid} aggregated stats:`, stat);
-
             parentsStats.push(stat);
         }
 
@@ -136,8 +133,7 @@ export async function awardBadgesAfterActivity(activityId: string) {
 
     }
     catch (error) {
-        console.error("Error awarding badges:", error);
-        throw error;
+        logger.error("Error awarding badges:", error);
     }
 }
 

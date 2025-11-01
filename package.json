@@ -22,6 +22,7 @@
     "mig:show": "npm run typeorm -- migration:show",
     "ts": "tsx -r tsconfig-paths/register src/services/inspect/inspect.ts",
     "hydration": "npx ts-node -r tsconfig-paths/register src/scripts/hydration.ts",
+    "old:hydration": "npx ts-node -r tsconfig-paths/register src/scripts/oldhydration.ts",
     "test:ws": "tsx src/tests/websocket-tester.ts",
     "test:ws:mock": "tsx src/tests/websocket-mock-events.ts"
   },

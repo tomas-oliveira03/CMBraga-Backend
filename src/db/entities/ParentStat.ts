@@ -1,13 +1,13 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn, OneToOne, JoinColumn } from "typeorm";
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn, OneToOne, JoinColumn, PrimaryColumn } from "typeorm";
 import { Parent } from "./Parent";
 import { ChildStat } from "./ChildStat";
 
 @Entity()
 export class ParentStat {
-    @PrimaryGeneratedColumn("uuid")
+    @PrimaryColumn("uuid")
     parentId!: string;
 
-    @PrimaryGeneratedColumn("uuid")
+    @PrimaryColumn("uuid")
     childStatId!: string;
 
     @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
