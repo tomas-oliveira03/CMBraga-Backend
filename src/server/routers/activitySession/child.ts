@@ -401,6 +401,149 @@ router.get('/available-stations/:id', async (req: Request, res: Response) => {
 });
 
 
+/**
+ * @swagger
+ * /activity-session/child/all/{id}:
+ *   get:
+ *     summary: Get all parent's children with registration status for an activity session
+ *     description: Returns a list of all children belonging to the authenticated parent with a flag indicating whether each child is registered for the specified activity session. Useful for displaying child selection UI when registering for activities.
+ *     tags:
+ *       - Activity Session - Children
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *           example: "c56ad528-3522-4557-8b34-a787a50900b7"
+ *         description: Activity Session ID (UUID)
+ *     responses:
+ *       200:
+ *         description: List of parent's children with registration status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   childId:
+ *                     type: string
+ *                     format: uuid
+ *                     example: "1bee5237-02ea-4f5c-83f3-bfe6e5a19756"
+ *                     description: Unique identifier of the child
+ *                   childName:
+ *                     type: string
+ *                     example: "Ana Costa"
+ *                     description: Full name of the child
+ *                   profilePictureURL:
+ *                     type: string
+ *                     format: uri
+ *                     example: "https://storage.example.com/profiles/child-123.jpg"
+ *                     description: URL to the child's profile picture
+ *                   isRegistered:
+ *                     type: boolean
+ *                     example: true
+ *                     description: True if the child is already registered for this activity session, false otherwise
+ *             examples:
+ *               mixedRegistrations:
+ *                 summary: Mix of registered and unregistered children
+ *                 value:
+ *                   - childId: "1bee5237-02ea-4f5c-83f3-bfe6e5a19756"
+ *                     childName: "Ana Costa"
+ *                     profilePictureURL: "https://storage.example.com/profiles/ana.jpg"
+ *                     isRegistered: true
+ *                   - childId: "2abc1234-12ab-34cd-56ef-123456789012"
+ *                     childName: "Carlos Pereira"
+ *                     profilePictureURL: "https://storage.example.com/profiles/carlos.jpg"
+ *                     isRegistered: true
+ *                   - childId: "3def5678-90gh-12ij-34kl-567890123456"
+ *                     childName: "Maria Silva"
+ *                     profilePictureURL: "https://storage.example.com/profiles/maria.jpg"
+ *                     isRegistered: false
+ *               allUnregistered:
+ *                 summary: No children registered yet
+ *                 value:
+ *                   - childId: "1bee5237-02ea-4f5c-83f3-bfe6e5a19756"
+ *                     childName: "Ana Costa"
+ *                     profilePictureURL: "https://storage.example.com/profiles/ana.jpg"
+ *                     isRegistered: false
+ *                   - childId: "2abc1234-12ab-34cd-56ef-123456789012"
+ *                     childName: "Carlos Pereira"
+ *                     profilePictureURL: "https://storage.example.com/profiles/carlos.jpg"
+ *                     isRegistered: false
+ *               emptyList:
+ *                 summary: Parent has no children
+ *                 value: []
+ *       401:
+ *         description: Authentication required - must be logged in as a parent
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Access token required"
+ *       403:
+ *         description: Forbidden - only parents can access this endpoint
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Access denied. Required role: parent"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
+router.get('/all/:id', authenticate, authorize(UserRole.PARENT), async (req: Request, res: Response) => {
+    try{
+        const activityId = req.params.id;
+
+        const allChildren = await AppDataSource.getRepository(ParentChild).find({
+            where:{
+                parentId: req.user?.userId
+            },
+            relations:{
+                child: true
+            }
+        })
+
+        const activitySession = await AppDataSource.getRepository(ChildActivitySession).find({
+            where:{
+                activitySessionId: activityId,
+                childId: In(allChildren.map(ac => ac.childId))
+            }
+        })
+
+        const childrenWithFlags = allChildren.map(ac => {
+            const isRegistered = activitySession.some(cas => cas.childId === ac.childId);
+            return {
+                childId: ac.childId,
+                childName: ac.child.name,
+                profilePictureURL: ac.child.profilePictureURL,
+                isRegistered: isRegistered
+            };
+        });
+
+        return res.status(200).json(childrenWithFlags);
+    } catch(error){
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }                   
+});
 
 /**
  * @swagger
