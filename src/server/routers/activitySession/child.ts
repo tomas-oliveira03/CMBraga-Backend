@@ -265,6 +265,14 @@ router.get('/available-stations/:id', async (req: Request, res: Response) => {
             relations: {
                 stationActivitySessions: {
                     station: true
+                },
+                route: true,
+                activityTransfer: {
+                    stationActivitySessions: {
+                        station: true
+                    },
+                    route: true,
+                    activityTransfer: true
                 }
             }
         });
@@ -279,29 +287,120 @@ router.get('/available-stations/:id', async (req: Request, res: Response) => {
             return res.status(404).json({ message: "Child not found" });
         }
 
-        const dropOffStationActivity = activitySession.stationActivitySessions.find(
+        if (!activitySession.activityTransferId) {
+            const dropOffStationActivity = activitySession.stationActivitySessions.find(
+                sas => sas.stationId === child.dropOffStationId
+            );
+            if (!dropOffStationActivity) {
+                return res.status(400).json({ message: "Child's drop-off station not found in this activity session" });
+            }
+            
+            const stationsWithAvailability = activitySession.stationActivitySessions
+                .sort((a, b) => a.stopNumber - b.stopNumber)
+                .map(sas => ({
+                    stopNumber: sas.stopNumber,
+                    isAvailable: sas.stopNumber < dropOffStationActivity.stopNumber,
+                    id: sas.station.id,
+                    name: sas.station.name,
+                    type: sas.station.type,
+                    isTransferStation: false
+                }));
+            
+            return res.status(200).json(stationsWithAvailability);
+        }
+
+        let currentSession = activitySession;
+        const result: any[] = [];
+
+        const routeConnector = await AppDataSource.getRepository(RouteConnection).findOne({
+            where: {
+                fromRouteId: currentSession.routeId,
+                toRouteId: currentSession.activityTransfer!.routeId
+            }
+        });
+
+        if (!routeConnector) {
+            return res.status(400).json({ 
+                message: `Route connection not found from ${currentSession.routeId} to ${currentSession.activityTransfer!.routeId}` 
+            });
+        }
+
+        const transferStationActivity = currentSession.stationActivitySessions.find(
+            sas => sas.stationId === routeConnector.stationId
+        );
+
+        if (!transferStationActivity) {
+            return res.status(400).json({ 
+                message: `Transfer station not found in route ${currentSession.route.name}` 
+            });
+        }
+
+        const stationsWithAvailability = currentSession.stationActivitySessions
+            .sort((a, b) => a.stopNumber - b.stopNumber)
+            .map(sas => ({
+                stopNumber: sas.stopNumber,
+                isAvailable: sas.stopNumber <= transferStationActivity.stopNumber,
+                id: sas.station.id,
+                name: sas.station.name,
+                type: sas.station.type,
+                isTransferStation: sas.stationId === routeConnector.stationId
+            }));
+
+        result.push(stationsWithAvailability);
+
+        
+        const nextSession = await AppDataSource.getRepository(ActivitySession).findOne({
+                where: { id: currentSession.activityTransferId! },
+                relations: {
+                    stationActivitySessions: {
+                        station: true
+                    },
+                    route: true,
+                    activityTransfer: {
+                        stationActivitySessions: {
+                            station: true
+                        },
+                        route: true,
+                        activityTransfer: true
+                    }
+                }
+            });
+
+        if (!nextSession) {
+            return res.status(400).json({ 
+                message: `Next activity session not found: ${currentSession.activityTransferId}` 
+            });
+        }
+
+        const dropOffStationActivity = nextSession.stationActivitySessions.find(
             sas => sas.stationId === child.dropOffStationId
         );
+        
         if (!dropOffStationActivity) {
             return res.status(400).json({ message: "Child's drop-off station not found in this activity session" });
         }
 
-        const stationsWithAvailability = activitySession.stationActivitySessions
+        const finalStations = nextSession.stationActivitySessions
             .sort((a, b) => a.stopNumber - b.stopNumber)
             .map(sas => ({
                 stopNumber: sas.stopNumber,
                 isAvailable: sas.stopNumber < dropOffStationActivity.stopNumber,
                 id: sas.station.id,
                 name: sas.station.name,
-                type: sas.station.type
+                type: sas.station.type,
+                isTransferStation: false
             }));
 
-        return res.status(200).json(stationsWithAvailability);
+        result.push(finalStations);
+
+        return res.status(200).json(result);
 
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
+
+
 
 /**
  * @swagger
