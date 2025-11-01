@@ -4,6 +4,8 @@ import { User } from "@/db/entities/User";
 import { UserChat } from "@/db/entities/UserChat";
 import { Chat } from "@/db/entities/Chat";
 import { TypeOfChat, UserRole } from "@/helpers/types";
+import informationHash from "@/lib/information-hash";
+import { webSocketEvents } from "./websocket-events";
 
 const MESSAGES_PER_PAGE = 20;
 const USERS_PER_PAGE = 10;
@@ -101,7 +103,7 @@ export async function getMessagesFromChat(chatId: string, page: number): Promise
 
         // Map messages to exclude senderId, chatId, and id
         const mappedMessages = messages.map(({ content, timestamp, senderName }) => ({
-            content,
+            informationHash: informationHash.decrypt(content),
             timestamp,
             senderName,
         }));
@@ -184,39 +186,25 @@ export function normalizeUsers(users: any[]) {
     });
 }
 
-export async function getOrCreateGeneralChat(): Promise<Chat> {
+export async function getGeneralChat(): Promise<Chat> {
   try {
     
-    let generalChat = await  AppDataSource.getRepository(Chat).findOne({
+    const generalChat = await AppDataSource.getRepository(Chat).findOne({
       where: { chatType: TypeOfChat.GENERAL_CHAT },
     });
 
-    if (!generalChat) {
-      const insertResult = await  AppDataSource.getRepository(Chat).insert({
-        chatName: "Chat Geral",
-        chatType: TypeOfChat.GENERAL_CHAT,
-        destinatairePhoto: "default-photo-url",
-      });
-
-      const insertedId = insertResult.identifiers[0]?.id;
-
-      generalChat = await  AppDataSource.getRepository(Chat).findOne({
-        where: { id: insertedId },
-      });
-    }
-
     return generalChat!;
+
   } catch (error) {
-    console.error("Error getting or creating general chat", error);
-    throw new Error("Error getting or creating general chat");
+    console.error("Error getting general chat", error);
+    throw new Error("Error getting general chat");
   }
 }
 
 
 export async function addUserToGeneralChat(userId: string): Promise<void> {
     try {
-        const generalChat = await getOrCreateGeneralChat();
-
+        const generalChat = await getGeneralChat();
 
         const existingUserChat = await AppDataSource.getRepository(UserChat).findOne({
             where: {
@@ -231,7 +219,10 @@ export async function addUserToGeneralChat(userId: string): Promise<void> {
                 chatId: generalChat!.id
             });
             console.log(`User ${userId} added to general chat`);
+
+            webSocketEvents.addNewUserToChatRoom(generalChat.id, userId);
         }
+
     } catch (error) {
         console.error("Error adding user to general chat:", error);
         throw new Error("Failed to add user to general chat");

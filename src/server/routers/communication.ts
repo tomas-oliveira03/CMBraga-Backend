@@ -14,6 +14,7 @@ import { TypeOfChat } from "@/helpers/types";
 
 import { checkIfChatAlreadyExists, checkIfUserInChat, checkIfUserExists, checkIfChatExists, getMessagesFromChat, getChat } from "../services/comms";
 import { webSocketEvents } from "../services/websocket-events";
+import informationHash from "@/lib/information-hash";
 
 const router = express.Router();
 
@@ -221,7 +222,7 @@ router.post("/messages/:conversationId", async (req: Request, res: Response) => 
 
         // Create a new message
         const newMessage = {
-            content: parsed.content,
+            content: informationHash.encrypt(parsed.content),
             timestamp: new Date(),
             chatId: conversationId,
             senderId: sender_id,
@@ -244,8 +245,8 @@ router.post("/messages/:conversationId", async (req: Request, res: Response) => 
  * @swagger
  * /communication/{conversationId}:
  *   get:
- *     summary: Get a communication by ID
- *     description: Retrieves a communication conversation by its ID, including all messages.
+ *     summary: Get messages from a conversation
+ *     description: Retrieves encrypted messages from a conversation with pagination. On first page (jump=0), also returns chat members and chat name.
  *     tags:
  *       - Communication
  *     parameters:
@@ -254,18 +255,21 @@ router.post("/messages/:conversationId", async (req: Request, res: Response) => 
  *         required: true
  *         schema:
  *           type: string
- *           example: "conversation-id"
- *         description: The ID of the conversation.
+ *           format: uuid
+ *           example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *         description: The unique identifier of the conversation (chat ID)
  *       - in: query
  *         name: jump
  *         required: false
  *         schema:
  *           type: integer
- *           example: 10
- *         description: The number of messages to skip for pagination.
+ *           minimum: 0
+ *           default: 0
+ *           example: 0
+ *         description: Page number for pagination. Use 0 for first page (includes member info and chat name), 1+ for subsequent pages (messages only)
  *     responses:
  *       200:
- *         description: Communication retrieved successfully.
+ *         description: Messages retrieved successfully
  *         content:
  *           application/json:
  *             schema:
@@ -273,28 +277,125 @@ router.post("/messages/:conversationId", async (req: Request, res: Response) => 
  *               properties:
  *                 messages:
  *                   type: array
+ *                   description: Array of messages in the conversation (decrypted content)
  *                   items:
  *                     type: object
  *                     properties:
- *                       senderId:
- *                         type: string
- *                         example: "user@example.com"
- *                       senderName:
- *                         type: string
- *                         example: "John Doe"
  *                       content:
  *                         type: string
  *                         example: "Hello, how are you?"
+ *                         description: The decrypted message content
+ *                       senderName:
+ *                         type: string
+ *                         example: "John Doe"
+ *                         description: Name of the message sender
  *                       timestamp:
  *                         type: string
  *                         format: date-time
- *                         example: "2023-10-01T12:00:00Z"
+ *                         example: "2023-10-01T12:00:00.000Z"
+ *                         description: When the message was sent (ISO 8601 format)
+ *                 members:
+ *                   type: array
+ *                   description: Chat members information (only returned when jump=0)
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       name:
+ *                         type: string
+ *                         example: "Jane Smith"
+ *                         description: Member's full name
+ *                       email:
+ *                         type: string
+ *                         format: email
+ *                         example: "jane.smith@example.com"
+ *                         description: Member's email address (user ID)
+ *                       profilePictureURL:
+ *                         type: string
+ *                         format: uri
+ *                         example: "https://storage.example.com/profiles/user-123.jpg"
+ *                         description: URL to member's profile picture
+ *                 chatName:
+ *                   type: string
+ *                   nullable: true
+ *                   example: "Project Team"
+ *                   description: Name of the chat (only for group chats, null for individual chats, returned when jump=0)
+ *             examples:
+ *               firstPageGroupChat:
+ *                 summary: First page of a group chat (jump=0)
+ *                 value:
+ *                   messages:
+ *                     - content: "Let's schedule a meeting for tomorrow"
+ *                       senderName: "John Doe"
+ *                       timestamp: "2023-10-01T14:30:00.000Z"
+ *                     - content: "Great idea! I'm available after 2pm"
+ *                       senderName: "Jane Smith"
+ *                       timestamp: "2023-10-01T14:25:00.000Z"
+ *                     - content: "Hello team!"
+ *                       senderName: "Bob Johnson"
+ *                       timestamp: "2023-10-01T12:00:00.000Z"
+ *                   members:
+ *                     - name: "Jane Smith"
+ *                       email: "jane.smith@example.com"
+ *                       profilePictureURL: "https://storage.example.com/profiles/jane.jpg"
+ *                     - name: "Bob Johnson"
+ *                       email: "bob.johnson@example.com"
+ *                       profilePictureURL: "https://storage.example.com/profiles/bob.jpg"
+ *                   chatName: "Project Team"
+ *               firstPageIndividualChat:
+ *                 summary: First page of an individual chat (jump=0)
+ *                 value:
+ *                   messages:
+ *                     - content: "See you tomorrow!"
+ *                       senderName: "Alice Brown"
+ *                       timestamp: "2023-10-01T16:45:00.000Z"
+ *                     - content: "Thanks for the help!"
+ *                       senderName: "John Doe"
+ *                       timestamp: "2023-10-01T16:40:00.000Z"
+ *                   members:
+ *                     - name: "Alice Brown"
+ *                       email: "alice.brown@example.com"
+ *                       profilePictureURL: "https://storage.example.com/profiles/alice.jpg"
+ *                   chatName: null
+ *               subsequentPage:
+ *                 summary: Subsequent page (jump=1 or higher)
+ *                 value:
+ *                   messages:
+ *                     - content: "Good morning everyone"
+ *                       senderName: "Bob Johnson"
+ *                       timestamp: "2023-09-30T09:15:00.000Z"
+ *                     - content: "Have a great weekend!"
+ *                       senderName: "Jane Smith"
+ *                       timestamp: "2023-09-29T17:30:00.000Z"
  *       400:
- *         description: Missing conversationId parameter.
+ *         description: Missing or invalid conversationId parameter
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Missing conversationId parameter"
  *       404:
- *         description: Communication not found.
+ *         description: Conversation not found or has no messages
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Communication not found"
  *       500:
- *         description: Internal server error.
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Failed to retrieve messages from chat"
  */
 router.get("/:conversationId", async (req: Request, res: Response) => {
     try {

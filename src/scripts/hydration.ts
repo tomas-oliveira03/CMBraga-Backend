@@ -29,6 +29,10 @@ import { selectRandomDefaultProfilePicture, USER_DEFAULT_PROFILE_PICTURES } from
 import { checkImagesExist, uploadImageBuffer } from "@/server/services/cloud";
 import { RouteConnection } from "@/db/entities/RouteConnection";
 import redisClient from "@/lib/redis";
+import { Chat } from "@/db/entities/Chat";
+import { UserChat } from "@/db/entities/UserChat";
+import { Message } from "@/db/entities/Message";
+import { TypeOfChat } from "@/helpers/types";
 
 
 async function cloudHydration(){
@@ -122,6 +126,9 @@ async function dbHydration() {
     const routeStationRepo = dataSource.getRepository(RouteStation);
     const feedbackRepo = dataSource.getRepository(Feedback);
     const childHistoryRepo = dataSource.getRepository(ChildHistory);
+    const chatRepo = dataSource.getRepository(Chat);
+    const userChatRepo = dataSource.getRepository(UserChat);
+    const messageRepo = dataSource.getRepository(Message);
 
     console.log("Cleaning tables (dependents first)...");
     // Clear repositories in order, but ignore errors if the table doesn't exist yet
@@ -135,6 +142,9 @@ async function dbHydration() {
       feedbackRepo,
       childHistoryRepo,
       parentChildRepo,
+      messageRepo,
+      userChatRepo,
+      chatRepo,
       userRepo,
       childRepo,
       parentRepo,
@@ -367,6 +377,52 @@ async function dbHydration() {
     }
 
     console.log(`✅ Created ${hpEntities.length} health professionals, ${adminEntities.length} admins, ${pais.length} parents, ${instrutores.length} instructors`);
+
+    // Create general chat and add all users
+    console.log("Creating general chat...");
+    const generalChat = await chatRepo.save({
+      chatName: "Chat Geral",
+      chatType: TypeOfChat.GENERAL_CHAT,
+      destinatairePhoto: "default-photo-url"
+    });
+
+    const allUserEmails = [
+      ...adminEntities.map(a => a.email),
+      ...instrutores.map(i => i.email),
+      ...pais.map(p => p.email),
+      ...hpEntities.map(hp => hp.email)
+    ];
+
+    const userChatEntries = allUserEmails.map(email => ({
+      userId: email,
+      chatId: generalChat.id
+    }));
+
+    await userChatRepo.insert(userChatEntries);
+    console.log(`✅ Created general chat with ${allUserEmails.length} users`);
+
+    // Create sample messages in general chat
+    const sampleMessages = [
+      { sender: allUserEmails[0], content: "Bem-vindos ao chat geral da plataforma!" },
+      { sender: allUserEmails[1], content: "Olá a todos! 👋" },
+      { sender: allUserEmails[2], content: "Boa tarde! Prontos para as atividades?" }
+    ];
+
+    for (const msg of sampleMessages) {
+      if (msg.sender) {
+        const user = await userRepo.findOne({ where: { id: msg.sender } });
+        if (user) {
+          await messageRepo.insert({
+            content: informationHash.encrypt(msg.content),
+            timestamp: new Date(Date.now() - Math.random() * 2 * 60 * 60 * 1000), // Random time within last 2 hours
+            chatId: generalChat.id,
+            senderId: msg.sender,
+            senderName: user.name
+          });
+        }
+      }
+    }
+    console.log(`✅ Created ${sampleMessages.length} sample messages in general chat`);
 
     // Create children (20 children for variety)
     const criancas: Child[] = [];
@@ -753,8 +809,9 @@ async function dbHydration() {
     console.log(`✅ Rotas: ${allRoutes.length}`);
     console.log(`✅ Estações únicas: ${stationMap.size}`);
     console.log(`✅ Relações rota-estação: ${allRouteStations.length}`);
-    console.log(`✅ Utilizadores: ${hpEntities.length} HP, ${adminEntities.length} admins, ${pais.length} pais, ${instrutores.length} instrutores`);
+    console.log(`✅ Utilizadores: ${hpEntities.length} HP, ${adminEntities.length} admins, ${pais.length} parents, ${instrutores.length} instructors`);
     console.log(`✅ Crianças: ${criancas.length} (com ${childHistories.length} registos de histórico)`);
+    console.log(`💬 Chat geral: ${allUserEmails.length} utilizadores + ${sampleMessages.length} mensagens`);
     console.log(`\n📅 ATIVIDADES CRIADAS:`);
     console.log(`   1️⃣  Futura SEM transbordo (daqui a 2 dias) - 5 crianças registadas`);
     console.log(`   2️⃣  Futura COM transbordo (daqui a 3 dias) - 3 crianças com transbordo`);
