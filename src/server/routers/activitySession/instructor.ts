@@ -5,6 +5,7 @@ import { UserRole } from "@/helpers/types";
 import { authenticate, authorize } from "@/server/middleware/auth";
 import { Instructor } from "@/db/entities/Instructor";
 import { InstructorActivitySession } from "@/db/entities/InstructorActivitySession";
+import { In } from "typeorm";
 
 const router = express.Router();
 
@@ -111,8 +112,8 @@ router.get('/:id', async (req: Request, res: Response) => {
  * @swagger
  * /activity-session/instructor/{id}:
  *   post:
- *     summary: Assign instructor to an activity session
- *     description: Assigns an instructor to a specific activity session. Only admins can assign instructors.
+ *     summary: Assign instructors to an activity session
+ *     description: Assigns one or more instructors to a specific activity session. Only admins can assign instructors.
  *     tags:
  *       - Activity Session - Instructors
  *     security:
@@ -132,16 +133,18 @@ router.get('/:id', async (req: Request, res: Response) => {
  *           schema:
  *             type: object
  *             required:
- *               - instructorId
+ *               - instructorIds
  *             properties:
- *               instructorId:
- *                 type: string
- *                 example: "1bee5237-02ea-4f5c-83f3-bfe6e5a19756"
+ *               instructorIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 example: ["1bee5237-02ea-4f5c-83f3-bfe6e5a19756", "2abc1234-12ab-34cd-56ef-123456789012"]
  *           example:
- *             instructorId: "1bee5237-02ea-4f5c-83f3-bfe6e5a19756"
+ *             instructorIds: ["1bee5237-02ea-4f5c-83f3-bfe6e5a19756", "2abc1234-12ab-34cd-56ef-123456789012"]
  *     responses:
  *       201:
- *         description: Instructor successfully assigned to activity session
+ *         description: Instructors successfully assigned to activity session
  *         content:
  *           application/json:
  *             schema:
@@ -149,23 +152,23 @@ router.get('/:id', async (req: Request, res: Response) => {
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "Instructor assigned to activity session successfully"
+ *                   example: "Instructors assigned to activity session successfully"
  *       400:
- *         description: Instructor already assigned to this activity session
+ *         description: One or more instructors already assigned to this activity session or invalid input
  *       404:
- *         description: Activity session or instructor not found
+ *         description: Activity session not found or one or more instructors not found
  *       500:
  *         description: Internal server error
  */
-// Assign instructor to an activity
+// Assign instructors to an activity
 router.post('/:id', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const activitySessionId = req.params.id;
-        const { instructorId } = req.body;
+        const { instructorIds } = req.body;
 
-        if (!instructorId) {
+        if (!Array.isArray(instructorIds) || instructorIds.length === 0 || !instructorIds.every(id => typeof id === 'string')) {
             return res.status(400).json({ message: "Instructor ID is required" });
-        }   
+        }
         
         const activitySession = await AppDataSource.getRepository(ActivitySession).findOne({
             where: { id: activitySessionId }
@@ -174,31 +177,36 @@ router.post('/:id', authenticate, authorize(UserRole.ADMIN), async (req: Request
             return res.status(404).json({ message: "Activity session not found" });
         }
 
-        const instructor = await AppDataSource.getRepository(Instructor).findOne({
-            where: { id: instructorId }
+        const instructors = await AppDataSource.getRepository(Instructor).find({
+            where: { id: In(instructorIds) }
         });
-        if (!instructor) {
-            return res.status(404).json({ message: "Instructor not found" });
+        if (instructors.length !== instructorIds.length) {
+            return res.status(404).json({ message: "One or more instructors not found" });
         }
 
-        // Check if instructor is already assigned to this activity session
-        const existingAssignment = await AppDataSource.getRepository(InstructorActivitySession).findOne({
+        // Check if any instructor is already assigned to this activity session        
+        const existingAssignments = await AppDataSource.getRepository(InstructorActivitySession).find({
             where: {
-                instructorId: instructorId,
+                instructorId: In(instructorIds),
                 activitySessionId: activitySessionId
             }
         });
-        if (existingAssignment) {
-            return res.status(400).json({ message: "Instructor is already assigned to this activity session" });
+
+        const alreadyAssignedIds = existingAssignments.map(a => a.instructorId);
+
+        if (alreadyAssignedIds.length !== 0) {
+            return res.status(400).json({ message: "One or more instructors are already assigned to this activity session" });
         }
 
-        // Assign instructor to activity session
-        await AppDataSource.getRepository(InstructorActivitySession).insert({
-            instructorId: instructorId,
-            activitySessionId: activitySessionId
-        });
+        const newAssignments = instructors.map(instructor => ({
+            instructorId: instructor.id,
+            activitySessionId: activitySessionId!
+        }));
 
-        return res.status(201).json({ message: "Instructor assigned to activity session successfully" });
+        // Assign instructors to activity session
+        await AppDataSource.getRepository(InstructorActivitySession).insert(newAssignments);
+
+        return res.status(201).json({ message: "Instructors assigned to activity session successfully" });
 
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
