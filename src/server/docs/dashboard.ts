@@ -92,3 +92,156 @@
  *                   type: string
  *                   example: "Activity not found"
  */
+ 
+/**
+ * @swagger
+ * /dashboard/users:
+ *   get:
+ *     summary: Get paginated users (admin only)
+ *     description: >
+ *       Returns a paginated list of users. Requires authentication and ADMIN authorization.
+ *       Optional query parameter `role` filters users by role (only users that have the corresponding role-specific id).
+ *       When requesting the first page (page=1) the response will also include countsByRole and total.
+ *     tags:
+ *       - Dashboard
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: Page number (defaults to 1)
+ *         example: 1
+ *       - in: query
+ *         name: role
+ *         schema:
+ *           type: string
+ *           enum: [ADMIN, INSTRUCTOR, PARENT, HEALTH_PROFESSIONAL]
+ *         description: Filter users by role (use enum values)
+ *         example: ADMIN
+ *     responses:
+ *       200:
+ *         description: Paginated users list (first page includes countsByRole and total)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               oneOf:
+ *                 - type: object
+ *                   properties:
+ *                     users:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                             example: "u1v2w3x4-5678-90ab-cdef-1234567890ab"
+ *                           name:
+ *                             type: string
+ *                             example: "João Faria"
+ *                           email:
+ *                             type: string
+ *                             format: email
+ *                             example: "joao@example.com"
+ *                           createdAt:
+ *                             type: string
+ *                             format: date-time
+ *                             example: "2024-02-01T08:00:00.000Z"
+ *                           updatedAt:
+ *                             type: string
+ *                             format: date-time
+ *                             nullable: true
+ *                             example: null
+ *                     total:
+ *                       type: integer
+ *                       example: 123
+ *                     countsByRole:
+ *                       type: object
+ *                       properties:
+ *                         admin:
+ *                           type: integer
+ *                           example: 5
+ *                         instructor:
+ *                           type: integer
+ *                           example: 20
+ *                         parent:
+ *                           type: integer
+ *                           example: 80
+ *                         health_professional:
+ *                           type: integer
+ *                           example: 18
+ *                     page:
+ *                       type: integer
+ *                       example: 1
+ *                 - type: object
+ *                   properties:
+ *                     users:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                             example: "u1v2w3x4-5678-90ab-cdef-1234567890ab"
+ *                           name:
+ *                             type: string
+ *                             example: "João Faria"
+ *                           email:
+ *                             type: string
+ *                             format: email
+ *                             example: "joao@example.com"
+ *                           createdAt:
+ *                             type: string
+ *                             format: date-time
+ *                             example: "2024-02-01T08:00:00.000Z"
+ *                           updatedAt:
+ *                             type: string
+ *                             format: date-time
+ *                             nullable: true
+ *                             example: null
+ *                     page:
+ *                       type: integer
+ *                       example: 2
+ *       400:
+ *         description: Invalid query parameter (page must be numeric or role invalid)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Invalid page query parameter"
+ *       401:
+ *         description: Unauthorized (missing or invalid token)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Unauthorized"
+ *       403:
+ *         description: Forbidden (insufficient role)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Forbidden"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
