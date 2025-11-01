@@ -1,14 +1,73 @@
 import express, { Request, Response } from "express";
 import { AppDataSource } from "@/db";
+import { IsNull } from "typeorm";
 import { Badge } from "@/db/entities/Badge";
+import { ClientBadge } from "@/db/entities/ClientBadge";
+import { User } from "@/db/entities/User";
+import { ParentChild } from "@/db/entities/ParentChild";
 import { z } from "zod";
-import { authorize } from "@/server/middleware/auth";
+import { authenticate, authorize } from "@/server/middleware/auth";
 import { UserRole } from "@/helpers/types";
 import { UpdateBadgeSchema, CreateBadgeSchema } from "../schemas/badge";
 
 const router = express.Router();
 
-// TODO: Only admin can create, update, delete badges
+/**
+ * @swagger
+ * tags:
+ *   - name: Badge
+ *     description: Badge operations
+ *
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ *   schemas:
+ *     Badge:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *         name:
+ *           type: string
+ *         description:
+ *           type: string
+ *         criteria:
+ *           type: string
+ *           enum: [streak, distance, calories, weather, points, special]
+ *         valueneeded:
+ *           type: number
+ *         imageUrl:
+ *           type: string
+ *           format: uri
+ *     CreateBadge:
+ *       type: object
+ *       required:
+ *         - name
+ *         - criteria
+ *       properties:
+ *         name:
+ *           type: string
+ *         description:
+ *           type: string
+ *         criteria:
+ *           type: string
+ *           enum: [streak, distance, calories, weather, points, special]
+ *         value:
+ *           type: number
+ *         imageUrl:
+ *           type: string
+ *           format: uri
+ *     UpdateBadge:
+ *       allOf:
+ *         - $ref: '#/components/schemas/CreateBadge'
+ *         - type: object
+ *           properties:
+ *             name:
+ *               type: string
+ */
 
 /**
  * @swagger
@@ -71,31 +130,28 @@ router.get('/:id', async (req: Request, res: Response) => {
  *     description: Creates a new badge
  *     tags:
  *       - Badge
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *               description:
- *                 type: string
- *               criteria:
- *                 type: string
- *                 enum: [streak, distance, calories, weather, points, special]
- *               value:
- *                 type: number
- *               imageUrl:
- *                 type: string
- *                 format: uri
- *                 example: "https://example.com/images/badge.png"
+ *             $ref: '#/components/schemas/CreateBadge'
  *     responses:
  *       201:
  *         description: Badge created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  *       400:
- *         description: Validation error
+ *         description: Validation error or name conflict
+ *       401:
+ *         description: Unauthorized
  */
 router.post('/', async (req: Request, res: Response) => {
     try {
@@ -130,6 +186,8 @@ router.post('/', async (req: Request, res: Response) => {
  *     description: Updates an existing badge
  *     tags:
  *       - Badge
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -141,24 +199,14 @@ router.post('/', async (req: Request, res: Response) => {
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *               description:
- *                 type: string
- *               criteria:
- *                 type: string
- *                 enum: [streak, distance, calories, weather, points, special]
- *               value:
- *                 type: number
- *               imageUrl:
- *                 type: string
- *                 format: uri
- *                 example: "https://example.com/images/badge.png"
+ *             $ref: '#/components/schemas/UpdateBadge'
  *     responses:
  *       200:
  *         description: Badge updated successfully
+ *       400:
+ *         description: Validation error or name conflict
+ *       401:
+ *         description: Unauthorized
  *       404:
  *         description: Badge not found
  */
@@ -195,6 +243,8 @@ router.put('/:id', async (req: Request, res: Response) => {
  *     description: Deletes a badge by ID
  *     tags:
  *       - Badge
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -204,6 +254,10 @@ router.put('/:id', async (req: Request, res: Response) => {
  *     responses:
  *       200:
  *         description: Badge deleted successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (requires admin)
  *       404:
  *         description: Badge not found
  */
@@ -215,6 +269,128 @@ router.delete('/:id', authorize(UserRole.ADMIN), async (req: Request, res: Respo
         }
         await AppDataSource.getRepository(Badge).delete(badge.id);
         return res.status(200).json({ message: "Badge deleted successfully" });
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+});
+
+/**
+ * @swagger
+ * /badge/profile/my-badges:
+ *   get:
+ *     summary: Get parent's own badges
+ *     description: Returns badges assigned to the authenticated parent (not child-specific)
+ *     tags:
+ *       - Badge
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of badges
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Badge'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
+router.get('/profile/my-badges', authenticate, authorize(UserRole.PARENT), async (req: Request, res: Response) => {
+    try {
+        const userId = req.user!.userId;
+
+        const clientBadges = await AppDataSource.getRepository(ClientBadge).find({
+            where: { parentId: userId, childId: IsNull() },
+            relations: ['badge']
+        });
+
+        const badges = clientBadges
+            .map(cb => cb.badge)
+            .sort((a, b) => {
+                const critA = a?.criteria ?? '';
+                const critB = b?.criteria ?? '';
+                const critCompare = critA.localeCompare(critB);
+                if (critCompare !== 0) return critCompare;
+                const valA = typeof a?.valueneeded === 'number' ? a!.valueneeded! : Number.NEGATIVE_INFINITY;
+                const valB = typeof b?.valueneeded === 'number' ? b!.valueneeded! : Number.NEGATIVE_INFINITY;
+                return valB - valA;
+            });
+
+        return res.status(200).json(badges);
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+});
+
+/**
+ * @swagger
+ * /badge/profile/children-badges:
+ *   get:
+ *     summary: Get a child's badges (parent only)
+ *     description: Returns badges assigned to a specific child if the authenticated parent is linked to that child
+ *     tags:
+ *       - Badge
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: childId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of child's badges
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Badge'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - parent not authorized for this child
+ *       404:
+ *         description: Child not found / no badges
+ */
+router.get('/profile/children-badges', authenticate, authorize(UserRole.PARENT), async (req: Request, res: Response) => {
+    try {
+        const childId = req.query.childId as string;
+        const userId = req.user!.userId;
+
+        const isFatherOfChild = await AppDataSource.getRepository(ParentChild).findOne({
+            where: {
+                parentId: userId,
+                childId: childId
+            }
+        });
+
+        if (!isFatherOfChild) {
+            return res.status(403).json({ message: "You are not authorized to view this child's badges" });
+        }
+        
+        const clientBadges = await AppDataSource.getRepository(ClientBadge).find({
+            where: { parentId: IsNull(), childId: childId },
+            relations: ['badge']
+        });
+
+        const badges = clientBadges
+            .map(cb => cb.badge)
+            .sort((a, b) => {
+                const critA = a?.criteria ?? '';
+                const critB = b?.criteria ?? '';
+                const critCompare = critA.localeCompare(critB);
+                if (critCompare !== 0) return critCompare;
+                const valA = typeof a?.valueneeded === 'number' ? a!.valueneeded! : Number.NEGATIVE_INFINITY;
+                const valB = typeof b?.valueneeded === 'number' ? b!.valueneeded! : Number.NEGATIVE_INFINITY;
+                return valB - valA;
+            });
+
+        return res.status(200).json(badges);
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
