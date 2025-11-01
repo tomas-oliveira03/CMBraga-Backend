@@ -59,6 +59,11 @@ class RedisClient {
 		await client.quit();
 	}
 
+	async flushAll() {
+		const client = this.getClient();
+		await client.flushall();
+	}
+
 }
 
 const redisClient = new RedisClient();

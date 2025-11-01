@@ -28,6 +28,7 @@ import path from "path";
 import { selectRandomDefaultProfilePicture, USER_DEFAULT_PROFILE_PICTURES } from "@/helpers/storage";
 import { checkImagesExist, uploadImageBuffer } from "@/server/services/cloud";
 import { RouteConnection } from "@/db/entities/RouteConnection";
+import redisClient from "@/lib/redis";
 
 
 async function cloudHydration(){
@@ -76,6 +77,17 @@ async function cloudHydration(){
 async function dbHydration() {
   console.log("Initializing data source...");
   const dataSource = await AppDataSource.initialize();
+  
+  // Clear Redis cache
+  console.log("Flushing Redis cache...");
+  try {
+    await redisClient.initialize();
+    await redisClient.flushAll();
+    console.log("✅ Redis cache cleared");
+  } catch (error) {
+    console.warn("⚠️  Failed to flush Redis:", error instanceof Error ? error.message : String(error));
+  }
+
   const datafile = path.join(__dirname, "/routes/data.json");
 
   let seedData: any = {};
@@ -759,6 +771,7 @@ async function dbHydration() {
     console.error("Seeding error:", err);
   } finally {
     await dataSource.destroy();
+    await redisClient.quit();
     console.log("Data source destroyed. Done.");
   }
 }
