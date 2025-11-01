@@ -8,6 +8,7 @@ import { ParentChild } from "@/db/entities/ParentChild";
 import express, { Request, Response } from "express";
 import { CreateFeedbackSchema } from "@/server/schemas/feedback";
 import { z } from "zod";
+import { ChildStation } from "@/db/entities/ChildStation";
 
 const router = express.Router();
 
@@ -472,6 +473,16 @@ router.post('/', async (req: Request, res: Response) => {
             return res.status(403).json({ message: "Child is not registered in this activity session" });
         }
 
+        const childParticipated = await AppDataSource.getRepository(ChildStation).findOne({
+            where: {
+                childId: validatedData.childId,
+                activitySessionId: validatedData.activitySessionId
+            }
+        });
+        if (!childParticipated) {
+            return res.status(403).json({ message: "Child did not participate in this activity session" });
+        }
+        
         const existingFeedback = await AppDataSource.getRepository(Feedback).findOne({
             where: {
                 activitySessionId: validatedData.activitySessionId,
