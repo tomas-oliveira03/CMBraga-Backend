@@ -5,6 +5,8 @@ import { ActivitySession } from "@/db/entities/ActivitySession";
 
 const router = express.Router();
 
+
+// Get issues informationn in given activity
 router.get('/issue/activity/:id', async (req: Request, res : Response) => {
     try {
         const activityId = req.params.id;

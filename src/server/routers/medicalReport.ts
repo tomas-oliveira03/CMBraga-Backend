@@ -8,6 +8,7 @@ import { HealthProfessional } from "@/db/entities/HealthProfessional";
 
 const router = express.Router();
 
+// Get all medical reports for a child
 router.get('/child/:id', async (req: Request, res : Response) => {
     try {
         const childId = req.params.id;

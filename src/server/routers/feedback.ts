@@ -41,6 +41,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 });
 
 
+// Get all feedbacks for a given child
 router.get('/child/:childId', async (req: Request, res: Response) => {
     try {
         const childId = req.params.childId;
@@ -63,6 +64,7 @@ router.get('/child/:childId', async (req: Request, res: Response) => {
 });
 
 
+// Get all feedbacks for a given activity session
 router.get('/activity/:activitySessionId', async (req: Request, res: Response) => {
     try {
         const activitySessionId = req.params.activitySessionId;

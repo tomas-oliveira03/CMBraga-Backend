@@ -6,6 +6,7 @@ import { UserRole } from "@/helpers/types";
 
 const router = express.Router();
 
+// Search for users by a query string
 router.get("/search",  async (req: Request, res: Response) => {
     try {
         const rawQuery = req.query.query;

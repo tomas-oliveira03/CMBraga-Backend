@@ -234,6 +234,7 @@ router.post('/', upload.single('file'), async (req: Request, res: Response) => {
 });
 
 
+// Route call right after route insertion
 router.put('/initial-update/:id', async (req: Request, res: Response) => {
     try {
         const routeId = req.params.id;
@@ -355,6 +356,7 @@ router.put('/:id', async (req: Request, res: Response) => {
 });
 
 
+// All possible transfers a route can handle
 router.get('/possible-transfers/:id', async (req: Request, res: Response) => {
     try {
         const routeId = req.params.id!;

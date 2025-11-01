@@ -106,6 +106,7 @@ router.post('/', upload.array('files'), async (req: Request, res: Response) => {
 });
 
 
+// Toggle issue between read and not read
 router.put('/resolve/toggle/:id', async (req: Request, res: Response) => {
     try {
         const issueId = req.params.id;
