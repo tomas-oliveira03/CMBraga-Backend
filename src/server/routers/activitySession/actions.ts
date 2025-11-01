@@ -19,6 +19,7 @@ import { RouteSchema } from "@/server/schemas/route";
 import { awardBadgesAfterActivity } from "@/server/services/badge";
 import { setAllInstructorsInActivityRedis } from "@/server/services/activity";
 import { webSocketEvents } from "@/server/services/websocket-events";
+import { ClientType, RequestType } from "@/helpers/websocket-types";
 
 const router = express.Router();
 
@@ -705,23 +706,22 @@ router.get('/station/drop-off', authenticate, authorize(UserRole.INSTRUCTOR, Use
  *                   type: string
  *                   enum: [regular, school]
  *                   example: "regular"
- *                 createdAt: 
- *                   type: string
- *                   format: date-time
- *                   example: "2024-01-15T10:30:00.000Z"
- *                 updatedAt: 
- *                   type: string
- *                   format: date-time
- *                   nullable: true
- *                   example: null
+ *                 latitude:
+ *                   type: number
+ *                   example: 41.5454
+ *                   description: "Station latitude coordinate"
+ *                 longitude:
+ *                   type: number
+ *                   example: -8.4265
+ *                   description: "Station longitude coordinate"
  *             examples:
  *               example:
  *                 value:
  *                   id: "station-uuid-2"
  *                   name: "Biblioteca Central"
  *                   type: "regular"
- *                   createdAt: "2024-01-15T10:30:00.000Z"
- *                   updatedAt: null
+ *                   latitude: 41.5454
+ *                   longitude: -8.4265
  *       402:
  *         description: There are still children to be dropped off or no next station
  *         content:
@@ -829,8 +829,18 @@ router.post('/station/next-stop', authenticate, authorize(UserRole.INSTRUCTOR), 
                 leftAt: new Date()
             }
         )
+        
+        const stationData = {
+            id: nextStation.id,
+            name: nextStation.name,
+            type: nextStation.type,
+            latitude: nextStation.latitude,
+            longitude: nextStation.longitude
+        }
 
-        return res.status(200).json(nextStation)
+        webSocketEvents.sendActivityNextStop(activitySessionId, req.user!.email, stationData)
+
+        return res.status(200).json(stationData)
         
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
@@ -874,28 +884,27 @@ router.post('/station/next-stop', authenticate, authorize(UserRole.INSTRUCTOR), 
  *                   type: string
  *                   enum: [regular, school]
  *                   example: "regular"
+ *                 latitude:
+ *                   type: number
+ *                   example: 41.5454
+ *                   description: "Station latitude coordinate"
+ *                 longitude:
+ *                   type: number
+ *                   example: -8.4265
+ *                   description: "Station longitude coordinate"
  *                 isLastStation: 
  *                   type: boolean
  *                   example: false
  *                   description: "Indicates if this is the last station in the route"
- *                 createdAt: 
- *                   type: string
- *                   format: date-time
- *                   example: "2024-01-15T10:30:00.000Z"
- *                 updatedAt: 
- *                   type: string
- *                   format: date-time
- *                   nullable: true
- *                   example: null
  *             examples:
  *               example:
  *                 value:
  *                   id: "station-uuid-1"
  *                   name: "Biblioteca Central"
  *                   type: "regular"
+ *                   latitude: 41.5454
+ *                   longitude: -8.4265
  *                   isLastStation: false
- *                   createdAt: "2024-01-15T10:30:00.000Z"
- *                   updatedAt: null
  *       400:
  *         description: Bad request
  *         content:
@@ -1007,7 +1016,18 @@ router.post('/station/arrived-at-stop', authenticate, authorize(UserRole.INSTRUC
             }
         )
 
-        return res.status(200).json(currentStationWithFlag)
+        const stationData = {
+            id: currentStationWithFlag.id,
+            name: currentStationWithFlag.name,
+            type: currentStationWithFlag.type,
+            latitude: currentStationWithFlag.latitude,
+            longitude: currentStationWithFlag.longitude,
+            isLastStation: currentStationWithFlag.isLastStation
+        }
+
+        webSocketEvents.sendActivityArrivedAtStop(activitySessionId, req.user!.email, stationData)
+
+        return res.status(200).json(stationData)
         
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
@@ -1393,6 +1413,8 @@ router.post('/child/check-in', authenticate, authorize(UserRole.INSTRUCTOR), asy
             registeredAt: new Date()
         });
 
+        webSocketEvents.sendActivityCheckedIn(activitySessionId, req.user!.email, RequestType.ADD, ClientType.CHILD, childId);
+
         return res.status(200).json({message: "Child checked-in successfully"});
 
     } catch (error) {
@@ -1571,6 +1593,8 @@ router.post('/child/check-out', authenticate, authorize(UserRole.INSTRUCTOR), as
             activitySessionId: activitySessionId,
             registeredAt: new Date()
         });
+ 
+        webSocketEvents.sendActivityCheckedOut(activitySessionId, req.user!.email, RequestType.ADD, childId);
 
         return res.status(200).json({message: "Child checked-out successfully"});
 
@@ -1737,6 +1761,8 @@ router.delete('/child/check-in', authenticate, authorize(UserRole.INSTRUCTOR), a
             type: ChildStationType.IN,
             activitySessionId: activitySessionId
         });
+        
+        webSocketEvents.sendActivityCheckedIn(activitySessionId, req.user!.email, RequestType.REMOVE, ClientType.CHILD, childId);
 
         return res.status(200).json({message: "Child uncheked-in sucessfully"});
 
@@ -1904,12 +1930,15 @@ router.delete('/child/check-out', authenticate, authorize(UserRole.INSTRUCTOR), 
             activitySessionId: activitySessionId,
         });
 
+        webSocketEvents.sendActivityCheckedOut(activitySessionId, req.user!.email, RequestType.REMOVE, childId);
+
         return res.status(200).json({message: "Child unchecked-out successfully"});
 
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
+
 
 /**
  * @swagger
@@ -2166,6 +2195,8 @@ router.post('/parent/check-in', authenticate, authorize(UserRole.INSTRUCTOR), as
             registeredAt: new Date()
         });
 
+        webSocketEvents.sendActivityCheckedIn(activitySessionId, req.user!.email, RequestType.ADD, ClientType.PARENT, parentId);
+
         return res.status(200).json({message: "Parent checked-in successfully"});
 
     } catch (error) {
@@ -2248,6 +2279,7 @@ router.post('/parent/check-in', authenticate, authorize(UserRole.INSTRUCTOR), as
  *               parent_not_found:
  *                 value:
  *                   message: "Parent not found"
+
  *               activity_not_found:
  *                 value:
  *                   message: "Activity session not found"
@@ -2335,6 +2367,8 @@ router.delete('/parent/check-in', authenticate, authorize(UserRole.INSTRUCTOR), 
             parentId: parentId,
             activitySessionId: activitySessionId
         });
+
+        webSocketEvents.sendActivityCheckedIn(activitySessionId, req.user!.email, RequestType.REMOVE, ClientType.PARENT, parentId);
 
         return res.status(200).json({message: "Parent unchecked-in successfully"});
 

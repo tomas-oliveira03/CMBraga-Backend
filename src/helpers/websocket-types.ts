@@ -9,7 +9,7 @@ export enum WebSocketEvent {
     CHECK_IN = 'checkIn',
     CHECK_OUT = 'checkOut',
     NEXT_STOP = 'nextStop',
-    ARRIVED_AT = 'arrivedAt'
+    ARRIVED_AT_STOP = 'arrivedAtStop'
 }
 
 export enum ConnectionStatus {
@@ -87,8 +87,7 @@ export type WebSocketMessage =
         data: {
             activitySessionId: string;
             requestType: RequestType;
-            clientType: ClientType;
-            clientId: string;
+            childId: string;
         }; 
         timestamp: Date 
     }
@@ -96,24 +95,30 @@ export type WebSocketMessage =
     { 
         event: WebSocketEvent.NEXT_STOP; 
         data: {
-            id: string;
-            name: string;
-            type: StationType;
-            latitude: number;
-            longitude: number;
+            activitySessionId: string;
+            stationData: {
+                id: string;
+                name: string;
+                type: StationType;
+                latitude: number;
+                longitude: number;
+            };
         }; 
         timestamp: Date 
     }
     | 
     { 
-        event: WebSocketEvent.ARRIVED_AT; 
+        event: WebSocketEvent.ARRIVED_AT_STOP; 
         data: {
-            id: string;
-            name: string;
-            type: StationType;
-            latitude: number;
-            longitude: number;
-            isLastStation: boolean;
+            activitySessionId: string;
+            stationData: {
+                id: string;
+                name: string;
+                type: StationType;
+                latitude: number;
+                longitude: number;
+                isLastStation: boolean;
+            };
         }; 
         timestamp: Date 
     };

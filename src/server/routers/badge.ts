@@ -16,62 +16,6 @@ import { BadgeCriteria } from "@/helpers/types";
 
 const router = express.Router();
 
-/**
- * @swagger
- * tags:
- *   - name: Badge
- *     description: Badge operations
- *
- * components:
- *   securitySchemes:
- *     bearerAuth:
- *       type: http
- *       scheme: bearer
- *       bearerFormat: JWT
- *   schemas:
- *     Badge:
- *       type: object
- *       properties:
- *         id:
- *           type: string
- *         name:
- *           type: string
- *         description:
- *           type: string
- *         criteria:
- *           type: string
- *           enum: [streak, distance, calories, weather, points, special]
- *         valueneeded:
- *           type: number
- *         imageUrl:
- *           type: string
- *           format: uri
- *     CreateBadge:
- *       type: object
- *       required:
- *         - name
- *         - criteria
- *       properties:
- *         name:
- *           type: string
- *         description:
- *           type: string
- *         criteria:
- *           type: string
- *           enum: [streak, distance, calories, weather, points, special]
- *         value:
- *           type: number
- *         imageUrl:
- *           type: string
- *           format: uri
- *     UpdateBadge:
- *       allOf:
- *         - $ref: '#/components/schemas/CreateBadge'
- *         - type: object
- *           properties:
- *             name:
- *               type: string
- */
 
 /**
  * @swagger

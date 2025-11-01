@@ -1,9 +1,9 @@
-import { ConnectionStatus, WebSocketEvent } from "@/helpers/websocket-types";
+import { ClientType, ConnectionStatus, RequestType, WebSocketEvent } from "@/helpers/websocket-types";
 import { webSocketManager } from "./websocket";
 import { AppDataSource } from "@/db";
 import { User } from "@/db/entities/User";
 import { logger } from "@/lib/logger";
-import { TypeOfChat } from "@/helpers/types";
+import { StationType, TypeOfChat } from "@/helpers/types";
 import { getAllInstructorsInActivityToNotify } from "./activity";
 
 
@@ -122,6 +122,109 @@ class WebSocketEvents {
         }
     }
 
+
+    // Send activity checked in event
+    async sendActivityCheckedIn(activitySessionId: string, senderInstructorId: string, requestType: RequestType, clientType: ClientType, clientId: string) {
+        try {
+            const message = {
+                event: WebSocketEvent.CHECK_IN as WebSocketEvent.CHECK_IN,
+                data: {
+                    activitySessionId: activitySessionId,
+                    requestType: requestType,
+                    clientType: clientType,
+                    clientId: clientId
+                },
+                timestamp: new Date()
+            };
+
+            const usersToNotify = await getAllInstructorsInActivityToNotify(activitySessionId, senderInstructorId)
+
+            webSocketManager.sendToUsers(usersToNotify, message);
+        }
+        catch(error){
+            logger.error(error instanceof Error ? error.message : String(error))
+        }
+    }
+
+
+    // Send activity checked out event
+    async sendActivityCheckedOut(activitySessionId: string, senderInstructorId: string, requestType: RequestType, childId: string) {
+        try {
+            const message = {
+                event: WebSocketEvent.CHECK_OUT as WebSocketEvent.CHECK_OUT,
+                data: {
+                    activitySessionId: activitySessionId,
+                    requestType: requestType,
+                    childId: childId
+                },
+                timestamp: new Date()
+            };
+
+            const usersToNotify = await getAllInstructorsInActivityToNotify(activitySessionId, senderInstructorId)
+
+            webSocketManager.sendToUsers(usersToNotify, message);
+        }
+        catch(error){
+            logger.error(error instanceof Error ? error.message : String(error))
+        }
+    }
+
+
+    // Send activity next stop event
+    async sendActivityNextStop(activitySessionId: string, senderInstructorId: string, stationData: {
+        id: string;
+        name: string;
+        type: StationType;
+        latitude: number;
+        longitude: number;
+    }) {
+        try {
+            const message = {
+                event: WebSocketEvent.NEXT_STOP as WebSocketEvent.NEXT_STOP,
+                data: {
+                    activitySessionId: activitySessionId,
+                    stationData: stationData
+                },
+                timestamp: new Date()
+            };
+
+            const usersToNotify = await getAllInstructorsInActivityToNotify(activitySessionId, senderInstructorId)
+
+            webSocketManager.sendToUsers(usersToNotify, message);
+        }
+        catch(error){
+            logger.error(error instanceof Error ? error.message : String(error))
+        }
+    }
+
+
+    // Send activity arrived at stop event
+    async sendActivityArrivedAtStop(activitySessionId: string, senderInstructorId: string, stationData: {
+        id: string;
+        name: string;
+        type: StationType;
+        latitude: number;
+        longitude: number;
+        isLastStation: boolean;
+    }) {
+        try {
+            const message = {
+                event: WebSocketEvent.ARRIVED_AT_STOP as WebSocketEvent.ARRIVED_AT_STOP,
+                data: {
+                    activitySessionId: activitySessionId,
+                    stationData: stationData
+                },
+                timestamp: new Date()
+            };
+
+            const usersToNotify = await getAllInstructorsInActivityToNotify(activitySessionId, senderInstructorId)
+
+            webSocketManager.sendToUsers(usersToNotify, message);
+        }
+        catch(error){
+            logger.error(error instanceof Error ? error.message : String(error))
+        }
+    }
 }
 
 
