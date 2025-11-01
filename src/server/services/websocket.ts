@@ -107,6 +107,17 @@ class WebSocketManager {
         logger.websocket(`Created chat room ${roomId} with ${userIds.length} users`);
     }
 
+    // Add user to chat room
+    addUserToChatRoom(roomId: string, userId: string): void {
+        const userIds = this.chatRooms.get(roomId);
+        if (userIds) {
+            userIds.push(userId);
+            logger.websocket(`Added user ${userId} to chat room ${roomId}`);
+        } else {
+            logger.websocket(`Chat room ${roomId} not found`);
+        }
+    }
+    
     // Send message to chat room
     sendToChatRoom(roomId: string, senderId: string, message: WebSocketMessage): void {
         const userIds = this.chatRooms.get(roomId);

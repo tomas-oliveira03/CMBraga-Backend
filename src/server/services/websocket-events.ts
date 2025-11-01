@@ -10,7 +10,7 @@ import { getAllInstructorsInActivityToNotify } from "./activity";
 class WebSocketEvents {
 
     // Send message when user connects to WebSocket
-    userConnectedToWebsocket (userId: string) {
+    userConnectedToWebsocket(userId: string) {
         try {
             const message = {
                 event: WebSocketEvent.CONNECTION_STATUS as WebSocketEvent.CONNECTION_STATUS,
@@ -34,6 +34,12 @@ class WebSocketEvents {
         webSocketManager.addChatRoom(chatId, userIds);
     }
 
+
+    // Add user to chatRoom
+    addNewUserToChatRoom(chatId: string, userId: string) {
+        webSocketManager.addUserToChatRoom(chatId, userId);
+    }
+    
 
     // Send message to chatRoom
     async sendMessageToChatRoom(chatId: string, chatType: TypeOfChat, chatName: string | null, senderId: string, messageContent: string) {
@@ -94,6 +100,7 @@ class WebSocketEvents {
             logger.error(error instanceof Error ? error.message : String(error))
         }
     }
+
 
     // Send activity ended event
     async sendActivityEnded(activitySessionId: string, senderInstructorId: string) {
