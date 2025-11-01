@@ -410,7 +410,7 @@ router.get('/station/pick-up', authenticate, authorize(UserRole.INSTRUCTOR, User
             return res.status(404).json({ message: "Activity session doesn't exist" });
         }
 
-        if (!(activitySession.instructorActivitySessions && activitySession.instructorActivitySessions.some(ias => ias.instructorId === req.user?.userId))) {
+        if (req.user?.role !== UserRole.ADMIN && !(activitySession.instructorActivitySessions && activitySession.instructorActivitySessions.some(ias => ias.instructorId === req.user?.userId))) {
             return res.status(400).json({ message: "Instructor is not assigned to this activity session" });
         }
 
@@ -530,7 +530,7 @@ router.get('/station/still-in', authenticate, authorize(UserRole.INSTRUCTOR, Use
             return res.status(404).json({ message: "Activity session doesn't exist" });
         }
 
-        if (!(activitySession.instructorActivitySessions && activitySession.instructorActivitySessions.some(ias => ias.instructorId === req.user?.userId))) {
+        if (req.user?.role !== UserRole.ADMIN && !(activitySession.instructorActivitySessions && activitySession.instructorActivitySessions.some(ias => ias.instructorId === req.user?.userId))) {
             return res.status(400).json({ message: "Instructor is not assigned to this activity session" });
         }
 
@@ -645,7 +645,7 @@ router.get('/station/drop-off', authenticate, authorize(UserRole.INSTRUCTOR, Use
             return res.status(404).json({ message: "Activity session doesn't exist" });
         }
 
-        if (!(activitySession.instructorActivitySessions && activitySession.instructorActivitySessions.some(ias => ias.instructorId === req.user?.userId))) {
+        if (req.user?.role !== UserRole.ADMIN && !(activitySession.instructorActivitySessions && activitySession.instructorActivitySessions.some(ias => ias.instructorId === req.user?.userId))) {
             return res.status(400).json({ message: "Instructor is not assigned to this activity session" });
         }
 
@@ -1071,6 +1071,14 @@ router.post('/station/arrived-at-stop', authenticate, authorize(UserRole.INSTRUC
  *                   type: string
  *                   enum: [regular, school]
  *                   example: "regular"
+ *                 latitude:
+ *                   type: number
+ *                   example: 41.5454
+ *                   description: "Station latitude coordinate"
+ *                 longitude:
+ *                   type: number
+ *                   example: -8.4265
+ *                   description: "Station longitude coordinate"
  *                 isInStation: 
  *                   type: boolean
  *                   example: true
@@ -1079,25 +1087,16 @@ router.post('/station/arrived-at-stop', authenticate, authorize(UserRole.INSTRUC
  *                   type: boolean
  *                   example: false
  *                   description: "Indicates if this is the last station in the route"
- *                 createdAt: 
- *                   type: string
- *                   format: date-time
- *                   example: "2024-01-15T10:30:00.000Z"
- *                 updatedAt: 
- *                   type: string
- *                   format: date-time
- *                   nullable: true
- *                   example: null
  *             examples:
  *               example:
  *                 value:
  *                   id: "station-uuid-1"
  *                   name: "Estação Central"
  *                   type: "regular"
+ *                   latitude: 41.5454
+ *                   longitude: -8.4265
  *                   isInStation: true
  *                   isLastStation: false
- *                   createdAt: "2024-01-15T10:30:00.000Z"
- *                   updatedAt: null
  *       201:
  *         description: Activity ready to be ended
  *         content:
@@ -1190,6 +1189,10 @@ router.get('/station/status', authenticate, authorize(UserRole.INSTRUCTOR, UserR
             return res.status(404).json({ message: "Activity session doesn't exist" });
         }
 
+        if (req.user?.role !== UserRole.ADMIN && !(activitySession.instructorActivitySessions && activitySession.instructorActivitySessions.some(ias => ias.instructorId === req.user?.userId))) {
+            return res.status(400).json({ message: "Instructor is not assigned to this activity session" });
+        }
+        
         const allStationIdsLeft = await getAllStationsLeftIds(activitySessionId)
          if (!activitySession.startedAt){
             return res.status(203).json({ message: "Activity not started yet" });
@@ -1228,7 +1231,15 @@ router.get('/station/status', authenticate, authorize(UserRole.INSTRUCTOR, UserR
             isLastStation: allStationIdsLeft.length === 1
         };
 
-        return res.status(200).json(currentStationWithFlags)
+        return res.status(200).json({
+            id: currentStationWithFlags.id,
+            name: currentStationWithFlags.name,
+            type: currentStationWithFlags.type,
+            latitude: currentStationWithFlags.latitude,
+            longitude: currentStationWithFlags.longitude,
+            isInStation: currentStationWithFlags.isInStation,
+            isLastStation: currentStationWithFlags.isLastStation,
+        })
         
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
@@ -2419,7 +2430,7 @@ router.delete('/parent/check-in', authenticate, authorize(UserRole.INSTRUCTOR), 
  *       404:
  *         description: Activity session not found
  */
-router.get('/parentStatus', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
+router.get('/parentStatus', authenticate, authorize(UserRole.INSTRUCTOR, UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const activitySessionId = req.query.activitySessionId;
 
@@ -2428,12 +2439,19 @@ router.get('/parentStatus', authenticate, authorize(UserRole.INSTRUCTOR), async 
         }
 
         const activitySession = await AppDataSource.getRepository(ActivitySession).findOne({
-            where: { id: activitySessionId },
-           
-        });
+            where: {
+                id: activitySessionId
+            }, relations: {
+                instructorActivitySessions: true
+            }
+        })
 
         if (!activitySession) {
             return res.status(404).json({ message: "Activity session not found" });
+        }
+
+        if (req.user?.role !== UserRole.ADMIN && !(activitySession.instructorActivitySessions && activitySession.instructorActivitySessions.some(ias => ias.instructorId === req.user?.userId))) {
+            return res.status(400).json({ message: "Instructor is not assigned to this activity session" });
         }
 
         const allParentsInActivity = await AppDataSource.getRepository(ParentActivitySession).find({
