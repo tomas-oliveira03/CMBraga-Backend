@@ -245,3 +245,176 @@
  *                   type: string
  *                   example: "Internal server error"
  */
+
+/**
+ * @swagger
+ * /dashboard/activity-sessions:
+ *   get:
+ *     summary: Get paginated activity sessions (admin only)
+ *     description: >
+ *       Returns a paginated list of activity sessions. Requires authentication and ADMIN authorization.
+ *       Optional query parameter `status` filters sessions by status (FUTURE, ONGOING, ENDED).
+ *       When requesting the first page (page=1), the response includes countsByStatus and total.
+ *     tags:
+ *       - Dashboard
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: Page number (defaults to 1)
+ *         example: 1
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [FUTURE, ONGOING, ENDED]
+ *         description: Filter activity sessions by status
+ *         example: FUTURE
+ *     responses:
+ *       200:
+ *         description: Paginated activity sessions list (first page includes countsByStatus and total)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               oneOf:
+ *                 - type: object
+ *                   properties:
+ *                     activitySessions:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                             example: "s1t2u3v4-w5x6-7890-yz12-ab1234567890"
+ *                           type:
+ *                             type: string
+ *                             example: "bike_ride"
+ *                           scheduledAt:
+ *                             type: string
+ *                             format: date-time
+ *                             example: "2024-03-01T09:00:00.000Z"
+ *                           startedAt:
+ *                             type: string
+ *                             format: date-time
+ *                             nullable: true
+ *                             example: "2024-03-01T09:05:00.000Z"
+ *                           finishedAt:
+ *                             type: string
+ *                             format: date-time
+ *                             nullable: true
+ *                             example: "2024-03-01T10:00:00.000Z"
+ *                           createdAt:
+ *                             type: string
+ *                             format: date-time
+ *                             example: "2024-02-25T08:00:00.000Z"
+ *                           updatedAt:
+ *                             type: string
+ *                             format: date-time
+ *                             nullable: true
+ *                             example: "2024-03-01T11:00:00.000Z"
+ *                     total:
+ *                       type: integer
+ *                       example: 50
+ *                     countsByStatus:
+ *                       type: object
+ *                       properties:
+ *                         future:
+ *                           type: integer
+ *                           example: 10
+ *                         ongoing:
+ *                           type: integer
+ *                           example: 5
+ *                         finished:
+ *                           type: integer
+ *                           example: 35
+ *                     page:
+ *                       type: integer
+ *                       example: 1
+ *                 - type: object
+ *                   properties:
+ *                     activitySessions:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                             example: "s1t2u3v4-w5x6-7890-yz12-ab1234567890"
+ *                           type:
+ *                             type: string
+ *                             example: "bike_ride"
+ *                           scheduledAt:
+ *                             type: string
+ *                             format: date-time
+ *                             example: "2024-03-01T09:00:00.000Z"
+ *                           startedAt:
+ *                             type: string
+ *                             format: date-time
+ *                             nullable: true
+ *                             example: "2024-03-01T09:05:00.000Z"
+ *                           finishedAt:
+ *                             type: string
+ *                             format: date-time
+ *                             nullable: true
+ *                             example: "2024-03-01T10:00:00.000Z"
+ *                           createdAt:
+ *                             type: string
+ *                             format: date-time
+ *                             example: "2024-02-25T08:00:00.000Z"
+ *                           updatedAt:
+ *                             type: string
+ *                             format: date-time
+ *                             nullable: true
+ *                             example: "2024-03-01T11:00:00.000Z"
+ *                     total:
+ *                       type: integer
+ *                       example: 50
+ *                     page:
+ *                       type: integer
+ *                       example: 2
+ *       400:
+ *         description: Invalid query parameter (page must be numeric or status invalid)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Invalid page query parameter"
+ *       401:
+ *         description: Unauthorized (missing or invalid token)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Unauthorized"
+ *       403:
+ *         description: Forbidden (insufficient role)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Forbidden"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */

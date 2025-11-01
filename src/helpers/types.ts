@@ -84,6 +84,13 @@ export enum WeatherType {
   Clouds = "clouds"           
 }
 
+export enum ActivitySessionStatus {
+    FUTURE = 'future',
+    ONGOING = 'ongoing',
+    ENDED = 'ended'
+}
+
+
 // Route
 export interface RoutePoint {
     lat: number;
