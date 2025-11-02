@@ -90,6 +90,11 @@ export enum ActivitySessionStatus {
     ENDED = 'ended'
 }
 
+export enum IssueStatus {
+    OPEN = 'open',
+    SOLVED = 'solved'
+}
+
 
 // Route
 export interface RoutePoint {

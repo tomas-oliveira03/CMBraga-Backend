@@ -2,18 +2,62 @@ import { AppDataSource } from "@/db";
 import express, { Request, Response } from "express";
 import { ActivitySession } from "@/db/entities/ActivitySession";
 import { authenticate, authorize } from "../middleware/auth";
-import { UserRole, ActivitySessionStatus } from "@/helpers/types";
+import { UserRole, ActivitySessionStatus, IssueStatus } from "@/helpers/types";
 import { User } from "@/db/entities/User";
 import { MoreThan, IsNull, Not } from "typeorm";
+import { Issue } from "@/db/entities/Issue";
 
-const USER_LIMIT = 50;
-const ACTIVITY_LIMIT = 50;
+const LIMIT = 50;
 
 const router = express.Router();
 
+router.get('/all-issues', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
+    try {
+        const page = parseInt(req.query.page as string) || 1;
+        if (page < 1 || (req.query.page && isNaN(Number(req.query.page)))) {
+            return res.status(400).json({ message: "Invalid page query parameter" });
+        }
+        const skip = (page - 1) * LIMIT;
+
+        const orderParam = (req.query.order as string)?.toLowerCase();
+        const order: "ASC" | "DESC" = orderParam === "asc" ? "ASC" : "DESC";
+
+        const statusParam = req.query.status as string | undefined;
+        let where: any = {};
+        if (statusParam) {
+            switch (statusParam) {
+                case IssueStatus.OPEN:
+                    where.resolvedAt = IsNull();
+                    break;
+                case IssueStatus.SOLVED:
+                    where.resolvedAt = Not(IsNull());
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        const [issues, total] = await AppDataSource.getRepository(Issue).findAndCount({
+            where,
+            order: { createdAt: order },
+            skip,
+            take: LIMIT,
+            relations: { activitySession: true }
+        });
+
+        return res.status(200).json({
+            issues,
+            total,
+            order: order,
+            page: page
+        });
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+});
 
 // Get issues informationn in given activity
-router.get('/issue/activity/:id', async (req: Request, res : Response) => {
+router.get('/issue/activity/:id', authenticate, authorize(UserRole.ADMIN), async (req: Request, res : Response) => {
     try {
         const activityId = req.params.id;
         const activity = await AppDataSource.getRepository(ActivitySession).findOne({
@@ -60,7 +104,7 @@ router.get('/users', authenticate, authorize(UserRole.ADMIN), async (req: Reques
         }
 
         const page = parseInt(req.query.page as string) || 1;
-        const skip = (page - 1) * USER_LIMIT;
+        const skip = (page - 1) * LIMIT;
         
         const userRepo = AppDataSource.getRepository(User);
 
@@ -97,12 +141,12 @@ router.get('/users', authenticate, authorize(UserRole.ADMIN), async (req: Reques
                 .where(`user.${roleFilterColumn} IS NOT NULL`)
                 .orderBy("user.name", "ASC")
                 .skip(skip)
-                .take(USER_LIMIT);
+                .take(LIMIT);
             [userList, totalCount] = await qb.getManyAndCount();
         } else {
             const result = await userRepo.findAndCount({
                 skip,
-                take: USER_LIMIT
+                take: LIMIT
             });
             userList = result[0];
             totalCount = result[1];
@@ -146,7 +190,7 @@ router.get('/activity-sessions', authenticate, authorize(UserRole.ADMIN), async 
         }
 
         const page = parseInt(req.query.page as string) || 1;
-        const skip = (page - 1) * ACTIVITY_LIMIT;
+        const skip = (page - 1) * LIMIT;
 
         const activityRepo = AppDataSource.getRepository(ActivitySession);
 
@@ -184,7 +228,7 @@ router.get('/activity-sessions', authenticate, authorize(UserRole.ADMIN), async 
             where,
             order,
             skip,
-            take: ACTIVITY_LIMIT
+            take: LIMIT
         });
 
         if (page === 1) {
