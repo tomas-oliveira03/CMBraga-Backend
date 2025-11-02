@@ -195,8 +195,6 @@
  *                                 type: number
  *                         stops:
  *                           type: array
- *                           items:
- *                             $ref: '#/components/schemas/RouteStop'
  *             examples:
  *               withConnector:
  *                 value:

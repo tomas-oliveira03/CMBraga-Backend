@@ -377,11 +377,9 @@ router.post('/set-password', async (req: Request, res: Response) => {
                 instructorId: true
             }
         });
-
         if (!user) {
-            throw new Error('User not found');
+            return res.status(404).json({ message: "User not found" });
         }
-
         
         if (user.adminId) {
             await AppDataSource.createQueryBuilder().update(Admin)
@@ -424,7 +422,7 @@ router.post('/set-password', async (req: Request, res: Response) => {
                 .execute();
 
         } else {
-            throw new Error('User role not found');
+            return res.status(404).json({ message: "User role not found" });
         }
     
         return res.status(200).json({ message: "Password set successfully" });

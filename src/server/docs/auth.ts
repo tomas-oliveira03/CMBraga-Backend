@@ -534,6 +534,22 @@
  *                 message:
  *                   type: string
  *                   example: "Invalid or expired token"
+ *       404:
+ *         description: User or user role not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               user_not_found:
+ *                 value:
+ *                   message: "User not found"
+ *               role_not_found:
+ *                 value:
+ *                   message: "User role not found"
  */
 
 

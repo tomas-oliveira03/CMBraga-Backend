@@ -214,11 +214,36 @@
  *             schema:
  *               type: object
  *               properties:
+ *                 id:
+ *                   type: string
+ *                   example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *                   description: "The ID of the created activity session"
+ *       400:
+ *         description: Validation error or route type mismatch
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
  *                 message:
  *                   type: string
- *                   example: "Session created successfully"
- *       400:
- *         description: Validation error
+ *             examples:
+ *               validation:
+ *                 value:
+ *                   message: "Validation error"
+ *               type_mismatch:
+ *                 value:
+ *                   message: "Cannot link an activity to a different route type"
+ *       404:
+ *         description: Route not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Route not found"
  *       500:
  *         description: Internal server error
  */
