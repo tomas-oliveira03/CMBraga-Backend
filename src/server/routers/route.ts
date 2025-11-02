@@ -60,10 +60,17 @@ router.get('/:id', async (req: Request, res: Response) => {
             relations: {
                 routeStations: {
                     station: true
+                },
+                fromRouteConnections: {
+                    toRoute: {
+                        routeStations: {
+                            station: true
+                        }
+                    },
+                    station: true
                 }
             }
         });
-
         if (!route){
             return res.status(404).json({ message: "Route not found" })
         }
@@ -89,7 +96,7 @@ router.get('/:id', async (req: Request, res: Response) => {
             }))
             .sort((a, b) => a.stopNumber - b.stopNumber);
 
-        const response = {
+        let response = {
             id: route.id,
             name: route.name,
             activityType: route.activityType,
@@ -98,8 +105,49 @@ router.get('/:id', async (req: Request, res: Response) => {
             updatedAt: route.updatedAt,
             route: route.metadata,
             bounds: bounds,
-            stops: stops
+            stops: stops,
+            connector: undefined as any
         };
+
+        // Add route connector logic if available
+        if(route.fromRouteConnections && route.fromRouteConnections[0]){
+            const firstConnectorRoute = route.fromRouteConnections[0]
+            console.log(firstConnectorRoute)
+            const connectorStops = firstConnectorRoute.toRoute.routeStations
+                .map(rs => ({
+                    stationId: rs.stationId,
+                    stopNumber: rs.stopNumber,
+                    distanceFromStartMeters: rs.distanceFromStartMeters,
+                    timeFromStartMinutes: rs.timeFromStartMinutes,
+                    distanceFromPreviousStationMeters: rs.distanceFromPreviousStationMeters,
+                    name: rs.station.name,
+                    type: rs.station.type,
+                    latitude: rs.station.latitude,
+                    longitude: rs.station.longitude,
+                }))
+                .sort((a, b) => a.stopNumber - b.stopNumber)
+                .filter((rs, i, arr) => {
+                    const startIndex = arr.findIndex(s => s.stationId === firstConnectorRoute.station.id);
+                    return i > startIndex; 
+                });
+
+            response.connector = {
+                connectorStation: {
+                    id: firstConnectorRoute.station.id,
+                    name: firstConnectorRoute.station.name
+                },
+                connectorRoute: {
+                    id: firstConnectorRoute.toRoute.id,
+                    name: firstConnectorRoute.toRoute.name,
+                    activityType: firstConnectorRoute.toRoute.activityType,
+                    distanceMeters: firstConnectorRoute.toRoute.distanceMeters,
+                    createdAt: firstConnectorRoute.toRoute.createdAt,
+                    updatedAt: firstConnectorRoute.toRoute.updatedAt,
+                    route: firstConnectorRoute.toRoute.metadata,
+                    stops: connectorStops,
+                }
+            }
+        }
 
         return res.status(200).json(response);
         
@@ -314,6 +362,10 @@ router.put('/:id', async (req: Request, res: Response) => {
                 });
                 if (!connectorRouteExists) {
                     throw new Error("Connector route not found");
+                }
+
+                if(connectorRouteExists.activityType !== route.activityType){
+                    throw new Error("Cannot connect to a different route type")
                 }
 
                 const connectorStationExists = await tx.getRepository(Station).findOne({

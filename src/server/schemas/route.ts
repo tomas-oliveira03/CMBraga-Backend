@@ -47,6 +47,7 @@ export const CreateRouteSchema = RouteSchema.omit({
 export const UpdateRouteSchema = RouteSchema.omit({
     id: true,
     distanceMeters: true,
+    activityType: true,
     boundsNorth: true,
     boundsSouth: true,
     boundsEast: true,

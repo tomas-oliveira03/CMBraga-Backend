@@ -46,7 +46,7 @@
  * /route/{id}:
  *   get:
  *     summary: Get route by ID
- *     description: Returns a single route by its ID with station info and bounds object
+ *     description: Returns a single route by its ID with station info, bounds object, and optional connector info
  *     tags:
  *       - Route
  *     parameters:
@@ -86,7 +86,7 @@
  *                 updatedAt:
  *                   type: string
  *                   format: date-time
- *                   example: null
+ *                   nullable: true
  *                 route:
  *                   type: array
  *                   items:
@@ -98,23 +98,25 @@
  *                       lon:
  *                         type: number
  *                         example: -8.397567
- *                   description: "Raw route metadata (array of lat/lon points)"
  *                 bounds:
  *                   type: object
  *                   properties:
  *                     north:
  *                       type: number
  *                       example: 41.554448
+ *                       description: "Northern boundary coordinate"
  *                     east:
  *                       type: number
  *                       example: -8.395174
+ *                       description: "Eastern boundary coordinate"
  *                     south:
  *                       type: number
  *                       example: 41.542617
+ *                       description: "Southern boundary coordinate"
  *                     west:
  *                       type: number
  *                       example: -8.404334
- *                   description: "Bounding box of the route"
+ *                       description: "Western boundary coordinate"
  *                 stops:
  *                   type: array
  *                   items:
@@ -148,7 +150,181 @@
  *                       longitude:
  *                         type: number
  *                         example: -8.397567
- *                   description: "List of stops with station info flattened"
+ *                 connector:
+ *                   type: object
+ *                   nullable: true
+ *                   properties:
+ *                     connectorStation:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: string
+ *                           example: "station-uuid-1"
+ *                         name:
+ *                           type: string
+ *                           example: "Estação Central"
+ *                     connectorRoute:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: string
+ *                           example: "route-uuid-2"
+ *                         name:
+ *                           type: string
+ *                           example: "Rota Pedibus Sul"
+ *                         activityType:
+ *                           type: string
+ *                           enum: [pedibus, ciclo_expresso]
+ *                         distanceMeters:
+ *                           type: integer
+ *                         createdAt:
+ *                           type: string
+ *                           format: date-time
+ *                         updatedAt:
+ *                           type: string
+ *                           format: date-time
+ *                           nullable: true
+ *                         route:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               lat:
+ *                                 type: number
+ *                               lon:
+ *                                 type: number
+ *                         stops:
+ *                           type: array
+ *                           items:
+ *                             $ref: '#/components/schemas/RouteStop'
+ *             examples:
+ *               withConnector:
+ *                 value:
+ *                   id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *                   name: "Rota Pedibus Centro"
+ *                   activityType: "pedibus"
+ *                   distanceMeters: 2500
+ *                   createdAt: "2024-01-15T10:30:00.000Z"
+ *                   updatedAt: null
+ *                   route: [
+ *                     { lat: 41.553404, lon: -8.397567 },
+ *                     { lat: 41.553890, lon: -8.397123 }
+ *                   ]
+ *                   bounds: {
+ *                     north: 41.554448,
+ *                     east: -8.395174,
+ *                     south: 41.542617,
+ *                     west: -8.404334
+ *                   }
+ *                   stops: [
+ *                     {
+ *                       stationId: "37b57f49-fecf-413d-bc90-6727682a8785",
+ *                       stopNumber: 1,
+ *                       distanceFromStartMeters: 0,
+ *                       timeFromStartMinutes: 0,
+ *                       distanceFromPreviousStationMeters: 0,
+ *                       name: "R. Manuel Ferreira Gomes",
+ *                       type: "regular",
+ *                       latitude: 41.553404,
+ *                       longitude: -8.397567
+ *                     },
+ *                     {
+ *                       stationId: "48c68f50-ged1-524e-cd01-7838793b9896",
+ *                       stopNumber: 2,
+ *                       distanceFromStartMeters: 500,
+ *                       timeFromStartMinutes: 5,
+ *                       distanceFromPreviousStationMeters: 500,
+ *                       name: "Escola Primária",
+ *                       type: "school",
+ *                       latitude: 41.553890,
+ *                       longitude: -8.397123
+ *                     }
+ *                   ]
+ *                   connector: {
+ *                     connectorStation: {
+ *                       id: "48c68f50-ged1-524e-cd01-7838793b9896",
+ *                       name: "Escola Primária"
+ *                     },
+ *                     connectorRoute: {
+ *                       id: "b2c3d4e5-f6g7-8901-bcde-f23456789012",
+ *                       name: "Rota Pedibus Sul",
+ *                       activityType: "pedibus",
+ *                       distanceMeters: 3000,
+ *                       createdAt: "2024-01-15T10:35:00.000Z",
+ *                       updatedAt: null,
+ *                       route: [
+ *                         { lat: 41.553890, lon: -8.397123 },
+ *                         { lat: 41.554200, lon: -8.396800 }
+ *                       ],
+ *                       stops: [
+ *                         {
+ *                           stationId: "48c68f50-ged1-524e-cd01-7838793b9896",
+ *                           stopNumber: 1,
+ *                           distanceFromStartMeters: 0,
+ *                           timeFromStartMinutes: 0,
+ *                           distanceFromPreviousStationMeters: 0,
+ *                           name: "Escola Primária",
+ *                           type: "school",
+ *                           latitude: 41.553890,
+ *                           longitude: -8.397123
+ *                         },
+ *                         {
+ *                           stationId: "59d79f61-hfe2-635f-de12-8949894c0907",
+ *                           stopNumber: 2,
+ *                           distanceFromStartMeters: 600,
+ *                           timeFromStartMinutes: 6,
+ *                           distanceFromPreviousStationMeters: 600,
+ *                           name: "Praça Municipal",
+ *                           type: "regular",
+ *                           latitude: 41.554200,
+ *                           longitude: -8.396800
+ *                         }
+ *                       ]
+ *                     }
+ *                   }
+ *               withoutConnector:
+ *                 value:
+ *                   id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *                   name: "Rota Pedibus Centro"
+ *                   activityType: "pedibus"
+ *                   distanceMeters: 2500
+ *                   createdAt: "2024-01-15T10:30:00.000Z"
+ *                   updatedAt: null
+ *                   route: [
+ *                     { lat: 41.553404, lon: -8.397567 },
+ *                     { lat: 41.553890, lon: -8.397123 }
+ *                   ]
+ *                   bounds: {
+ *                     north: 41.554448,
+ *                     east: -8.395174,
+ *                     south: 41.542617,
+ *                     west: -8.404334
+ *                   }
+ *                   stops: [
+ *                     {
+ *                       stationId: "37b57f49-fecf-413d-bc90-6727682a8785",
+ *                       stopNumber: 1,
+ *                       distanceFromStartMeters: 0,
+ *                       timeFromStartMinutes: 0,
+ *                       distanceFromPreviousStationMeters: 0,
+ *                       name: "R. Manuel Ferreira Gomes",
+ *                       type: "regular",
+ *                       latitude: 41.553404,
+ *                       longitude: -8.397567
+ *                     },
+ *                     {
+ *                       stationId: "48c68f50-ged1-524e-cd01-7838793b9896",
+ *                       stopNumber: 2,
+ *                       distanceFromStartMeters: 500,
+ *                       timeFromStartMinutes: 5,
+ *                       distanceFromPreviousStationMeters: 500,
+ *                       name: "Escola Primária",
+ *                       type: "school", 
+ *                       latitude: 41.553890,
+ *                       longitude: -8.397123
+ *                     }
+ *                   ]
+ *                   connector: undefined
  *       404:
  *         description: Route not found
  *         content:

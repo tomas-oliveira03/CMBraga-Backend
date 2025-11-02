@@ -18,6 +18,7 @@ import activitySessionStationChild from "./activitySession/child"
 import activitySessionStationInstructor from "./activitySession/instructor"
 import activitySessionStationActions from "./activitySession/actions"
 import activitySessionStationParent from "./activitySession/parent"
+import activitySessionStationRoute from "./activitySession/route"
 import badgeRouter from "./badge";
 import routeRouter from "./route";
 import feedbackRouter from "./feedback";
@@ -42,6 +43,7 @@ router.use("/activity-session/child", activitySessionStationChild);
 router.use("/activity-session/instructor", activitySessionStationInstructor);
 router.use("/activity-session/actions", activitySessionStationActions);
 router.use("/activity-session/parent", activitySessionStationParent);
+router.use("/activity-session/route", activitySessionStationRoute);
 router.use("/activity-session", activitySessionRouter);
 router.use("/user", userRouter);
 router.use("/badge", badgeRouter);
