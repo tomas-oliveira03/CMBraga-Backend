@@ -65,6 +65,7 @@ export async function awardBadgesAfterActivity(activityId: string) {
         const parentsIds = activity?.parentStations.map(ps => ps.parentId) || [];
         let parentsStats: Stat[] = [];
         for (const pid of parentsIds) {
+            console.log("Processing parent:", pid);
             const parentDBStats = await AppDataSource.getRepository(ParentStat).find({
                 where: { parentId: pid }
             });
@@ -123,6 +124,8 @@ export async function awardBadgesAfterActivity(activityId: string) {
                 }, new Set<string>()).size,
                 totalPointsEarned: Array.from(activityToChildStat.values()).reduce((sum, cs) => sum + (cs.pointsEarned || 0), 0),
             };
+
+            console.log("Parent stat computed:", stat);
 
             parentsStats.push(stat);
         }

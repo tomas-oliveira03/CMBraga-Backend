@@ -11,6 +11,16 @@ import { ParentStation } from "@/db/entities/ParentStation";
 import { ParentStat } from "@/db/entities/ParentStat";
 import { ChildStat } from "@/db/entities/ChildStat";
 
+type ChildBaseInfo = {
+    childStatId: string;
+    pointsEarned: number;
+}
+
+type ParentBaseInfo = {
+    parentId: string;
+    childStatsInfo: ChildBaseInfo[];
+}
+
 export async function setActivityStats(activityId: string){
     try{
         const activity = await AppDataSource.getRepository(ActivitySession).findOne({
@@ -75,6 +85,7 @@ export async function setActivityStats(activityId: string){
         const activityDate = activity.scheduledAt!
         const insertedClientStatIds: string[] = [];
         const activitySessionWeatherType = activity.weatherType;
+        const parentInfo: ParentBaseInfo[] = [];
 
         for (const [childId, stations] of completeChildStationsMap){
             const pickUpStation = stationInfoMap.get(stations.pickupStationId);
@@ -130,11 +141,19 @@ export async function setActivityStats(activityId: string){
 
                 if ( educatorsInvolvedIds.length > 0) {
                     for (const parentId of educatorsInvolvedIds) {
-                        const parentStatPayload = {
-                            childStatId: insertedId,
-                            parentId: parentId
-                        };
-                        await AppDataSource.getRepository(ParentStat).insert(parentStatPayload);
+                        if (!parentInfo.find(p => p.parentId === parentId)) {
+                            parentInfo.push({
+                                parentId: parentId,
+                                childStatsInfo: []
+                            });
+                        }
+                        const parent = parentInfo.find(p => p.parentId === parentId);
+                        if (parent) {
+                            parent.childStatsInfo.push({
+                                childStatId: insertedId,
+                                pointsEarned: pointsEarned
+                            });
+                        }
                     }
                 }
 
@@ -145,6 +164,28 @@ export async function setActivityStats(activityId: string){
                 }
             }
         }
+
+        if (parentInfo.length > 0) {
+            for (const parent of parentInfo) {
+                let biggerPoints: ChildBaseInfo | null = null;
+                for (const childStat of parent.childStatsInfo) {
+                    if (!biggerPoints || childStat.pointsEarned > biggerPoints.pointsEarned) {
+                        biggerPoints = {
+                            childStatId: childStat.childStatId,
+                            pointsEarned: childStat.pointsEarned
+                        };
+                    }
+                }
+                if (biggerPoints) {
+                    const parentStatPayload = {
+                        parentId: parent.parentId,
+                        childStatId: biggerPoints.childStatId,
+                    };
+                    await AppDataSource.getRepository(ParentStat).insert(parentStatPayload);
+                }
+            }
+        }
+
         if (insertedClientStatIds.length > 0) {
             logger.info(`Inserted ${insertedClientStatIds.length} client stats: ${insertedClientStatIds.join(',')}`);
         } else {
