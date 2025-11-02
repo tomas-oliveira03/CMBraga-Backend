@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn, OneToOne, PrimaryColumn } from "typeorm"
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn, OneToOne, PrimaryColumn, Index } from "typeorm"
 import { Child } from "./Child";
 import { ActivitySession } from "./ActivitySession";
 import { ParentStat } from "./ParentStat";
@@ -26,6 +26,7 @@ export class ChildStat {
     @Column({ type: 'varchar' })
     activitySessionId!: string;
 
+    @Index()
     @Column({ type: 'varchar' })
     childId!: string | null;
 
