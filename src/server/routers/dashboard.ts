@@ -4,8 +4,10 @@ import { ActivitySession } from "@/db/entities/ActivitySession";
 import { authenticate, authorize } from "../middleware/auth";
 import { UserRole, ActivitySessionStatus, IssueStatus } from "@/helpers/types";
 import { User } from "@/db/entities/User";
-import { MoreThan, IsNull, Not } from "typeorm";
+import { MoreThan, IsNull, Not, In } from "typeorm";
 import { Issue } from "@/db/entities/Issue";
+import { ParentStat } from "@/db/entities/ParentStat";
+import { ChildStat } from "@/db/entities/ChildStat";
 
 const LIMIT = 50;
 
@@ -276,5 +278,54 @@ router.get('/activity-sessions', authenticate, authorize(UserRole.ADMIN), async 
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
+
+// Get activity session stats by activity id
+router.get('/activity-stats/:id', authenticate, authorize(UserRole.ADMIN), async (req: Request, res : Response) => {
+    try {
+        const activityId = req.params.id;
+        const activity = await AppDataSource.getRepository(ActivitySession).findOne({
+            where: { id: activityId },
+            relations: {
+                issues: true,
+                feedbacks: true,
+                route: true,
+                childStations: true,
+                parentStations: true
+            }
+        });
+        if(!activity){
+            return res.status(404).json({ message: "Activity not found" });
+        }
+
+        const childStats = await AppDataSource.getRepository(ChildStat).find({
+            where: { activitySession: { id: activityId } }
+        });
+
+        if (childStats.length === 0) {
+            return res.status(200).json({
+                activity,
+                childStats: [],
+                parentStats: []
+            });
+        }
+
+        const childStatsIds = childStats.map(stat => stat.id);
+
+        const parentStats = await AppDataSource.getRepository(ParentStat).find({
+            where: {  childStat: { id: In(childStatsIds) } }
+        });
+
+        return res.status(200).json({
+            activity,
+            childStats,
+            parentStats
+        });
+
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+})
+
+
 
 export default router;

@@ -554,3 +554,115 @@
  *                   type: string
  *                   example: "Internal server error"
  */
+
+/**
+ * @swagger
+ * /dashboard/activity-stats/{id}:
+ *   get:
+ *     summary: Get activity session stats by activity ID (admin only)
+ *     description: >
+ *       Returns an activity session with its associated child and parent stats for a given activity session ID.
+ *       Requires authentication and ADMIN authorization.
+ *     tags:
+ *       - Dashboard
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "s1t2u3v4-w5x6-7890-yz12-ab1234567890"
+ *         description: Activity session ID (UUID)
+ *     responses:
+ *       200:
+ *         description: Activity session stats
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 activity:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       example: "s1t2u3v4-w5x6-7890-yz12-ab1234567890"
+ *                     type:
+ *                       type: string
+ *                       example: "bike_ride"
+ *                     scheduledAt:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2024-03-01T09:00:00.000Z"
+ *                     startedAt:
+ *                       type: string
+ *                       format: date-time
+ *                       nullable: true
+ *                       example: "2024-03-01T09:05:00.000Z"
+ *                     finishedAt:
+ *                       type: string
+ *                       format: date-time
+ *                       nullable: true
+ *                       example: "2024-03-01T10:00:00.000Z"
+ *                     createdAt:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2024-02-25T08:00:00.000Z"
+ *                     updatedAt:
+ *                       type: string
+ *                       format: date-time
+ *                       nullable: true
+ *                       example: "2024-03-01T11:00:00.000Z"
+ *                 childStats:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         example: "childstat-uuid"
+ *                       activitySession:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                             example: "s1t2u3v4-w5x6-7890-yz12-ab1234567890"
+ *                       // ...other child stat properties...
+ *                 parentStats:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         example: "parentstat-uuid"
+ *                       childStat:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                             example: "childstat-uuid"
+ *                       // ...other parent stat properties...
+ *       404:
+ *         description: Activity not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Activity not found"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
