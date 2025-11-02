@@ -15,7 +15,6 @@ import { setActivityStats } from "@/server/services/activityStats";
 import { Parent } from "@/db/entities/Parent";
 import { ParentActivitySession } from "@/db/entities/ParentActivitySession";
 import { ParentStation } from "@/db/entities/ParentStation";
-import { RouteSchema } from "@/server/schemas/route";
 import { awardBadgesAfterActivity } from "@/server/services/badge";
 import { setAllInstructorsInActivityRedis } from "@/server/services/activity";
 import { webSocketEvents } from "@/server/services/websocket-events";

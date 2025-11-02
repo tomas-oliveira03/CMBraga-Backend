@@ -6,9 +6,8 @@ import { ChildActivitySession } from "@/db/entities/ChildActivitySession";
 import { ParentChild } from "@/db/entities/ParentChild";
 import { UserRole } from "@/helpers/types";
 import { authenticate, authorize } from "@/server/middleware/auth";
-import { In, IsNull } from "typeorm";
+import { In } from "typeorm";
 import { RouteConnection } from "@/db/entities/RouteConnection";
-import { string } from "zod";
 
 const router = express.Router();
 
@@ -41,7 +40,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
-});
+}); 
 
 
 router.get('/available-stations/:id', async (req: Request, res: Response) => {

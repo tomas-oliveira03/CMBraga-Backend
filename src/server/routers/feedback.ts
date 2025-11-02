@@ -150,8 +150,7 @@ router.post('/', async (req: Request, res: Response) => {
         const existingFeedback = await AppDataSource.getRepository(Feedback).findOne({
             where: {
                 activitySessionId: validatedData.activitySessionId,
-                childId: validatedData.childId,
-                parentId: validatedData.parentId
+                childId: validatedData.childId
             }
         });
 
