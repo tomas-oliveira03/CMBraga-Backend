@@ -32,7 +32,6 @@ const options = {
         ],
     },
     apis: [
-        './src/server/routers/**/*.ts',
         './src/server/docs/**/*.ts',
     ],
 };
