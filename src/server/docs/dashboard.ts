@@ -629,7 +629,6 @@
  *                           id:
  *                             type: string
  *                             example: "s1t2u3v4-w5x6-7890-yz12-ab1234567890"
- *                       // ...other child stat properties...
  *                 parentStats:
  *                   type: array
  *                   items:
@@ -644,7 +643,6 @@
  *                           id:
  *                             type: string
  *                             example: "childstat-uuid"
- *                       // ...other parent stat properties...
  *       404:
  *         description: Activity not found
  *         content:
