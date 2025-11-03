@@ -4,7 +4,7 @@ import express, { Request, Response } from "express";
 import { UpdateChildSchema } from "../schemas/child";
 import { map, z } from "zod";
 import { Station } from "@/db/entities/Station";
-import { ChildStationType, StationType } from "@/helpers/types";
+import { ActivityLinkType, ChildStationType, StationType } from "@/helpers/types";
 import multer from "multer";
 import { isValidImageFile } from "@/helpers/storage";
 import { updateProfilePicture } from "../services/user";
@@ -433,13 +433,13 @@ router.get('/upcoming-activities/:id', async (req: Request, res: Response) => {
                     return a.registeredAt.getTime() - b.registeredAt.getTime();
                 });
                 return {
-                    type: "bundle",
+                    type: ActivityLinkType.BUNDLE,
                     activities
                 };
             } else {
                 // Single
                 return {
-                    type: "single",
+                    type: ActivityLinkType.SINGLE,
                     ...group[0]!
                 };
             }
@@ -448,7 +448,7 @@ router.get('/upcoming-activities/:id', async (req: Request, res: Response) => {
         // Sort all by expectedDepartureAt
         finalPayload.sort((a, b) => {
             const getExpectedDepartureAt = (item: UpcomingActivityPayload) => {
-                if (item.type === "bundle") {
+                if (item.type === ActivityLinkType.BUNDLE) {
                     return item.activities[0]!.activitySession.expectedDepartureAt.getTime();
                 } else {
                     return item.activitySession.expectedDepartureAt.getTime();
@@ -552,13 +552,13 @@ router.get('/ongoing-activities/:id', async (req: Request, res: Response) => {
                     return a.registeredAt.getTime() - b.registeredAt.getTime();
                 });
                 return {
-                    type: "bundle",
+                    type: ActivityLinkType.BUNDLE,
                     activities
                 };
             } else {
                 // Single
                 return {
-                    type: "single",
+                    type: ActivityLinkType.SINGLE,
                     ...group[0]!
                 };
             }
@@ -567,7 +567,7 @@ router.get('/ongoing-activities/:id', async (req: Request, res: Response) => {
         // Sort all by expectedDepartureAt
         finalPayload.sort((a, b) => {
             const getExpectedDepartureAt = (item: OngoingActivityPayload) => {
-                if (item.type === "bundle") {
+                if (item.type === ActivityLinkType.BUNDLE) {
                     return item.activities[0]!.activitySession.expectedDepartureAt.getTime();
                 } else {
                     return item.activitySession.expectedDepartureAt.getTime();
@@ -678,13 +678,13 @@ router.get('/previous-activities/:id', async (req: Request, res: Response) => {
                     return a.registeredAt.getTime() - b.registeredAt.getTime();
                 });
                 return {
-                    type: "bundle",
+                    type: ActivityLinkType.BUNDLE,
                     activities
                 };
             } else {
                 // Single
                 return {
-                    type: "single",
+                    type: ActivityLinkType.SINGLE,
                     ...group[0]!
                 };
             }
@@ -693,7 +693,7 @@ router.get('/previous-activities/:id', async (req: Request, res: Response) => {
         // Sort all by expectedDepartureAt
         finalPayload.sort((a, b) => {
             const getExpectedDepartureAt = (item: PreviousActivityPayload) => {
-                if (item.type === "bundle") {
+                if (item.type === ActivityLinkType.BUNDLE) {
                     return item.activities[0]!.activitySession.arrivedAt.getTime();
                 } else {
                     return item.activitySession.arrivedAt.getTime();

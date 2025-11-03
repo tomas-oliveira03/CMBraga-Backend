@@ -1,4 +1,4 @@
-import { ActivityMode, ActivityType, WeatherType } from "./types";
+import { ActivityLinkType, ActivityMode, ActivityType, WeatherType } from "./types";
 
 // UPCOMING
 export interface UpcomingActivitySessionInfo {
@@ -32,12 +32,12 @@ export interface UpcomingActivitySessionInfo {
 }
 
 export interface UpcomingBundleActivityPayload {
-    type: "bundle";
+    type: ActivityLinkType.BUNDLE;
     activities: UpcomingActivitySessionInfo[];
 }
 
 export interface UpcomingSingleActivityPayload extends UpcomingActivitySessionInfo {
-    type: "single";
+    type: ActivityLinkType.SINGLE;
 }
 
 export type UpcomingActivityPayload = UpcomingBundleActivityPayload | UpcomingSingleActivityPayload;
@@ -84,12 +84,12 @@ export interface PreviousActivitySessionInfo {
 }
 
 export interface PreviousBundleActivityPayload {
-    type: "bundle";
+    type: ActivityLinkType.BUNDLE;
     activities: PreviousActivitySessionInfo[];
 }
 
 export interface PreviousSingleActivityPayload extends PreviousActivitySessionInfo {
-    type: "single";
+    type: ActivityLinkType.SINGLE;
 }
 
 export type PreviousActivityPayload = PreviousBundleActivityPayload | PreviousSingleActivityPayload;
@@ -131,12 +131,12 @@ export interface OngoingActivitySessionInfo {
 }
 
 export interface OngoingBundleActivityPayload {
-    type: "bundle";
+    type: ActivityLinkType.BUNDLE;
     activities: OngoingActivitySessionInfo[];
 }
 
 export interface OngoingSingleActivityPayload extends OngoingActivitySessionInfo {
-    type: "single";
+    type: ActivityLinkType.SINGLE;
 }
 
 export type OngoingActivityPayload = OngoingBundleActivityPayload | OngoingSingleActivityPayload;

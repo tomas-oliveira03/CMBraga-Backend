@@ -101,3 +101,10 @@ export interface RoutePoint {
     lat: number;
     lon: number;
 }
+
+
+// Activity Types
+export enum ActivityLinkType {
+    SINGLE = 'single',
+    BUNDLE = 'bundle'
+}
