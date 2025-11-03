@@ -8,6 +8,8 @@ import multer from "multer";
 import { isValidImageFile } from "@/helpers/storage";
 import { updateProfilePicture } from "../services/user";
 import { User } from "@/db/entities/User";
+import { ActivityStatusType } from "@/helpers/types";
+import { IsNull } from "typeorm";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -104,6 +106,62 @@ router.put('/:id', upload.single('file'), async (req: Request, res: Response) =>
             });
         }
         
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+});
+
+
+// Get all instructor ongoing and upcoming activities
+router.get('/next-activities/:id', async (req: Request, res: Response) => {
+    try {
+        const instructorId = req.params.id;
+        const instructor = await AppDataSource.getRepository(Instructor).findOne({
+            where: {
+                id: instructorId,
+                instructorActivitySessions: {
+                    activitySession: {
+                        finishedAt: IsNull()
+                    }
+                }
+            },
+            relations: {
+                instructorActivitySessions: {
+                    activitySession: {
+                        route: true
+                    }
+                }
+            }
+        });
+        if (!instructor){
+            return res.status(404).json({ message: "Instructor not found" })
+        }
+
+        const finalPayload = instructor.instructorActivitySessions.map(activitySessionLink => {
+            const activitySession = activitySessionLink.activitySession;
+            const activityStatusType = activitySession.startedAt 
+                ? ActivityStatusType.ONGOING 
+                : ActivityStatusType.UPCOMING;
+
+            return {
+                status: activityStatusType,
+                activity: {
+                    id: activitySession.id,
+                    type: activitySession.type,
+                    mode: activitySession.mode,
+                    scheduledAt: activitySession.scheduledAt,
+                    ...(activitySession.startedAt && { startedAt: activitySession.startedAt }),
+                    createdAt: activitySession.createdAt,
+                    updatedAt: activitySession.updatedAt
+                },
+                route: {
+                    id: activitySession.route.id,
+                    name: activitySession.route.name,
+                }
+            };
+        })
+
+        return res.status(200).json(finalPayload);
+    } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });

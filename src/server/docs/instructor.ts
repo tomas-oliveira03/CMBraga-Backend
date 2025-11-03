@@ -197,3 +197,94 @@
  *       500:
  *         description: Internal server error
  */
+
+
+/**
+ * @swagger
+ * /instructor/next-activities/{id}:
+ *   get:
+ *     summary: Get instructor's next activities
+ *     description: Returns all ongoing and upcoming activities for a specific instructor
+ *     tags:
+ *       - Instructor
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *         description: Instructor ID (UUID)
+ *     responses:
+ *       200:
+ *         description: List of instructor's next activities
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   status:
+ *                     type: string
+ *                     enum: [upcoming, ongoing]
+ *                     example: "upcoming"
+ *                   activity:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         example: "b2c3d4e5-f6g7-8901-bcde-f23456789012"
+ *                       type:
+ *                         type: string
+ *                         example: "GUIDED_TOUR"
+ *                       mode:
+ *                         type: string
+ *                         example: "WALKING"
+ *                       scheduledAt:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2024-01-25T14:30:00.000Z"
+ *                       startedAt:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2024-01-25T14:32:15.000Z"
+ *                         description: "Only present if activity has started"
+ *                       createdAt:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2024-01-20T10:15:30.000Z"
+ *                       updatedAt:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2024-01-22T16:45:22.000Z"
+ *                   route:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         example: "c3d4e5f6-g7h8-9012-cdef-345678901234"
+ *                       name:
+ *                         type: string
+ *                         example: "Historic Center Route"
+ *       404:
+ *         description: Instructor not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Instructor not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Database connection error"
+ */

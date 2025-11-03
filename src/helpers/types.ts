@@ -108,3 +108,9 @@ export enum ActivityLinkType {
     SINGLE = 'single',
     BUNDLE = 'bundle'
 }
+
+export enum ActivityStatusType {
+    ONGOING = 'ongoing',
+    PREVIOUS = 'previous',
+    UPCOMING = 'upcoming'
+}
