@@ -54,8 +54,9 @@ router.post('/', async (req: Request, res: Response) => {
             return res.status(400).json({ message: "Badge name must be unique" });
         }
 
-        await AppDataSource.getRepository(Badge).insert(validatedData);
-        return res.status(201).json({ message: "Badge created successfully" });
+        const result = await AppDataSource.getRepository(Badge).insert(validatedData);
+        const newId = result.identifiers?.[0]?.id ?? null;
+        return res.status(201).json({ message: "Badge created successfully", id: newId });
     } catch (error) {
         if (error instanceof z.ZodError) {
             return res.status(400).json({ message: "Validation error", errors: error.issues });
@@ -81,7 +82,7 @@ router.put('/:id', async (req: Request, res: Response) => {
         }
 
         await AppDataSource.getRepository(Badge).update(currentBadge.id, validatedData);
-        return res.status(200).json({ message: "Badge updated successfully" });
+        return res.status(200).json({ message: "Badge updated successfully", id: currentBadge.id });
     } catch (error) {
         if (error instanceof z.ZodError) {
             return res.status(400).json({ message: "Validation error", errors: error.issues });

@@ -114,3 +114,17 @@ export enum ActivityStatusType {
     PREVIOUS = 'previous',
     UPCOMING = 'upcoming'
 }
+
+
+export enum RankingTimeframe {
+    MONTHLY = 'monthly',
+    ANNUALLY = 'annually',
+    ALL_TIME = 'all_time'
+}
+
+export enum RankingType {
+    PARENTS = 'parents',
+    CHILDREN = 'children',
+    SCHOOLS = 'schools',
+    SCHOOL_CLASSES = 'school_classes'
+}

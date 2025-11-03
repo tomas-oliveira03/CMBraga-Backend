@@ -22,6 +22,7 @@ import activitySessionStationRoute from "./activitySession/route"
 import badgeRouter from "./badge";
 import routeRouter from "./route";
 import feedbackRouter from "./feedback";
+import leaderboardRouter from "./leaderboard";
 
 const router = express.Router();
 
@@ -49,5 +50,6 @@ router.use("/user", userRouter);
 router.use("/badge", badgeRouter);
 router.use("/route", routeRouter);
 router.use("/feedback", feedbackRouter);
+router.use("/leaderboard", leaderboardRouter);
 
 export default router;
