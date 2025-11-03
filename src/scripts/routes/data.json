@@ -30,62 +30,6 @@
             "password": "Person23!",
             "phone": "910000002",
             "address": "Rua 2, nº 2"
-        },
-        {
-            "name": "Pai 3",
-            "email": "pai3@exemplo.pt",
-            "password": "Person23!",
-            "phone": "910000003",
-            "address": "Rua 3, nº 3"
-        },
-        {
-            "name": "Pai 4",
-            "email": "pai4@exemplo.pt",
-            "password": "Person23!",
-            "phone": "910000004",
-            "address": "Rua 4, nº 4"
-        },
-        {
-            "name": "Pai 5",
-            "email": "pai5@exemplo.pt",
-            "password": "Person23!",
-            "phone": "910000005",
-            "address": "Rua 5, nº 5"
-        },
-        {
-            "name": "Pai 6",
-            "email": "pai6@exemplo.pt",
-            "password": "Person23!",
-            "phone": "910000006",
-            "address": "Rua 6, nº 6"
-        },
-        {
-            "name": "Pai 7",
-            "email": "pai7@exemplo.pt",
-            "password": "Person23!",
-            "phone": "910000007",
-            "address": "Rua 7, nº 7"
-        },
-        {
-            "name": "Pai 8",
-            "email": "pai8@exemplo.pt",
-            "password": "Person23!",
-            "phone": "910000008",
-            "address": "Rua 8, nº 8"
-        },
-        {
-            "name": "Pai 9",
-            "email": "pai9@exemplo.pt",
-            "password": "Person23!",
-            "phone": "910000009",
-            "address": "Rua 9, nº 9"
-        },
-        {
-            "name": "Pai 10",
-            "email": "pai10@exemplo.pt",
-            "password": "Person23!",
-            "phone": "910000010",
-            "address": "Rua 10, nº 10"
         }
     ],
     "instructores": [
@@ -116,46 +60,6 @@
         {
             "id": "pai2@exemplo.pt",
             "name": "Pai 2",
-            "role": "parent"
-        },
-        {
-            "id": "pai3@exemplo.pt",
-            "name": "Pai 3",
-            "role": "parent"
-        },
-        {
-            "id": "pai4@exemplo.pt",
-            "name": "Pai 4",
-            "role": "parent"
-        },
-        {
-            "id": "pai5@exemplo.pt",
-            "name": "Pai 5",
-            "role": "parent"
-        },
-        {
-            "id": "pai6@exemplo.pt",
-            "name": "Pai 6",
-            "role": "parent"
-        },
-        {
-            "id": "pai7@exemplo.pt",
-            "name": "Pai 7",
-            "role": "parent"
-        },
-        {
-            "id": "pai8@exemplo.pt",
-            "name": "Pai 8",
-            "role": "parent"
-        },
-        {
-            "id": "pai9@exemplo.pt",
-            "name": "Pai 9",
-            "role": "parent"
-        },
-        {
-            "id": "pai10@exemplo.pt",
-            "name": "Pai 10",
             "role": "parent"
         },
         {

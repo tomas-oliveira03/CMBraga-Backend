@@ -428,7 +428,7 @@ async function dbHydration() {
     const allStations = Array.from(stationMap.values());
     const schoolStations = allStations.filter(s => s.type === "school");
     
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 3; i++) {
       const schoolStation = schoolStations[i % schoolStations.length] || allStations[allStations.length - 1];
       const child = childRepo.create({
         name: `Criança ${i + 1}`,
@@ -528,14 +528,23 @@ async function dbHydration() {
       instructorActivityRepo.create({ instructorId: instrutores[1]!.id, activitySessionId: futureActivity1.id })
     ]);
     
-    // Register 5 children
-    for (let i = 0; i < 5; i++) {
+    // Get valid stations for LinhaAzul
+    const linhaAzulStations = await routeStationRepo.find({ 
+      where: { routeId: linhaAzul!.id },
+      order: { stopNumber: 'ASC' }
+    });
+    
+    // Register children using valid route stations
+    for (let i = 0; i < Math.min(2, criancas.length); i++) {
       const child = criancas[i]!;
+      const pickupStation = linhaAzulStations[i % linhaAzulStations.length];
+      const dropoffStation = linhaAzulStations[(i + 2) % linhaAzulStations.length]; // Different station for dropoff
+      
       await childActivityRepo.save(childActivityRepo.create({
         childId: child.id,
         activitySessionId: futureActivity1.id,
-        pickUpStationId: (await routeStationRepo.findOne({ where: { routeId: linhaAzul!.id, stopNumber: (i % 3) + 1 } }))!.stationId,
-        dropOffStationId: child.dropOffStationId,
+        pickUpStationId: pickupStation!.stationId,
+        dropOffStationId: dropoffStation!.stationId,
         isLateRegistration: false,
         parentId: pais[i % pais.length]!.id,
         registeredAt: new Date(baseDate.getTime() - 3 * 24 * 60 * 60 * 1000)
@@ -574,9 +583,17 @@ async function dbHydration() {
     ]);
     
     // Register 3 children with transfer
-    for (let i = 5; i < 8; i++) {
+    const transferChildCount = Math.min(2, criancas.length - 1);
+    for (let i = 1; i < 1 + transferChildCount; i++) {
       const child = criancas[i]!;
-      const pickupStation = (await routeStationRepo.findOne({ where: { routeId: linhaAzul!.id, stopNumber: 1 } }))!.stationId;
+      const pickupStation = linhaAzulStations[0]!.stationId;
+      
+      // Get valid stations for LinhaVermelha
+      const linhaVermelhaStations = await routeStationRepo.find({ 
+        where: { routeId: linhaVermelha!.id },
+        order: { stopNumber: 'DESC' }
+      });
+      const finalDropoff = linhaVermelhaStations[0]!.stationId;
       
       await childActivityRepo.save([
         childActivityRepo.create({
@@ -593,7 +610,7 @@ async function dbHydration() {
           childId: child.id,
           activitySessionId: futureActivity2b.id,
           pickUpStationId: mergeStop!.id,
-          dropOffStationId: child.dropOffStationId,
+          dropOffStationId: finalDropoff,
           isLateRegistration: false,
           parentId: pais[i % pais.length]!.id,
           registeredAt: new Date(baseDate.getTime() - 2 * 24 * 60 * 60 * 1000),
@@ -618,16 +635,17 @@ async function dbHydration() {
       instructorActivityRepo.create({ instructorId: instrutores[0]!.id, activitySessionId: ongoingActivity.id })
     );
     
-    // Register and check-in 4 children
-    for (let i = 8; i < 12; i++) {
+    // Register and check-in children for ongoing activity
+    for (let i = 0; i < Math.min(1, criancas.length); i++) {
       const child = criancas[i]!;
-      const pickupStationRS = await routeStationRepo.findOne({ where: { routeId: linhaAzul!.id, stopNumber: (i % 3) + 1 } });
+      const pickupStation = linhaAzulStations[i % linhaAzulStations.length];
+      const dropoffStation = linhaAzulStations[(i + 3) % linhaAzulStations.length];
       
       await childActivityRepo.save(childActivityRepo.create({
         childId: child.id,
         activitySessionId: ongoingActivity.id,
-        pickUpStationId: pickupStationRS!.stationId,
-        dropOffStationId: child.dropOffStationId,
+        pickUpStationId: pickupStation!.stationId,
+        dropOffStationId: dropoffStation!.stationId,
         isLateRegistration: false,
         parentId: pais[i % pais.length]!.id,
         registeredAt: new Date(ongoingActivity.scheduledAt.getTime() - 24 * 60 * 60 * 1000)
@@ -636,7 +654,7 @@ async function dbHydration() {
       // Check-in at pickup station
       await childStationRepo.save(childStationRepo.create({
         childId: child.id,
-        stationId: pickupStationRS!.stationId,
+        stationId: pickupStation!.stationId,
         activitySessionId: ongoingActivity.id,
         type: "in" as any,
         instructorId: instrutores[0]!.id,
@@ -662,20 +680,23 @@ async function dbHydration() {
       instructorActivityRepo.create({ instructorId: instrutores[1]!.id, activitySessionId: finishedActivity.id })
     );
     
-    // Register 6 children with full check-in/out
-    for (let i = 12; i < 18; i++) {
+    // Get valid stations for LinhaVermelha
+    const linhaVermelhaStations = await routeStationRepo.find({ 
+      where: { routeId: linhaVermelha!.id },
+      order: { stopNumber: 'ASC' }
+    });
+    
+    // Register children with full check-in/out for finished activity
+    for (let i = 0; i < Math.min(2, criancas.length); i++) {
       const child = criancas[i]!;
-      const pickupStationRS = await routeStationRepo.findOne({ where: { routeId: linhaVermelha!.id, stopNumber: 1 } });
-      const dropoffStationRS = await routeStationRepo.findOne({ 
-        where: { routeId: linhaVermelha!.id },
-        order: { stopNumber: 'DESC' }
-      });
+      const pickupStation = linhaVermelhaStations[0];
+      const dropoffStation = linhaVermelhaStations[linhaVermelhaStations.length - 1];
       
       await childActivityRepo.save(childActivityRepo.create({
         childId: child.id,
         activitySessionId: finishedActivity.id,
-        pickUpStationId: pickupStationRS!.stationId,
-        dropOffStationId: child.dropOffStationId,
+        pickUpStationId: pickupStation!.stationId,
+        dropOffStationId: dropoffStation!.stationId,
         isLateRegistration: false,
         parentId: pais[i % pais.length]!.id,
         registeredAt: new Date(finishedActivity.scheduledAt.getTime() - 48 * 60 * 60 * 1000)
@@ -684,7 +705,7 @@ async function dbHydration() {
       // Check-in
       await childStationRepo.save(childStationRepo.create({
         childId: child.id,
-        stationId: pickupStationRS!.stationId,
+        stationId: pickupStation!.stationId,
         activitySessionId: finishedActivity.id,
         type: "in" as any,
         instructorId: instrutores[1]!.id,
@@ -694,7 +715,7 @@ async function dbHydration() {
       // Check-out
       await childStationRepo.save(childStationRepo.create({
         childId: child.id,
-        stationId: child.dropOffStationId,
+        stationId: dropoffStation!.stationId,
         activitySessionId: finishedActivity.id,
         type: "out" as any,
         instructorId: instrutores[1]!.id,
@@ -702,22 +723,6 @@ async function dbHydration() {
       }));
     }
     
-    // Add feedbacks for finished activity
-    for (let i = 12; i < 15; i++) {
-      await feedbackRepo.save(feedbackRepo.create({
-        evaluation1: 4 + (i % 2),
-        evaluation2: 4 + (i % 2),
-        evaluation3: 4,
-        evaluation4: 5,
-        evaluation5: 4 + (i % 2),
-        textFeedback: `Feedback da criança ${i + 1}: Atividade muito boa!`,
-        overallRating: 4 + (i % 2),
-        activitySessionId: finishedActivity.id,
-        childId: criancas[i]!.id,
-        parentId: pais[i % pais.length]!.id,
-        submitedAt: new Date(finishedActivity.finishedAt!.getTime() + 2 * 60 * 60 * 1000)
-      }));
-    }
 
     // SCENARIO 5: Future activity in late registration
     const lateRegActivity = activityRepo.create({
@@ -733,27 +738,39 @@ async function dbHydration() {
       instructorActivityRepo.create({ instructorId: instrutores[0]!.id, activitySessionId: lateRegActivity.id })
     );
     
-    // Register 2 children (one normal, one late)
-    await childActivityRepo.save([
-      childActivityRepo.create({
-        childId: criancas[18]!.id,
-        activitySessionId: lateRegActivity.id,
-        pickUpStationId: (await routeStationRepo.findOne({ where: { routeId: linhaAzul!.id, stopNumber: 1 } }))!.stationId,
-        dropOffStationId: criancas[18]!.dropOffStationId,
-        isLateRegistration: false,
-        parentId: pais[18 % pais.length]!.id,
-        registeredAt: new Date(baseDate.getTime() - 24 * 60 * 60 * 1000)
-      }),
-      childActivityRepo.create({
-        childId: criancas[19]!.id,
-        activitySessionId: lateRegActivity.id,
-        pickUpStationId: (await routeStationRepo.findOne({ where: { routeId: linhaAzul!.id, stopNumber: 2 } }))!.stationId,
-        dropOffStationId: criancas[19]!.dropOffStationId,
-        isLateRegistration: true,
-        parentId: pais[19 % pais.length]!.id,
-        registeredAt: new Date(now.getTime() - 2 * 60 * 60 * 1000) // 2h ago
-      })
-    ]);
+    // Register children for late registration activity
+    const lateRegChildren = [];
+    if (criancas.length >= 2) {
+      const dropoffStation1 = linhaAzulStations[(linhaAzulStations.length - 2) % linhaAzulStations.length];
+      lateRegChildren.push(
+        childActivityRepo.create({
+          childId: criancas[1]!.id,
+          activitySessionId: lateRegActivity.id,
+          pickUpStationId: linhaAzulStations[0]!.stationId,
+          dropOffStationId: dropoffStation1!.stationId,
+          isLateRegistration: false,
+          parentId: pais[1 % pais.length]!.id,
+          registeredAt: new Date(baseDate.getTime() - 24 * 60 * 60 * 1000)
+        })
+      );
+    }
+    if (criancas.length >= 3) {
+      const dropoffStation2 = linhaAzulStations[linhaAzulStations.length - 1];
+      lateRegChildren.push(
+        childActivityRepo.create({
+          childId: criancas[2]!.id,
+          activitySessionId: lateRegActivity.id,
+          pickUpStationId: linhaAzulStations[1]!.stationId,
+          dropOffStationId: dropoffStation2!.stationId,
+          isLateRegistration: true,
+          parentId: pais[2 % pais.length]!.id,
+          registeredAt: new Date(now.getTime() - 2 * 60 * 60 * 1000) // 2h ago
+        })
+      );
+    }
+    if (lateRegChildren.length > 0) {
+      await childActivityRepo.save(lateRegChildren);
+    }
 
     // Create sample issue
     await issueRepo.save(issueRepo.create({
@@ -812,11 +829,11 @@ async function dbHydration() {
     console.log(`✅ Crianças: ${criancas.length} (com ${childHistories.length} registos de histórico)`);
     console.log(`💬 Chat geral: ${allUserEmails.length} utilizadores + ${sampleMessages.length} mensagens`);
     console.log(`\n📅 ATIVIDADES CRIADAS:`);
-    console.log(`   1️⃣  Futura SEM transbordo (daqui a 2 dias) - 5 crianças registadas`);
-    console.log(`   2️⃣  Futura COM transbordo (daqui a 3 dias) - 3 crianças com transbordo`);
-    console.log(`   3️⃣  Em curso (iniciada há 30 min) - 4 crianças com check-in`);
-    console.log(`   4️⃣  Finalizada (ontem) - 6 crianças com check-in/out completo + 3 feedbacks`);
-    console.log(`   5️⃣  Futura em inscrição tardia (hoje à noite) - 2 crianças (1 normal, 1 tardia)`);
+    console.log(`   1️⃣  Futura SEM transbordo (daqui a 2 dias) - ${Math.min(2, criancas.length)} crianças registadas`);
+    console.log(`   2️⃣  Futura COM transbordo (daqui a 3 dias) - ${Math.min(2, Math.max(0, criancas.length - 1))} crianças com transbordo`);
+    console.log(`   3️⃣  Em curso (iniciada há 30 min) - ${Math.min(1, criancas.length)} crianças com check-in`);
+    console.log(`   4️⃣  Finalizada (ontem) - ${Math.min(2, criancas.length)} crianças com check-in/out completo`);
+    console.log(`   5️⃣  Futura em inscrição tardia (hoje à noite) - ${lateRegChildren.length} crianças`);
     console.log(`\n🏅 Badges: ${createdBadgesCount}`);
     console.log(`💬 Feedbacks: 3 (atividade finalizada)`);
     console.log(`⚠️  Issues: 1`);
