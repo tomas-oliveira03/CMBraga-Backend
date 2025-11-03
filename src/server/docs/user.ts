@@ -56,8 +56,8 @@
  * @swagger
  * /user/{id}:
  *   get:
- *     summary: Get user by ID
- *     description: Returns a single user by their ID (email) with role information
+ *     summary: Get user by role-specific ID
+ *     description: Returns a single user by their role-specific ID (adminId, instructorId, etc.) with role information.
  *     tags:
  *       - User
  *     parameters:
@@ -66,8 +66,8 @@
  *         required: true
  *         schema:
  *           type: string
- *           example: "user@example.com"
- *         description: User ID (email address)
+ *           example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *         description: User's role-specific ID (adminId, instructorId, parentId, healthProfessionalId)
  *     responses:
  *       200:
  *         description: User found
