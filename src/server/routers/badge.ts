@@ -419,4 +419,237 @@ router.get('/profile/children-badges-to-achieve', authenticate, authorize(UserRo
     }
 });
 
+router.get('/profile/badges-progress', authenticate, authorize(UserRole.PARENT), async (req: Request, res: Response) => {
+    try {
+        const userId = req.user!.userId;
+
+        const badges = await AppDataSource.getRepository(Badge).find();
+
+        const assignedClientBadges = await AppDataSource.getRepository(ClientBadge).find({
+            where: { parentId: userId, childId: IsNull() },
+            relations: ['badge']
+        });
+        const achievedIds = new Set(assignedClientBadges.map(cb => cb.badgeId));
+
+        const parentDBStats = await AppDataSource.getRepository(ParentStat).find({
+            where: { parentId: userId }
+        });
+
+        const enrichedParentStats: ParentStat[] = [];
+        for (const ps of parentDBStats) {
+            const childStatId = ps.childStatId;
+            if (!childStatId) continue;
+            const childStat = await AppDataSource.getRepository(ChildStat).findOne({
+                where: { id: childStatId },
+                relations: { activitySession: true }
+            });
+            if (!childStat) continue;
+            ps.childStat = childStat;
+            enrichedParentStats.push(ps);
+        }
+
+        const activitySessionMap: Map<string, ParentStat[]> = new Map();
+        for (const ps of enrichedParentStats) {
+            const activitySessionId = ps.childStat.activitySessionId;
+            if (!activitySessionMap.has(activitySessionId)) activitySessionMap.set(activitySessionId, []);
+            activitySessionMap.get(activitySessionId)!.push(ps);
+        }
+
+        const activityToChildStat: Map<string, ChildStat> = new Map();
+        for (const [activitySessionId, pStats] of activitySessionMap) {
+            let bestChildStat: ChildStat | null = null;
+            for (const ps of pStats) {
+                const cs = ps.childStat;
+                if (!cs) continue;
+                if (bestChildStat == null || (cs.pointsEarned ?? 0) > (bestChildStat.pointsEarned ?? 0)) {
+                    bestChildStat = cs;
+                }
+            }
+            if (bestChildStat) activityToChildStat.set(activitySessionId, bestChildStat);
+        }
+
+        const parentStat = {
+            totalDistanceMeters: Array.from(activityToChildStat.values()).reduce((sum, cs) => sum + (cs.distanceMeters || 0), 0),
+            totalCaloriesBurned: Array.from(activityToChildStat.values()).reduce((sum, cs) => sum + (cs.caloriesBurned || 0), 0),
+            totalParticipations: activityToChildStat.size,
+            totalDifferentWeatherTypes: Array.from(activityToChildStat.values()).reduce((set, cs) => {
+                const wt = cs.activitySession?.weatherType;
+                if (wt != null) set.add(String(wt));
+                return set;
+            }, new Set<string>()).size,
+            totalPointsEarned: Array.from(activityToChildStat.values()).reduce((sum, cs) => sum + (cs.pointsEarned || 0), 0),
+        };
+
+        const excludedCriteria = [BadgeCriteria.STREAK, BadgeCriteria.LEADERBOARD, BadgeCriteria.SPECIAL];
+
+        const result = badges.map(b => {
+            const achieved = achievedIds.has(b.id);
+            let percentDone: number | null = null;
+
+            if (!achieved && !excludedCriteria.includes(b.criteria as BadgeCriteria)) {
+                const needed = typeof b.valueneeded === 'number' ? b.valueneeded : null;
+                let percentComplete: number | null = null;
+
+                if (needed !== null) {
+                    switch (b.criteria as BadgeCriteria) {
+                        case BadgeCriteria.DISTANCE:
+                            percentComplete = needed <= 0 ? null : (parentStat.totalDistanceMeters / (needed * 1000)) * 100;
+                            break;
+                        case BadgeCriteria.CALORIES:
+                            percentComplete = needed <= 0 ? null : (parentStat.totalCaloriesBurned / needed) * 100;
+                            break;
+                        case BadgeCriteria.WEATHER:
+                            percentComplete = needed <= 0 ? null : (parentStat.totalDifferentWeatherTypes / needed) * 100;
+                            break;
+                        case BadgeCriteria.POINTS:
+                            percentComplete = needed <= 0 ? null : (parentStat.totalPointsEarned / needed) * 100;
+                            break;
+                        case BadgeCriteria.PARTICIPATION:
+                            percentComplete = needed <= 0 ? null : (parentStat.totalParticipations / needed) * 100;
+                            break;
+                        default:
+                            percentComplete = null;
+                            break;
+                    }
+                }
+
+                if (percentComplete !== null) {
+                    const bounded = Math.max(0, Math.min(100, percentComplete));
+                    percentDone = parseFloat(bounded.toFixed(2));
+                }
+            }
+
+            return {
+                id: b.id,
+                name: b.name,
+                description: b.description,
+                imageUrl: b.imageUrl,
+                criteria: b.criteria,
+                valueneeded: b.valueneeded,
+                achieved,
+                percentDone: achieved ? 100 : percentDone,
+            };
+        }).sort((a, b) => {
+            if (a.achieved !== b.achieved) return a.achieved ? -1 : 1;
+            const critCompare = String(a.criteria).localeCompare(String(b.criteria));
+            if (critCompare !== 0) return critCompare;
+            const valA = typeof a.valueneeded === 'number' ? a.valueneeded : Number.NEGATIVE_INFINITY;
+            const valB = typeof b.valueneeded === 'number' ? b.valueneeded : Number.NEGATIVE_INFINITY;
+            return valA - valB;
+        });
+
+        return res.status(200).json(result);
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+});
+
+// New endpoint: /profile/children-badges-progress
+router.get('/profile/children-badges-progress', authenticate, authorize(UserRole.PARENT), async (req: Request, res: Response) => {
+    try {
+        const userId = req.user!.userId;
+        const childId = req.query.childId as string;
+
+        if (!childId) {
+            return res.status(400).json({ message: "childId is required" });
+        }
+
+        // Verify parent-child relationship
+        const isParent = await AppDataSource.getRepository(ParentChild).findOne({
+            where: { parentId: userId, childId }
+        });
+        if (!isParent) {
+            return res.status(403).json({ message: "You are not authorized to view this child's badges" });
+        }
+
+        const badges = await AppDataSource.getRepository(Badge).find();
+
+        const assignedClientBadges = await AppDataSource.getRepository(ClientBadge).find({
+            where: { childId, parentId: IsNull() },
+            relations: ['badge']
+        });
+        const achievedIds = new Set(assignedClientBadges.map(cb => cb.badgeId));
+
+        const childDBStats = await AppDataSource.getRepository(ChildStat).find({
+            where: { childId },
+            relations: { activitySession: true }
+        });
+
+        const weatherSet = new Set<string>();
+        for (const cs of childDBStats) {
+            const wt = cs.activitySession?.weatherType;
+            if (wt != null) weatherSet.add(String(wt));
+        }
+
+        const childStat = {
+            totalDistanceMeters: childDBStats.reduce((sum, cs) => sum + (cs.distanceMeters || 0), 0),
+            totalCaloriesBurned: childDBStats.reduce((sum, cs) => sum + (cs.caloriesBurned || 0), 0),
+            totalParticipations: childDBStats.length,
+            totalDifferentWeatherTypes: weatherSet.size,
+            totalPointsEarned: childDBStats.reduce((sum, cs) => sum + (cs.pointsEarned || 0), 0),
+        };
+
+        const excludedCriteria = [BadgeCriteria.STREAK, BadgeCriteria.LEADERBOARD, BadgeCriteria.SPECIAL];
+
+        const result = badges.map(b => {
+            const achieved = achievedIds.has(b.id);
+            let percentDone: number | null = null;
+
+            if (!achieved && !excludedCriteria.includes(b.criteria as BadgeCriteria)) {
+                const needed = typeof b.valueneeded === 'number' ? b.valueneeded : null;
+                let percentComplete: number | null = null;
+
+                if (needed !== null) {
+                    switch (b.criteria as BadgeCriteria) {
+                        case BadgeCriteria.DISTANCE:
+                            percentComplete = needed <= 0 ? null : (childStat.totalDistanceMeters / (needed * 1000)) * 100;
+                            break;
+                        case BadgeCriteria.CALORIES:
+                            percentComplete = needed <= 0 ? null : (childStat.totalCaloriesBurned / needed) * 100;
+                            break;
+                        case BadgeCriteria.WEATHER:
+                            percentComplete = needed <= 0 ? null : (childStat.totalDifferentWeatherTypes / needed) * 100;
+                            break;
+                        case BadgeCriteria.POINTS:
+                            percentComplete = needed <= 0 ? null : (childStat.totalPointsEarned / needed) * 100;
+                            break;
+                        case BadgeCriteria.PARTICIPATION:
+                            percentComplete = needed <= 0 ? null : (childStat.totalParticipations / needed) * 100;
+                            break;
+                        default:
+                            percentComplete = null;
+                            break;
+                    }
+                }
+
+                if (percentComplete !== null) {
+                    const bounded = Math.max(0, Math.min(100, percentComplete));
+                    percentDone = parseFloat(bounded.toFixed(2));
+                }
+            }
+
+            return {
+                id: b.id,
+                name: b.name,
+                description: b.description,
+                imageUrl: b.imageUrl,
+                criteria: b.criteria,
+                valueneeded: b.valueneeded,
+                achieved,
+                percentDone: achieved ? 100 : percentDone,
+            };
+        }).sort((a, b) => {
+            if (a.achieved !== b.achieved) return a.achieved ? -1 : 1;
+            const critCompare = String(a.criteria).localeCompare(String(b.criteria));
+            if (critCompare !== 0) return critCompare;
+            const valA = typeof a.valueneeded === 'number' ? a.valueneeded : Number.NEGATIVE_INFINITY;  
+            const valB = typeof b.valueneeded === 'number' ? b.valueneeded : Number.NEGATIVE_INFINITY;
+            return valA - valB;
+        });
+        return res.status(200).json(result);
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+});
+
 export default router;
