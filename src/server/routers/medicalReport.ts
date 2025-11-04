@@ -5,6 +5,8 @@ import { CreateMedicalReportSchema, UpdateMedicalReportSchema } from "../schemas
 import { z } from "zod";
 import { Child } from "@/db/entities/Child";
 import { HealthProfessional } from "@/db/entities/HealthProfessional";
+import { createNotificationForUser } from "../services/notification";
+import { UserNotificationType } from "@/helpers/types";
 
 const router = express.Router();
 
@@ -100,7 +102,16 @@ router.post('/', async (req: Request, res: Response) => {
             return res.status(404).json({ message: "Health professional not found" })
         }
 
-        await AppDataSource.getRepository(MedicalReport).insert(validatedData)
+        const medicalReport = await AppDataSource.getRepository(MedicalReport).insert(validatedData)
+        
+        createNotificationForUser({
+            type: UserNotificationType.CHILD_MEDICAL_REPORT,
+            child: {
+                id: child.id,
+                name: child.name
+            },
+            medicalReportId: medicalReport.identifiers[0]!.id
+        })
         
         return res.status(201).json({message: "Medical report added successfully"});
 
