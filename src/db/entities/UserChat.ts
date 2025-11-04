@@ -9,6 +9,9 @@ export class UserChat {
 
     @PrimaryColumn({ type: 'varchar' })
     chatId!: string;
+
+    @Column({ type: 'boolean', default: false })
+    seen!: boolean;
     
     @ManyToOne(() => User)
     user!: User;

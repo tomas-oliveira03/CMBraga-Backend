@@ -133,6 +133,18 @@ router.post("/messages/:conversationId", authenticate, async (req: Request, res:
 
         await AppDataSource.getRepository(Message).insert(newMessage);
 
+        const usersThanThenSender = await AppDataSource.getRepository(UserChat)
+            .find({ where: { chatId: conversationId } });
+
+        for (const userChat of usersThanThenSender) {
+            if (userChat.userId !== sender_id) {
+                await AppDataSource.getRepository(UserChat).update(
+                    { chatId: conversationId, userId: userChat.userId },
+                    { seen: false }
+                );
+            }
+        }
+
         webSocketEvents.sendMessageToChatRoom(conversationId, chatExists.chatType, chatExists.chatName, sender_id, parsed.content);
         
         return res.status(201).json({ message: "Message sent successfully" });
@@ -171,6 +183,12 @@ router.get("/chat/:conversationId", authenticate, async (req: Request, res: Resp
         if (!chatData.messages || chatData.messages.length === 0) {
             return res.status(404).json({ message: "Communication not found" });
         }
+
+        // Update seen status
+        await AppDataSource.getRepository(UserChat).update(
+            { chatId: conversationId, userId: senderId },
+            { seen: true }
+        );
 
         if (jump === 0 && chatData.members) {
             return res.status(200).json({ members: chatData.members, messages: chatData.messages });
@@ -241,7 +259,12 @@ router.get("/my-chats", authenticate, async (req: Request, res: Response) => {
                     email: member.user.id,
                     profilePictureURL: member.user.profilePictureURL
                 }));
-    
+
+                const currentUserChat = await AppDataSource.getRepository(UserChat).findOne({
+                    where: { chatId: chat.id, userId }
+                });
+                const seen = currentUserChat ? currentUserChat.seen : true;
+
                 return {
                     chatId: chat.id,
                     chatType: chat.chatType,
@@ -250,6 +273,7 @@ router.get("/my-chats", authenticate, async (req: Request, res: Response) => {
                     senderName: senderName,
                     timestamp: mostRecentMessage?.timestamp || null,
                     members: memberDetails,
+                    seen
                 };
             })
         );

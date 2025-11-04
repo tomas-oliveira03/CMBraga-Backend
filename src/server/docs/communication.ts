@@ -112,7 +112,7 @@
 
 /**
  * @swagger
- * /communication/{conversationId}:
+ * /communication/chat/{conversationId}:
  *   get:
  *     summary: Get messages from a conversation
  *     description: Retrieves encrypted messages from a conversation with pagination. On first page (jump=0), also returns chat members and chat name.
