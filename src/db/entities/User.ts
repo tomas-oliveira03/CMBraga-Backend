@@ -4,6 +4,7 @@ import { Instructor } from "./Instructor";
 import { Parent } from "./Parent";
 import { HealthProfessional } from "./HealthProfessional";
 import { UserChat } from "./UserChat";
+import { Notification } from "./Notification";
 
 @Entity()
 export class User {
@@ -46,4 +47,7 @@ export class User {
 
     @OneToMany(() => UserChat, (userChat) => userChat.user)
     chats!: UserChat[];
+
+    @OneToMany(() => Notification, (notification) => notification.user)
+    notifications!: Notification[];
 }

@@ -134,3 +134,15 @@ export enum LeaderboardType {
     POINTS = 'points',
     PARTICIPATIONS = 'participations'
 }
+
+
+
+
+// Notification Type
+export enum NotificationType {
+    CHILD_CHECKED_IN = 'child_checked_in',
+    CHILD_CHECKED_OUT = 'child_checked_out',
+    CHILD_MEDICAL_REPORT = 'child_medical_report',
+    INSTRUCTOR_ASSIGNED_TO_ACTIVITY = 'instructor_assigned_to_activity',
+    NEW_ACTIVITY_ISSUE = 'new_activity_issue'
+}
