@@ -8,6 +8,8 @@ import { Instructor } from "@/db/entities/Instructor";
 import multer from 'multer';
 import { uploadImagesBuffer } from "../services/cloud";
 import { areValidImageFiles } from "@/helpers/storage";
+import { createNotificationForUser } from "../services/notification";
+import { UserNotificationType } from "@/helpers/types";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -57,7 +59,10 @@ router.post('/', upload.array('files'), async (req: Request, res: Response) => {
         }
 
         const activitySession = await AppDataSource.getRepository(ActivitySession).findOne({
-            where: { id: validatedData.activitySessionId }
+            where: { id: validatedData.activitySessionId },
+            relations: {
+                route: true
+            }
         });
 
         if (!activitySession) {
@@ -72,10 +77,12 @@ router.post('/', upload.array('files'), async (req: Request, res: Response) => {
             return res.status(404).json({ message: "Instructor not found" });
         }
         
+    
+        let issueId: string = '';
         await AppDataSource.transaction(async tx => {
 
             const issue = await tx.getRepository(Issue).insert(validatedData);
-            const issueId = issue.identifiers[0]?.id
+            issueId = issue.identifiers[0]?.id
             
             const imagesToUploadData = files.map((file, index) => ({
                 buffer: file.buffer,
@@ -89,8 +96,18 @@ router.post('/', upload.array('files'), async (req: Request, res: Response) => {
                 { imageURLs: cloudStoredImagesURLs }
             )
         });
-        
-        
+
+        createNotificationForUser({
+            type: UserNotificationType.NEW_ACTIVITY_ISSUE,
+            issueId: issueId,
+            activitySession: {
+                id: activitySession.id,
+                type: activitySession.type,
+                routeName: activitySession.route.name,
+                scheduledAt: activitySession.scheduledAt ,
+            }
+        })
+
         return res.status(201).json({ message: "Issue created successfully" });
 
     } catch (error) {
