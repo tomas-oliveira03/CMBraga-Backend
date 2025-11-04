@@ -1,11 +1,12 @@
 import { AppDataSource } from "@/db";
 import express, { Request, Response } from "express";
 import { ActivitySession } from "@/db/entities/ActivitySession";
-import { UserRole } from "@/helpers/types";
+import { UserNotificationType, UserRole } from "@/helpers/types";
 import { authenticate, authorize } from "@/server/middleware/auth";
 import { Instructor } from "@/db/entities/Instructor";
 import { InstructorActivitySession } from "@/db/entities/InstructorActivitySession";
 import { In } from "typeorm";
+import { createNotificationForUser } from "@/server/services/notification";
 
 const router = express.Router();
 
@@ -84,7 +85,10 @@ router.post('/:id', authenticate, authorize(UserRole.ADMIN), async (req: Request
         }
         
         const activitySession = await AppDataSource.getRepository(ActivitySession).findOne({
-            where: { id: activitySessionId }
+            where: { id: activitySessionId },
+            relations:{
+                route: true
+            }
         });
         if (!activitySession) {
             return res.status(404).json({ message: "Activity session not found" });
@@ -118,6 +122,21 @@ router.post('/:id', authenticate, authorize(UserRole.ADMIN), async (req: Request
 
         // Assign instructors to activity session
         await AppDataSource.getRepository(InstructorActivitySession).insert(newAssignments);
+
+        instructors.forEach(instructor => {
+            createNotificationForUser({
+                type: UserNotificationType.INSTRUCTOR_ASSIGNED_TO_ACTIVITY,
+                instructor: {
+                    email: instructor.email,
+                },
+                activitySession: {
+                    id: activitySession.id,
+                    type: activitySession.type,
+                    routeName: activitySession.route.name,
+                    scheduledAt: activitySession.scheduledAt ,
+                }
+            })
+        });
 
         return res.status(201).json({ message: "Instructors assigned to activity session successfully" });
 
