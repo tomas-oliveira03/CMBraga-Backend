@@ -53,4 +53,36 @@ router.get("/:id", authenticate,  async (req, res) => {
     }
 });
 
+
+router.delete("/:id", authenticate,  async (req, res) => {
+    try {
+        const notificationId = req.params.id;
+        const userId = req.user?.email;
+    
+        if(!notificationId){
+            return res.status(404).json({ message: "Notification Id is required"})
+        }
+
+        const notification = await AppDataSource.getRepository(Notification).findOne({
+            where: {
+                id: notificationId
+            }
+        })
+
+        if (!notification) {
+            return res.status(404).json({ message: "Notification not found" });
+        }
+
+        if (notification.userId !== userId) {
+            return res.status(403).json({ message: "Cannot delete this notification" });
+        }
+
+        await AppDataSource.getRepository(Notification).delete(notificationId);
+
+        return res.status(200).json({message: "Notification deleted successfully"});
+    }
+    catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+});
 export default router;
