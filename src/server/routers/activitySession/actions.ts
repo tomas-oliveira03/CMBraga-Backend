@@ -734,9 +734,10 @@ router.post('/child/check-out', authenticate, authorize(UserRole.INSTRUCTOR), as
                 message: "Child ID, Station ID and Activity Session ID are required" 
             });
         }
-        const stationId = await getCurrentStationId(activitySessionId)
         
-        if (!stationId || typeof stationId !== "string"){
+        const station = await getCurrentStation(activitySessionId)
+        
+        if (!station){
             return res.status(404).json({ message: "Activity session not found or no more stations left" });
         }
 
@@ -744,7 +745,8 @@ router.post('/child/check-out', authenticate, authorize(UserRole.INSTRUCTOR), as
         const activitySession = await AppDataSource.getRepository(ActivitySession).findOne({
             where: { id: activitySessionId },
             relations: {
-                instructorActivitySessions: true
+                instructorActivitySessions: true,
+                route: true
             }
         });
 
@@ -756,11 +758,9 @@ router.post('/child/check-out', authenticate, authorize(UserRole.INSTRUCTOR), as
             return res.status(400).json({ message: "Instructor is not assigned to this activity session" });
         }
 
-        const child = await AppDataSource.getRepository(ChildActivitySession).findOne({
+        const child = await AppDataSource.getRepository(Child).findOne({
             where: { 
-                childId: childId,
-                activitySessionId: activitySessionId,
-                dropOffStationId: stationId
+                id: childId
             }
         });
         if (!child) {
@@ -782,8 +782,11 @@ router.post('/child/check-out', authenticate, authorize(UserRole.INSTRUCTOR), as
 
         const stationActivity = await AppDataSource.getRepository(StationActivitySession).findOne({
             where: {
-                stationId: stationId,
+                stationId: station.id,
                 activitySessionId: activitySessionId
+            },
+            relations:{
+                station: true
             }
         });
 
@@ -800,7 +803,7 @@ router.post('/child/check-out', authenticate, authorize(UserRole.INSTRUCTOR), as
         const alreadyCheckedOut = await AppDataSource.getRepository(ChildStation).findOne({
             where: {
                 childId: childId,
-                stationId: stationId,
+                stationId: station.id,
                 activitySessionId: activitySessionId,
                 type: ChildStationType.OUT
 
@@ -813,7 +816,7 @@ router.post('/child/check-out', authenticate, authorize(UserRole.INSTRUCTOR), as
 
         await AppDataSource.getRepository(ChildStation).insert({
             childId: childId,
-            stationId: stationId,
+            stationId: station.id,
             type: ChildStationType.OUT,
             instructorId: req.user!.userId,
             activitySessionId: activitySessionId,
@@ -821,7 +824,19 @@ router.post('/child/check-out', authenticate, authorize(UserRole.INSTRUCTOR), as
         });
  
         webSocketEvents.sendActivityCheckedOut(activitySessionId, req.user!.email, RequestType.ADD, childId);
-
+        createNotificationForUser({
+            type: UserNotificationType.CHILD_CHECKED_OUT,
+            child: {
+                id: childId,
+                name: child.name
+            },
+            activitySession: {
+                id: activitySessionId,
+                type: activitySession.type,
+                routeName: activitySession.route.name,
+                stationName: station.name
+            }
+        })
         return res.status(200).json({message: "Child checked-out successfully"});
 
     } catch (error) {

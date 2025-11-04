@@ -111,21 +111,22 @@ async function usersToNotifyForNotificationType(payload: NotificationInitialPayl
     let usersToNotify: string[] = [];
     
     switch (payload.type) {
-        case UserNotificationType.CHILD_CHECKED_IN || UserNotificationType.CHILD_CHECKED_OUT || UserNotificationType.CHILD_MEDICAL_REPORT:
-
+        case UserNotificationType.CHILD_CHECKED_IN:
+        case UserNotificationType.CHILD_CHECKED_OUT:
+        case UserNotificationType.CHILD_MEDICAL_REPORT:
             const parents = await AppDataSource.getRepository(User).find({
-                where: {
-                    parent: {
-                        parentChildren: {
-                            childId: payload.child.id
-                        }
-                    }
-                },
-                relations: {
-                    parent: {
-                        parentChildren: true
-                    }
+            where: {
+                parent: {
+                parentChildren: {
+                    childId: payload.child.id
                 }
+                }
+            },
+            relations: {
+                parent: {
+                parentChildren: true
+                }
+            }
             });
             usersToNotify = parents.map(user => user.id);
             break;
