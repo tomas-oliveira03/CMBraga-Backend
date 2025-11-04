@@ -1,6 +1,6 @@
 import { Column, Entity, Index, ManyToOne, PrimaryColumn } from "typeorm"
 import { User } from "./User";
-import { NotificationType } from "@/helpers/types";
+import { UserNotificationType } from "@/helpers/types";
 
 @Entity()
 export class Notification {
@@ -12,7 +12,7 @@ export class Notification {
     userId!: string;
 
     @Column({ type: 'varchar' })
-    type!: NotificationType;
+    type!: UserNotificationType;
 
     @Column({ type: 'varchar' })
     title!: string;

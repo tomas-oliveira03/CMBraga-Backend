@@ -139,7 +139,7 @@ export enum LeaderboardType {
 
 
 // Notification Type
-export enum NotificationType {
+export enum UserNotificationType {
     CHILD_CHECKED_IN = 'child_checked_in',
     CHILD_CHECKED_OUT = 'child_checked_out',
     CHILD_MEDICAL_REPORT = 'child_medical_report',

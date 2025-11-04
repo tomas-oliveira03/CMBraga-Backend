@@ -1,5 +1,5 @@
 import { AppDataSource } from "@/db";
-import { ActivityType, NotificationType } from "@/helpers/types";
+import { ActivityType, UserNotificationType } from "@/helpers/types";
 import { logger } from "@/lib/logger";
 import { Notification } from "@/db/entities/Notification";
 import { ParentChild } from "@/db/entities/ParentChild";
@@ -8,7 +8,7 @@ import { User } from "@/db/entities/User";
 
 type NotificationInitialPayload = {
     metadata: {
-        type: NotificationType.CHILD_CHECKED_IN;
+        type: UserNotificationType.CHILD_CHECKED_IN;
         child: {
             id: string;
             name: string;
@@ -22,7 +22,7 @@ type NotificationInitialPayload = {
     }
     |
     {
-        type: NotificationType.CHILD_CHECKED_OUT;
+        type: UserNotificationType.CHILD_CHECKED_OUT;
         child: {
             id: string;
             name: string;
@@ -36,7 +36,7 @@ type NotificationInitialPayload = {
     }
     |
     {
-        type: NotificationType.CHILD_MEDICAL_REPORT;
+        type: UserNotificationType.CHILD_MEDICAL_REPORT;
         child: {
             id: string;
             name: string;
@@ -45,7 +45,7 @@ type NotificationInitialPayload = {
     }
     |
     {
-        type: NotificationType.INSTRUCTOR_ASSIGNED_TO_ACTIVITY;
+        type: UserNotificationType.INSTRUCTOR_ASSIGNED_TO_ACTIVITY;
         instructor: {
             email: string;
         },
@@ -58,7 +58,7 @@ type NotificationInitialPayload = {
     }
     |
     {
-        type: NotificationType.NEW_ACTIVITY_ISSUE;
+        type: UserNotificationType.NEW_ACTIVITY_ISSUE;
         issueId: string;
         activitySession: {
             id: string;
@@ -72,31 +72,31 @@ type NotificationInitialPayload = {
 
 function buildNotificationContent(payload: NotificationInitialPayload): { title: string; description: string, uri?: string } {
     switch (payload.metadata.type) {
-        case NotificationType.CHILD_CHECKED_IN:
+        case UserNotificationType.CHILD_CHECKED_IN:
             return {
                 title: `Criança entrou na atividade`,
                 description: `A criança ${payload.metadata.child.name} entrou na estação ${payload.metadata.activitySession.stationName} na atividade ${payload.metadata.activitySession.type}.`,
                 uri: `/activity-session/${payload.metadata.activitySession.id}`
             };
-        case NotificationType.CHILD_CHECKED_OUT:
+        case UserNotificationType.CHILD_CHECKED_OUT:
             return {
                 title: `Criança saiu da atividade`,
                 description: `A criança ${payload.metadata.child.name} saiu na estação ${payload.metadata.activitySession.stationName}.`,
                 uri: `/activity-session/${payload.metadata.activitySession.id}`
             };
-        case NotificationType.CHILD_MEDICAL_REPORT:
+        case UserNotificationType.CHILD_MEDICAL_REPORT:
             return {
                 title: `Relatório médico da criança`,
                 description: `A criança ${payload.metadata.child.name} possui um novo relatório médico.`,
                 uri: `/medical-report/${payload.metadata.medicalReportId}`
             };
-        case NotificationType.INSTRUCTOR_ASSIGNED_TO_ACTIVITY:
+        case UserNotificationType.INSTRUCTOR_ASSIGNED_TO_ACTIVITY:
             return {
                 title: `Atribuição de nova atividade`,
                 description: `Foi-lhe atribuído a atividade ${payload.metadata.activitySession.type}, ${payload.metadata.activitySession.routeName} agendada para ${payload.metadata.activitySession.scheduledAt.toLocaleString()}.`,
                 uri: `/activity-session/${payload.metadata.activitySession.id}`
             };
-        case NotificationType.NEW_ACTIVITY_ISSUE:
+        case UserNotificationType.NEW_ACTIVITY_ISSUE:
             return {
                 title: `Novo problema reportado na atividade`,
                 description: `Foi reportado um novo problema na atividade ${payload.metadata.activitySession.type}, ${payload.metadata.activitySession.routeName} agendada para ${payload.metadata.activitySession.scheduledAt.toLocaleString()}.`,
@@ -112,7 +112,7 @@ async function usersToNotifyForNotificationType(payload: NotificationInitialPayl
     let usersToNotify: string[] = [];
     
     switch (payload.metadata.type) {
-        case NotificationType.CHILD_CHECKED_IN || NotificationType.CHILD_CHECKED_OUT || NotificationType.CHILD_MEDICAL_REPORT:
+        case UserNotificationType.CHILD_CHECKED_IN || UserNotificationType.CHILD_CHECKED_OUT || UserNotificationType.CHILD_MEDICAL_REPORT:
             const parents = await AppDataSource.getRepository(ParentChild).find({
                 where: {
                     childId: payload.metadata.child.id
@@ -126,11 +126,11 @@ async function usersToNotifyForNotificationType(payload: NotificationInitialPayl
             usersToNotify = parents.map(parentChild => parentChild.parent.user.id);
             break;
         
-        case NotificationType.INSTRUCTOR_ASSIGNED_TO_ACTIVITY:
+        case UserNotificationType.INSTRUCTOR_ASSIGNED_TO_ACTIVITY:
             usersToNotify = [payload.metadata.instructor.email];
             break;
 
-        case NotificationType.NEW_ACTIVITY_ISSUE:
+        case UserNotificationType.NEW_ACTIVITY_ISSUE:
             const users = await AppDataSource.getRepository(User).find({
                 where: {
                     admin: Not(IsNull())
