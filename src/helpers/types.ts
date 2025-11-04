@@ -128,3 +128,9 @@ export enum RankingType {
     SCHOOLS = 'schools',
     SCHOOL_CLASSES = 'school_classes'
 }
+
+export enum LeaderboardType {
+    DISTANCE = 'distance',
+    POINTS = 'points',
+    PARTICIPATIONS = 'participations'
+}

@@ -5,7 +5,8 @@
  *     summary: Get leaderboard rankings
  *     description: >
  *       Returns leaderboard rankings for parents, children, schools, or school classes.
- *       Supports filtering by timeframe (monthly, annually, all_time) and "back" parameter for previous periods.
+ *       Supports filtering by timeframe (monthly, annually, all_time), "back" parameter for previous periods,
+ *       a "parameter" query to choose the ranking metric (distance, points, participations) and pagination via `page`.
  *     tags:
  *       - Leaderboard
  *     parameters:
@@ -33,6 +34,22 @@
  *           minimum: 0
  *         description: Number of periods back (0=current, 1=previous, etc.)
  *         example: 0
+ *       - in: query
+ *         name: parameter
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [distance, points, participations]
+ *         description: Metric to order the leaderboard by. Defaults to "distance".
+ *         example: distance
+ *       - in: query
+ *         name: page
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: Page number for paginated results (page size is fixed server-side)
+ *         example: 1
  *     responses:
  *       200:
  *         description: Leaderboard rankings
@@ -120,7 +137,7 @@
  *                               type: number
  *                               example: 180
  *       400:
- *         description: Invalid leaderboard type
+ *         description: Invalid leaderboard type or bad query parameter
  *         content:
  *           application/json:
  *             schema:

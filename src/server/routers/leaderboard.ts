@@ -2,12 +2,14 @@ import { AppDataSource } from "@/db";
 import express, { Request, Response } from "express";
 import { ActivitySession } from "@/db/entities/ActivitySession";
 import { authenticate } from "@/server/middleware/auth";
-import { UserRole, ActivitySessionStatus, IssueStatus, RankingTimeframe, RankingType } from "@/helpers/types";
+import { UserRole, ActivitySessionStatus, IssueStatus, RankingTimeframe, RankingType, LeaderboardType } from "@/helpers/types";
 import { ParentStat } from "@/db/entities/ParentStat";
 import { ChildStat } from "@/db/entities/ChildStat";
 import { MoreThan, IsNull, Not, In, Between, MoreThanOrEqual, LessThanOrEqual } from "typeorm";
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, subWeeks, subMonths, subYears } from "date-fns";
 import { z } from "zod";
+
+const STAT_PAGE_SIZE = 50;
 
 const router = express.Router();
 
@@ -209,6 +211,8 @@ router.get("/top/:type", async (req: Request, res: Response) => {
     try {
         const type = req.params.type as RankingType;
         const back = parseInt(req.query.back as string) || 0;
+        const parameter = req.query.parameter as LeaderboardType || LeaderboardType.DISTANCE;
+        const page = parseInt(req.query.page as string) || 1;
         const timeframe = (req.query.timeframe as RankingTimeframe) || RankingTimeframe.MONTHLY;
         if (![RankingType.PARENTS, RankingType.CHILDREN, RankingType.SCHOOLS, RankingType.SCHOOL_CLASSES].includes(type)) {
             return res.status(400).json({ error: "Invalid leaderboard type" });
@@ -218,6 +222,23 @@ router.get("/top/:type", async (req: Request, res: Response) => {
         for (const tf of timeframes) {
             results[tf.label] = await getStats(type, tf.start, tf.end);
         }
+
+        for (const tfLabel of Object.keys(results)) {
+            results[tfLabel].sort((a: any, b: any) => {
+                switch (parameter) {
+                    case LeaderboardType.DISTANCE:
+                        return (b.totalDistance || 0) - (a.totalDistance || 0);
+                    case LeaderboardType.POINTS:
+                        return (b.totalPoints || 0) - (a.totalPoints || 0);
+                    case LeaderboardType.PARTICIPATIONS:
+                        return (b.totalParticipations || 0) - (a.totalParticipations || 0);
+                    default:
+                        return 0;
+                }
+            });
+            results[tfLabel] = results[tfLabel].slice((page - 1) * STAT_PAGE_SIZE, page * STAT_PAGE_SIZE);
+        }
+
         return res.json({ type, timeframe, leaderboard: results });
     } catch (error) {
         console.error("Error fetching leaderboard:", error);
