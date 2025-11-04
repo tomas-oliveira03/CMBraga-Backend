@@ -4,6 +4,7 @@ import { ChildActivitySession } from "@/db/entities/ChildActivitySession";
 import { Child } from "@/db/entities/Child";
 import { In, IsNull, Not } from "typeorm";
 import { ChildStation } from "@/db/entities/ChildStation";
+import { Station } from "@/db/entities/Station";
 
 // Get current station id of an ongoing activity
 export async function getCurrentStationId(activitySessionId: string): Promise<string|null>{
@@ -247,6 +248,35 @@ export async function getAllChildrenAlreadyDroppedOff(activitySessionId: string,
 
 }
 
+
+// Get current station of an ongoing activity
+export async function getCurrentStation(activitySessionId: string): Promise<Station|null>{
+    const activitySession = await AppDataSource.getRepository(ActivitySession).findOne({
+        where: { 
+            id: activitySessionId,
+            stationActivitySessions: {
+                leftAt: IsNull()
+            }
+        },
+        order: {
+            stationActivitySessions: {
+                stopNumber: "ASC"
+            }
+        },
+        relations: {
+            stationActivitySessions: {
+                station: true
+            }
+        }
+    });
+
+    if(!activitySession){
+        return null;
+        
+    }
+
+    return activitySession.stationActivitySessions[0]?.station ?? null;
+}
 
 
 export const stripChildData = (children: Child[]) =>

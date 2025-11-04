@@ -1,10 +1,10 @@
-import { Column, Entity, Index, ManyToOne, PrimaryColumn } from "typeorm"
+import { Column, Entity, Index, ManyToOne, PrimaryGeneratedColumn } from "typeorm"
 import { User } from "./User";
 import { UserNotificationType } from "@/helpers/types";
 
 @Entity()
 export class Notification {
-    @PrimaryColumn({ type: 'varchar'})
+    @PrimaryGeneratedColumn("uuid")
     id!: string;
 
     @Index()

@@ -6,8 +6,8 @@ import { ParentChild } from "@/db/entities/ParentChild";
 import { Admin, IsNull, Not } from "typeorm";
 import { User } from "@/db/entities/User";
 
-type NotificationInitialPayload = {
-    metadata: {
+type NotificationInitialPayload = 
+    {
         type: UserNotificationType.CHILD_CHECKED_IN;
         child: {
             id: string;
@@ -67,40 +67,39 @@ type NotificationInitialPayload = {
             scheduledAt: Date;
         }
     }
-}
 
 
 function buildNotificationContent(payload: NotificationInitialPayload): { title: string; description: string, uri?: string } {
-    switch (payload.metadata.type) {
+    switch (payload.type) {
         case UserNotificationType.CHILD_CHECKED_IN:
             return {
                 title: `Criança entrou na atividade`,
-                description: `A criança ${payload.metadata.child.name} entrou na estação ${payload.metadata.activitySession.stationName} na atividade ${payload.metadata.activitySession.type}.`,
-                uri: `/activity-session/${payload.metadata.activitySession.id}`
+                description: `A criança ${payload.child.name} entrou na estação ${payload.activitySession.stationName} na atividade ${payload.activitySession.type}.`,
+                uri: `/activity-session/${payload.activitySession.id}`
             };
         case UserNotificationType.CHILD_CHECKED_OUT:
             return {
                 title: `Criança saiu da atividade`,
-                description: `A criança ${payload.metadata.child.name} saiu na estação ${payload.metadata.activitySession.stationName}.`,
-                uri: `/activity-session/${payload.metadata.activitySession.id}`
+                description: `A criança ${payload.child.name} saiu na estação ${payload.activitySession.stationName}.`,
+                uri: `/activity-session/${payload.activitySession.id}`
             };
         case UserNotificationType.CHILD_MEDICAL_REPORT:
             return {
                 title: `Relatório médico da criança`,
-                description: `A criança ${payload.metadata.child.name} possui um novo relatório médico.`,
-                uri: `/medical-report/${payload.metadata.medicalReportId}`
+                description: `A criança ${payload.child.name} possui um novo relatório médico.`,
+                uri: `/medical-report/${payload.medicalReportId}`
             };
         case UserNotificationType.INSTRUCTOR_ASSIGNED_TO_ACTIVITY:
             return {
                 title: `Atribuição de nova atividade`,
-                description: `Foi-lhe atribuído a atividade ${payload.metadata.activitySession.type}, ${payload.metadata.activitySession.routeName} agendada para ${payload.metadata.activitySession.scheduledAt.toLocaleString()}.`,
-                uri: `/activity-session/${payload.metadata.activitySession.id}`
+                description: `Foi-lhe atribuído a atividade ${payload.activitySession.type}, ${payload.activitySession.routeName} agendada para ${payload.activitySession.scheduledAt.toLocaleString()}.`,
+                uri: `/activity-session/${payload.activitySession.id}`
             };
         case UserNotificationType.NEW_ACTIVITY_ISSUE:
             return {
                 title: `Novo problema reportado na atividade`,
-                description: `Foi reportado um novo problema na atividade ${payload.metadata.activitySession.type}, ${payload.metadata.activitySession.routeName} agendada para ${payload.metadata.activitySession.scheduledAt.toLocaleString()}.`,
-                uri: `/issue/${payload.metadata.issueId}`
+                description: `Foi reportado um novo problema na atividade ${payload.activitySession.type}, ${payload.activitySession.routeName} agendada para ${payload.activitySession.scheduledAt.toLocaleString()}.`,
+                uri: `/issue/${payload.issueId}`
             };
         default:
             throw new Error('Unknown notification type');
@@ -111,23 +110,28 @@ function buildNotificationContent(payload: NotificationInitialPayload): { title:
 async function usersToNotifyForNotificationType(payload: NotificationInitialPayload): Promise<string[]> {
     let usersToNotify: string[] = [];
     
-    switch (payload.metadata.type) {
+    switch (payload.type) {
         case UserNotificationType.CHILD_CHECKED_IN || UserNotificationType.CHILD_CHECKED_OUT || UserNotificationType.CHILD_MEDICAL_REPORT:
-            const parents = await AppDataSource.getRepository(ParentChild).find({
+
+            const parents = await AppDataSource.getRepository(User).find({
                 where: {
-                    childId: payload.metadata.child.id
+                    parent: {
+                        parentChildren: {
+                            childId: payload.child.id
+                        }
+                    }
                 },
                 relations: {
                     parent: {
-                        user: true
+                        parentChildren: true
                     }
                 }
             });
-            usersToNotify = parents.map(parentChild => parentChild.parent.user.id);
+            usersToNotify = parents.map(user => user.id);
             break;
         
         case UserNotificationType.INSTRUCTOR_ASSIGNED_TO_ACTIVITY:
-            usersToNotify = [payload.metadata.instructor.email];
+            usersToNotify = [payload.instructor.email];
             break;
 
         case UserNotificationType.NEW_ACTIVITY_ISSUE:
@@ -158,7 +162,7 @@ export async function createNotificationForUser(payload: NotificationInitialPayl
         const payloadBulkData = usersToNotify.map(userId => {
             return {
                 userId: userId,
-                type: payload.metadata.type,
+                type: payload.type,
                 title: title,
                 description: description,
                 uri: uri

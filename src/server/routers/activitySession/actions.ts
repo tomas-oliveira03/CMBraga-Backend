@@ -2,8 +2,8 @@ import { AppDataSource } from "@/db";
 import express, { Request, Response } from "express";
 import { ActivitySession } from "@/db/entities/ActivitySession";
 import { authenticate, authorize } from "@/server/middleware/auth";
-import { getAllChildrenAlreadyDroppedOff, getAllChildrenAtPickupStation, getAllChildrenByDroppedOffStatus, getAllChildrenByPickupStatus, getAllChildrenLeftToPickUp, getAllChildrenYetToBeDroppedOff, getAllStationsLeftIds, getCurrentStationId, stripChildData } from "@/server/services/actions";
-import { ChildStationType, UserRole } from "@/helpers/types";
+import { getAllChildrenAlreadyDroppedOff, getAllChildrenAtPickupStation, getAllChildrenByDroppedOffStatus, getAllChildrenByPickupStatus, getAllChildrenLeftToPickUp, getAllChildrenYetToBeDroppedOff, getAllStationsLeftIds, getCurrentStation, getCurrentStationId, stripChildData } from "@/server/services/actions";
+import { ChildStationType, UserNotificationType, UserRole } from "@/helpers/types";
 import { StationActivitySession } from "@/db/entities/StationActivitySession";
 import { Station } from "@/db/entities/Station";
 import { Child } from "@/db/entities/Child";
@@ -19,6 +19,7 @@ import { awardBadgesAfterActivity } from "@/server/services/badge";
 import { setAllInstructorsInActivityRedis } from "@/server/services/activity";
 import { webSocketEvents } from "@/server/services/websocket-events";
 import { ClientType, RequestType } from "@/helpers/websocket-types";
+import { createNotificationForUser } from "@/server/services/notification";
 
 const router = express.Router();
 
@@ -614,16 +615,17 @@ router.post('/child/check-in', authenticate, authorize(UserRole.INSTRUCTOR), asy
                 message: "Child ID, Station ID and Activity Session ID are required" 
             });
         }
-        const stationId = await getCurrentStationId(activitySessionId)
+        const station = await getCurrentStation(activitySessionId)
         
-        if (!stationId || typeof stationId !== "string"){
+        if (!station){
             return res.status(404).json({ message: "Activity session not found or no more stations left" });
         }
 
         const activitySession = await AppDataSource.getRepository(ActivitySession).findOne({
             where: { id: activitySessionId },
             relations: {
-                instructorActivitySessions: true
+                instructorActivitySessions: true,
+                route: true
             }
         });
 
@@ -647,7 +649,7 @@ router.post('/child/check-in', authenticate, authorize(UserRole.INSTRUCTOR), asy
             where: {
                 childId: childId,
                 activitySessionId: activitySessionId,
-                pickUpStationId: stationId, 
+                pickUpStationId: station.id, 
             }
         });
 
@@ -659,7 +661,7 @@ router.post('/child/check-in', authenticate, authorize(UserRole.INSTRUCTOR), asy
 
         const stationActivity = await AppDataSource.getRepository(StationActivitySession).findOne({
             where: {
-                stationId: stationId,
+                stationId: station.id,
                 activitySessionId: activitySessionId
             }
         });
@@ -677,7 +679,7 @@ router.post('/child/check-in', authenticate, authorize(UserRole.INSTRUCTOR), asy
         const alreadyCheckedIn = await AppDataSource.getRepository(ChildStation).findOne({
             where: {
                 childId: childId,
-                stationId: stationId,
+                stationId: station.id,
                 activitySessionId: activitySessionId,
                 type: ChildStationType.IN
             }
@@ -692,7 +694,7 @@ router.post('/child/check-in', authenticate, authorize(UserRole.INSTRUCTOR), asy
 
         await AppDataSource.getRepository(ChildStation).insert({
             childId: childId,
-            stationId: stationId,
+            stationId: station.id,
             type: ChildStationType.IN,
             instructorId: req.user!.userId,
             activitySessionId: activitySessionId,
@@ -700,6 +702,19 @@ router.post('/child/check-in', authenticate, authorize(UserRole.INSTRUCTOR), asy
         });
 
         webSocketEvents.sendActivityCheckedIn(activitySessionId, req.user!.email, RequestType.ADD, ClientType.CHILD, childId);
+        createNotificationForUser({
+            type: UserNotificationType.CHILD_CHECKED_IN,
+            child: {
+                id: childId,
+                name: child.name
+            },
+            activitySession: {
+                id: activitySessionId,
+                type: activitySession.type,
+                routeName: activitySession.route.name,
+                stationName: station.name
+            }
+        })
 
         return res.status(200).json({message: "Child checked-in successfully"});
 
