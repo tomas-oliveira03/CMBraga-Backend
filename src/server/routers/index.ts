@@ -23,6 +23,7 @@ import badgeRouter from "./badge";
 import routeRouter from "./route";
 import feedbackRouter from "./feedback";
 import leaderboardRouter from "./leaderboard";
+import notificationRouter from "./notification";
 
 const router = express.Router();
 
@@ -51,5 +52,6 @@ router.use("/badge", badgeRouter);
 router.use("/route", routeRouter);
 router.use("/feedback", feedbackRouter);
 router.use("/leaderboard", leaderboardRouter);
+router.use("/notification", notificationRouter);
 
 export default router;
