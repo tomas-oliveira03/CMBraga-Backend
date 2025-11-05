@@ -121,6 +121,22 @@ class WebSocketManager {
             logger.websocket(`Chat room ${roomId} not found`);
         }
     }
+
+    // Remove user from chat room
+    removeUserFromChatRoom(roomId: string, userId: string): void {
+        const userIds = this.chatRooms.get(roomId);
+        if (userIds) {
+            const index = userIds.indexOf(userId);
+            if (index !== -1) {
+                userIds.splice(index, 1);
+                logger.websocket(`Removed user ${userId} from chat room ${roomId}`);
+            } else {
+                logger.websocket(`User ${userId} not found in chat room ${roomId}`);
+            }
+        } else {
+            logger.websocket(`Chat room ${roomId} not found`);
+        }
+    }
     
     // Send message to chat room
     sendToChatRoom(roomId: string, senderId: string, message: WebSocketMessage): void {

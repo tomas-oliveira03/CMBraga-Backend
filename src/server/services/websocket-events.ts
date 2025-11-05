@@ -39,6 +39,12 @@ class WebSocketEvents {
     addNewUserToChatRoom(chatId: string, userId: string) {
         webSocketManager.addUserToChatRoom(chatId, userId);
     }
+
+
+    // Remove user from chatRoom
+    removeUserFromChatRoom(chatId: string, userId: string) {
+        webSocketManager.removeUserFromChatRoom(chatId, userId);
+    }
     
 
     // Send message to chatRoom
