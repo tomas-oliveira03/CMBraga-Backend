@@ -115,7 +115,15 @@ router.post("/chats/:conversationId/members", authenticate, async (req: Request,
         }
         const userId = req.user.email;
         const { conversationId } = req.params;
-        const { newMembers } = req.body.newmembers;
+
+        const newMembers = Array.isArray(req.body?.newMembers) ? req.body.newMembers
+            : Array.isArray(req.body?.newmembers) ? req.body.newmembers
+            : [];
+
+        if (!Array.isArray(newMembers) || newMembers.length === 0) {
+            return res.status(400).json({ message: "newMembers must be a non-empty array of email strings" });
+        }
+        
         if (!conversationId) {
             return res.status(400).json({ message: "conversationId is required" });
         }
@@ -146,6 +154,7 @@ router.post("/chats/:conversationId/members", authenticate, async (req: Request,
         }));
         await userChatRepository.insert(newUserChats);
 
+        webSocketEvents.addNewUserToChatRoom(conversationId, userId);
         return res.status(200).json({ message: "New members added successfully" });
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
@@ -167,7 +176,7 @@ router.post("/chats/:conversationId/leave", authenticate, async (req: Request, r
         if (!chat) {
             return res.status(404).json({ message: "Conversation not found" });
         }
-        if (chat.chatType !== TypeOfChat.GROUP_CHAT) {
+        if (chat.chatType === TypeOfChat.INDIVIDUAL_CHAT) {
             return res.status(400).json({ message: "Cannot leave an individual chat" });
         }
         const isUserInChat = await checkIfUserInChat(userId, conversationId);
@@ -176,6 +185,9 @@ router.post("/chats/:conversationId/leave", authenticate, async (req: Request, r
         }
         const userChatRepository = AppDataSource.getRepository(UserChat);
         await userChatRepository.delete({ userId, chatId: conversationId });
+
+        webSocketEvents.removeUserFromChatRoom(conversationId, userId);
+
         return res.status(200).json({ message: "You have left the group chat successfully" });
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });

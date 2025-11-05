@@ -258,3 +258,108 @@
  *       500:
  *         description: Internal server error.
  */
+
+
+/**
+ * @swagger
+ * /communication/chats/{conversationId}/members:
+ *   post:
+ *     summary: Add members to a group conversation
+ *     description: Adds one or more users to an existing group conversation. Request must be made by an existing member of the group. Provide an array of email addresses in the request body under the property "newMembers".
+ *     tags:
+ *       - Communication
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: conversationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: The ID of the conversation to which new members will be added.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - newMembers
+ *             properties:
+ *               newMembers:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: email
+ *                 description: Array of member email addresses to add to the group chat.
+ *           example:
+ *             newMembers:
+ *               - "newuser1@example.com"
+ *               - "newuser2@example.com"
+ *     responses:
+ *       200:
+ *         description: New members added successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             example:
+ *               message: "New members added successfully"
+ *       400:
+ *         description: Validation error or one or more specified users do not exist.
+ *       401:
+ *         description: Authentication required.
+ *       403:
+ *         description: Forbidden - requester is not a member of the conversation.
+ *       404:
+ *         description: Conversation not found or not a group chat.
+ *       500:
+ *         description: Internal server error.
+ */
+
+
+/**
+ * @swagger
+ * /communication/chats/{conversationId}/leave:
+ *   post:
+ *     summary: Leave a group conversation
+ *     description: Authenticated user leaves the specified group conversation. Cannot be used on individual chats.
+ *     tags:
+ *       - Communication
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: conversationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: The ID of the group conversation to leave.
+ *     responses:
+ *       200:
+ *         description: Left the group chat successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             example:
+ *               message: "You have left the group chat successfully"
+ *       400:
+ *         description: Invalid request (e.g., trying to leave an individual chat).
+ *       401:
+ *         description: Authentication required.
+ *       403:
+ *         description: Forbidden - user not a member of the conversation.
+ *       404:
+ *         description: Conversation not found.
+ *       500:
+ *         description: Internal server error.
+ */
