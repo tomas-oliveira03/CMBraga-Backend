@@ -70,7 +70,7 @@ type NotificationInitialPayload =
     }
 
 
-function buildNotificationContent(payload: NotificationInitialPayload): { title: string; description: string, uri?: string } {
+function buildNotificationContent(payload: NotificationInitialPayload): { title: string; description: string, uri: string } {
     switch (payload.type) {
         case UserNotificationType.CHILD_CHECKED_IN:
             return {
@@ -156,7 +156,7 @@ async function usersToNotifyForNotificationType(payload: NotificationInitialPayl
 }
 
 
-function sendWebsocketNotificationToUsers(usersToNotify: string[], insertResult: InsertResult, notificationContent: { title: string; description: string; uri?: string }, notificationType: UserNotificationType) {
+function sendWebsocketNotificationToUsers(usersToNotify: string[], insertResult: InsertResult, notificationContent: { title: string; description: string; uri: string }, notificationType: UserNotificationType) {
     insertResult.identifiers.forEach((identifier, index) => {
         const userId = usersToNotify[index];
         const notificationId = identifier.id;
@@ -171,7 +171,7 @@ function sendWebsocketNotificationToUsers(usersToNotify: string[], insertResult:
             type: notificationType,
             title: notificationContent.title,
             description: notificationContent.description,
-            uri: notificationContent.uri || null
+            uri: notificationContent.uri
         });
     });
 }

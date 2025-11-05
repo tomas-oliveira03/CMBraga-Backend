@@ -233,7 +233,7 @@ class WebSocketEvents {
         type: UserNotificationType;
         title: string;
         description: string;
-        uri: string | null;
+        uri: string;
     }) {
         try {
             const message = {

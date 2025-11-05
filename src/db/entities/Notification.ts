@@ -23,7 +23,7 @@ export class Notification {
     @Column({ type: 'boolean', default: false })
     isRead!: boolean;
 
-    @Column({ type: 'varchar', nullable: true, default: null })
+    @Column({ type: 'varchar' })
     uri!: string;
 
     @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })

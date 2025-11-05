@@ -131,7 +131,7 @@ export type WebSocketMessage =
             type: UserNotificationType;
             title: string;
             description: string;
-            uri: string | null;
+            uri: string;
         }; 
         timestamp: Date 
     };
