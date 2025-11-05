@@ -59,12 +59,17 @@ router.post("/", upload.single('file'), authenticate, async (req: Request, res: 
             return res.status(400).json({ message: "Conversation already exists", chatId: exists.id });
         }
 
-        const newChat = {
-            chatType: num_members > 2 ? TypeOfChat.GROUP_CHAT : TypeOfChat.INDIVIDUAL_CHAT,
-            destinatairePhoto: "",
-            chatName: num_members > 2 ? parsed.chatName : null,
-            messages: [],
-        };
+        const newChat: {
+                    chatType: TypeOfChat;
+                    chatName: string | null;
+                    destinatairePhoto: string | null;
+                    messages: any[];
+                } = {
+                    chatType: num_members > 2 ? TypeOfChat.GROUP_CHAT : TypeOfChat.INDIVIDUAL_CHAT,
+                    chatName: num_members > 2 ? (parsed.chatName ?? null) : null,
+                    destinatairePhoto: null,
+                    messages: [],
+                };
 
         if (num_members > 2 && req.file) {
             if (!isValidImageFile(req.file)){

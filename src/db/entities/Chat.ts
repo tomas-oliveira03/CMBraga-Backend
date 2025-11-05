@@ -2,7 +2,6 @@ import { Check, Column, Entity, ManyToOne, OneToMany, OneToOne, PrimaryGenerated
 import { TypeOfChat } from "@/helpers/types";
 import { Message } from "./Message";
 import { UserChat } from "./UserChat";
-
 @Entity()
 @Check(`"chat_type" IN ('group_chat', 'individual_chat', 'general_chat')`)
 export class Chat {
@@ -15,7 +14,7 @@ export class Chat {
     @Column({ type: 'varchar'})
     chatType!: TypeOfChat;
 
-    @Column({ type: 'varchar'})
+    @Column({ type: 'varchar', nullable: true})
     destinatairePhoto!: string;
 
     @OneToMany(() => Message, message => message.chat)
