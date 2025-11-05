@@ -62,12 +62,12 @@ router.post("/", upload.single('file'), authenticate, async (req: Request, res: 
         const newChat: {
                     chatType: TypeOfChat;
                     chatName: string | null;
-                    destinatairePhoto: string | null;
+                    destinatairePhoto?: string;
                     messages: any[];
                 } = {
                     chatType: num_members > 2 ? TypeOfChat.GROUP_CHAT : TypeOfChat.INDIVIDUAL_CHAT,
                     chatName: num_members > 2 ? (parsed.chatName ?? null) : null,
-                    destinatairePhoto: null,
+                    destinatairePhoto: undefined,
                     messages: [],
                 };
 
@@ -104,6 +104,80 @@ router.post("/", upload.single('file'), authenticate, async (req: Request, res: 
         if (error instanceof z.ZodError) {
             return res.status(400).json({ message: "Validation error", errors: error.issues });
         }
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+});
+
+router.post("/chats/:conversationId/members", authenticate, async (req: Request, res: Response) => {
+    try {
+        if (!req.user || !req.user.email) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+        const userId = req.user.email;
+        const { conversationId } = req.params;
+        const { newMembers } = req.body.newmembers;
+        if (!conversationId) {
+            return res.status(400).json({ message: "conversationId is required" });
+        }
+        const chat = await getChat(conversationId);
+        if (!chat) {
+            return res.status(404).json({ message: "Conversation not found" });
+        }
+        if (chat.chatType !== TypeOfChat.GROUP_CHAT) {
+            return res.status(400).json({ message: "Cannot add members to an individual chat" });
+        }
+        const isUserInChat = await checkIfUserInChat(userId, conversationId);
+        if (!isUserInChat) {
+            return res.status(403).json({ message: "You are not a member of this conversation" });
+        }
+        const filteredNewMembers = Array.isArray(newMembers) ? newMembers.filter((email: any) => typeof email === "string" && email.trim().length > 0) : [];
+        if (filteredNewMembers.length === 0) {
+            return res.status(400).json({ message: "No valid new members provided" });
+        }
+
+        const allExist = await checkIfEmailsExist(filteredNewMembers);
+        if (!allExist) {
+            return res.status(400).json({ message: "One or more specified users do not exist" });
+        }
+        const userChatRepository = AppDataSource.getRepository(UserChat);
+        const newUserChats = filteredNewMembers.map((email: string) => ({
+            userId: email,
+            chatId: conversationId,
+        }));
+        await userChatRepository.insert(newUserChats);
+
+        return res.status(200).json({ message: "New members added successfully" });
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+});
+
+// Me as a user leaving a group chat
+router.post("/chats/:conversationId/leave", authenticate, async (req: Request, res: Response) => {
+    try {
+        if (!req.user || !req.user.email) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+        const userId = req.user.email;
+        const { conversationId } = req.params;
+        if (!conversationId) {
+            return res.status(400).json({ message: "conversationId is required" });
+        }
+        const chat = await getChat(conversationId);
+        if (!chat) {
+            return res.status(404).json({ message: "Conversation not found" });
+        }
+        if (chat.chatType !== TypeOfChat.GROUP_CHAT) {
+            return res.status(400).json({ message: "Cannot leave an individual chat" });
+        }
+        const isUserInChat = await checkIfUserInChat(userId, conversationId);
+        if (!isUserInChat) {
+            return res.status(403).json({ message: "You are not a member of this conversation" });
+        }
+        const userChatRepository = AppDataSource.getRepository(UserChat);
+        await userChatRepository.delete({ userId, chatId: conversationId });
+        return res.status(200).json({ message: "You have left the group chat successfully" });
+    } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
