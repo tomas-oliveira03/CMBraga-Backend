@@ -88,12 +88,19 @@ class WebSocketEvents {
 
 
     // Send activity started event
-    async sendActivityStarted(activitySessionId: string, senderInstructorId: string) {
+    async sendActivityStarted(activitySessionId: string, senderInstructorId: string, stationData: {
+        id: string;
+        name: string;
+        type: StationType;
+        latitude: number;
+        longitude: number;
+    }) {
         try {
             const message = {
                 event: WebSocketEvent.ACTIVITY_STARTED as WebSocketEvent.ACTIVITY_STARTED,
                 data: {
-                    activitySessionId: activitySessionId
+                    activitySessionId: activitySessionId,
+                    stationData: stationData
                 },
                 timestamp: new Date()
             };

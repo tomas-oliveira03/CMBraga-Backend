@@ -18,18 +18,38 @@
  *         example: "c56ad528-3522-4557-8b34-a787a50900b7"
  *     responses:
  *       200:
- *         description: Activity started successfully
+ *         description: Activity started successfully with first station info
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 message:
+ *                 id: 
  *                   type: string
+ *                   example: "station-uuid-1"
+ *                 name: 
+ *                   type: string
+ *                   example: "Escola Primária Central"
+ *                 type: 
+ *                   type: string
+ *                   enum: [regular, school]
+ *                   example: "school"
+ *                 latitude:
+ *                   type: number
+ *                   example: 41.5454
+ *                   description: "Station latitude coordinate"
+ *                 longitude:
+ *                   type: number
+ *                   example: -8.4265
+ *                   description: "Station longitude coordinate"
  *             examples:
  *               success:
  *                 value:
- *                   message: "Activity started successfully"
+ *                   id: "station-uuid-1"
+ *                   name: "Escola Primária Central"
+ *                   type: "school"
+ *                   latitude: 41.5454
+ *                   longitude: -8.4265
  *       400:
  *         description: Bad request or already started
  *         content:
@@ -65,6 +85,9 @@
  *               not_found:
  *                 value:
  *                   message: "Activity session not found"
+ *               first_station_not_found:
+ *                 value:
+ *                   message: "First station not found"
  */
 
 

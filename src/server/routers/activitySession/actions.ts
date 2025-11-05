@@ -61,16 +61,7 @@ router.post('/start', authenticate, authorize(UserRole.INSTRUCTOR), async (req: 
             return res.status(400).json({ message: "Cannot start activity: must be within 30 minutes of scheduled time" });
         }
 
-        const firstStationId = await getCurrentStationId(activitySessionId)
-        if (!firstStationId){
-            return res.status(404).json({ message: "First station not found" });
-        }
-
-        const firstStation = await AppDataSource.getRepository(Station).find({
-            where: {
-                id: firstStationId
-            }
-        })
+        const firstStation = await getCurrentStation(activitySessionId)
         if (!firstStation){
             return res.status(404).json({ message: "First station not found" });
         }
@@ -87,9 +78,17 @@ router.post('/start', authenticate, authorize(UserRole.INSTRUCTOR), async (req: 
         });
 
         await setAllInstructorsInActivityRedis(activitySessionId)
-        webSocketEvents.sendActivityStarted(activitySessionId, req.user!.email)
 
-        return res.status(200).json(firstStation);
+        const stationData = {
+            id: firstStation.id,
+            name: firstStation.name,
+            type: firstStation.type,
+            latitude: firstStation.latitude,
+            longitude: firstStation.longitude
+        }
+        webSocketEvents.sendActivityStarted(activitySessionId, req.user!.email, stationData)
+
+        return res.status(200).json(stationData);
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }

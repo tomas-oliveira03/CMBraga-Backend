@@ -60,6 +60,13 @@ export type WebSocketMessage =
         event: WebSocketEvent.ACTIVITY_STARTED; 
         data: {
             activitySessionId: string;
+            stationData: {
+                id: string;
+                name: string;
+                type: StationType;
+                latitude: number;
+                longitude: number;
+            };
         }; 
         timestamp: Date 
     }
