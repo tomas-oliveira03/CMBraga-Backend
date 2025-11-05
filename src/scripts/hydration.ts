@@ -7,6 +7,7 @@ import { ParentChild } from "@/db/entities/ParentChild";
 import { Instructor } from "@/db/entities/Instructor";
 import { HealthProfessional } from "@/db/entities/HealthProfessional";
 import { Admin } from "@/db/entities/Admin";
+import { Notification } from "@/db/entities/Notification";
 import { ActivitySession } from "@/db/entities/ActivitySession";
 import { ChildActivitySession } from "@/db/entities/ChildActivitySession";
 import { InstructorActivitySession } from "@/db/entities/InstructorActivitySession";
@@ -18,7 +19,7 @@ import { User } from "@/db/entities/User";
 import { Feedback } from "@/db/entities/Feedback";
 import { ParentActivitySession } from "@/db/entities/ParentActivitySession";
 import { Badge } from "@/db/entities/Badge";
-import { BadgeCriteria } from "@/helpers/types";
+import { BadgeCriteria, UserNotificationType } from "@/helpers/types";
 import informationHash from "@/lib/information-hash";
 import { Route } from "@/db/entities/Route";
 import { RouteStation } from "@/db/entities/RouteStation";
@@ -487,7 +488,7 @@ async function dbHydration() {
 
     // ===== CREATE COMPREHENSIVE ACTIVITY SCENARIOS =====
     const now = new Date();
-    const baseDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 0, 0); // 8:00 AM today
+    const baseDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 0, 0);
     
     // Helper to create consistent station activity sessions
     async function createStationActivitySessions(
@@ -531,7 +532,10 @@ async function dbHydration() {
     // Get valid stations for LinhaAzul
     const linhaAzulStations = await routeStationRepo.find({ 
       where: { routeId: linhaAzul!.id },
-      order: { stopNumber: 'ASC' }
+      order: { stopNumber: 'ASC' },
+      relations:{
+        station: true
+      }
     });
     
     // Register children using valid route stations
@@ -821,6 +825,61 @@ async function dbHydration() {
       createdBadgesCount = badgesToSave.length;
     }
 
+    // ===== CREATE SAMPLE NOTIFICATIONS =====
+    console.log("Creating sample notifications...");
+    const notificationRepo = dataSource.getRepository(Notification);
+    
+    const sampleNotifications = [
+      notificationRepo.create({
+        userId: pais[0]!.email,
+        type: UserNotificationType.CHILD_CHECKED_IN,
+        title: "Criança entrou na atividade",
+        description: `A criança ${criancas[0]!.name} entrou na estação ${linhaAzulStations[0]!.station.name} na atividade ciclo_expresso.`,
+        uri: `/activity-session/${finishedActivity.id}`,
+        isRead: false
+      }),
+      notificationRepo.create({
+        userId: pais[0]!.email,
+        type: UserNotificationType.CHILD_CHECKED_OUT,
+        title: "Criança saiu da atividade",
+        description: `A criança ${criancas[0]!.name} saiu na estação ${criancas[0]!.school}.`,
+        uri: `/activity-session/${finishedActivity.id}`,
+        isRead: true
+      }),
+
+      notificationRepo.create({
+        userId: pais[0]!.email,
+        type: UserNotificationType.CHILD_MEDICAL_REPORT,
+        title: "Relatório médico da criança",
+        description: `A criança ${criancas[0]!.name} possui um novo relatório médico.`,
+        uri: `/child/${criancas[0]!.id}/medical-reports`,
+        isRead: false
+      }),
+
+      notificationRepo.create({
+        userId: instrutores[0]!.email,
+        type: UserNotificationType.INSTRUCTOR_ASSIGNED_TO_ACTIVITY,
+        title: "Atribuição de nova atividade",
+        description: `Foi-lhe atribuído a atividade ciclo_expresso, ${linhaAzul!.name} agendada para ${futureActivity1.scheduledAt.toLocaleString('pt-PT')}.`,
+        uri: `/activity-session/${futureActivity1.id}`,
+        isRead: false
+      }),
+
+      ...adminEntities.map(admin => 
+        notificationRepo.create({
+          userId: admin.email,
+          type: UserNotificationType.NEW_ACTIVITY_ISSUE,
+          title: "Novo problema reportado na atividade",
+          description: `Foi reportado um novo problema na atividade ciclo_expresso, ${linhaVermelha!.name} agendada para ${finishedActivity.scheduledAt.toLocaleString('pt-PT')}.`,
+          uri: `/activity-session/${finishedActivity.id}/issues`,
+          isRead: admin === adminEntities[0] ? true : false
+        })
+      )
+    ];
+
+    await notificationRepo.save(sampleNotifications);
+    console.log(`✅ Created ${sampleNotifications.length} sample notifications (${adminEntities.length} admin issue notifications + 8 other types)`);
+
     console.log("\n=== 🎉 HIDRATAÇÃO COMPLETA ===");
     console.log(`✅ Rotas: ${allRoutes.length}`);
     console.log(`✅ Estações únicas: ${stationMap.size}`);
@@ -838,6 +897,7 @@ async function dbHydration() {
     console.log(`💬 Feedbacks: 3 (atividade finalizada)`);
     console.log(`⚠️  Issues: 1`);
     console.log(`🏥 Medical Reports: 1`);
+    console.log(`📬 Notificações: ${sampleNotifications.length} (todas as 5 categorias)`);
 
     console.log("\n✅ Seeding finished with comprehensive, consistent data!");
   } catch (err) {
