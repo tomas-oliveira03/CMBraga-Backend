@@ -63,6 +63,10 @@ router.post('/', authenticate, authorize(UserRole.PARENT), async (req: Request, 
             return res.status(404).json({ message: "Activity session not found" });
         }
 
+        if(activitySession.startedAt){
+            return res.status(404).json({ message: "Cannot add parent from an ongoing or past activity" });
+        }
+
         const parent = await AppDataSource.getRepository(Parent).findOne({
             where: { id: req.user!.userId }
         });
@@ -112,6 +116,10 @@ router.delete('/', authenticate, authorize(UserRole.PARENT), async (req: Request
         
         if (!activitySession) {
             return res.status(404).json({ message: "Activity session not found" });
+        }
+
+        if(activitySession.startedAt){
+            return res.status(404).json({ message: "Cannot remove parent from an ongoing or past activity" });
         }
 
         const parent = await AppDataSource.getRepository(Parent).findOne({

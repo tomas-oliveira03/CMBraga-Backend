@@ -3,8 +3,9 @@ import { ActivityType, UserNotificationType } from "@/helpers/types";
 import { logger } from "@/lib/logger";
 import { Notification } from "@/db/entities/Notification";
 import { ParentChild } from "@/db/entities/ParentChild";
-import { Admin, IsNull, Not } from "typeorm";
+import { Admin, InsertResult, IsNull, Not } from "typeorm";
 import { User } from "@/db/entities/User";
+import { webSocketEvents } from "./websocket-events";
 
 type NotificationInitialPayload = 
     {
@@ -155,6 +156,27 @@ async function usersToNotifyForNotificationType(payload: NotificationInitialPayl
 }
 
 
+function sendWebsocketNotificationToUsers(usersToNotify: string[], insertResult: InsertResult, notificationContent: { title: string; description: string; uri?: string }, notificationType: UserNotificationType) {
+    insertResult.identifiers.forEach((identifier, index) => {
+        const userId = usersToNotify[index];
+        const notificationId = identifier.id;
+
+        if (!userId) {
+            logger.error(`No userId found for notification id ${notificationId}`);
+            return;
+        }
+
+        webSocketEvents.sendUserNotification(userId, {
+            notificationId: notificationId,
+            type: notificationType,
+            title: notificationContent.title,
+            description: notificationContent.description,
+            uri: notificationContent.uri || null
+        });
+    });
+}
+
+
 export async function createNotificationForUser(payload: NotificationInitialPayload) {
     try {
         const { title, description, uri } = buildNotificationContent(payload);
@@ -169,7 +191,9 @@ export async function createNotificationForUser(payload: NotificationInitialPayl
                 uri: uri
             }
         })
-        await AppDataSource.getRepository(Notification).insert(payloadBulkData);
+        const result = await AppDataSource.getRepository(Notification).insert(payloadBulkData);
+        sendWebsocketNotificationToUsers(usersToNotify, result, { title, description, uri }, payload.type);
+
     }
     catch(error){
         logger.error(error instanceof Error ? error.message : String(error))

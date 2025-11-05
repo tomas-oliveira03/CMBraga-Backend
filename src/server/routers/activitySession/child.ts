@@ -449,6 +449,10 @@ router.delete('/:id', authenticate, authorize(UserRole.PARENT), async (req: Requ
             return res.status(400).json({ message: "Child can only be removed from the first activity session in a transfer chain" });
         }
 
+        if(activitySession.startedAt){
+            return res.status(404).json({ message: "Cannot remove child from an ongoing or past activity" });
+        }
+
         // If activity session supports transfer, remove from all chained sessions
         if (activitySession.activityTransferId && activitySession.stationActivitySessions.find(sas => sas.stationId !== child.dropOffStationId)) {
             let currentSession = activitySession;

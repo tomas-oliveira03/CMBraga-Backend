@@ -1,26 +1,27 @@
 import { AppDataSource } from "@/db";
-import express from "express";
+import express, { Request, Response } from "express";
 import { User } from "@/db/entities/User";
 import { Notification } from "@/db/entities/Notification";
 import { authenticate } from "../middleware/auth";
-import { date } from "zod";
 
 const router = express.Router();
 
-router.get("/user/:id", async (req, res) => {
-    try{
-
-        const userId = req.params.id;
+router.get("/user", authenticate, async (req: Request, res: Response) => {
+    try {
+        const userId = req.user?.email;
         const allNotifications = await AppDataSource.getRepository(User).findOne({
-            where:{
+            where: {
                 id: userId
             },
-            relations:{
+            relations: {
                 notifications: true
             }
         })
+        if (!allNotifications){
+            return res.status(404).json({ message: "User not found" });
+        }
 
-        return res.status(200).json(allNotifications?.notifications)
+        return res.status(200).json(allNotifications.notifications)
 
     } catch(error){
             return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
@@ -28,7 +29,7 @@ router.get("/user/:id", async (req, res) => {
 });
 
 
-router.get("/:id", authenticate,  async (req, res) => {
+router.get("/:id", authenticate, async (req: Request, res: Response) => {
     try {
         const notificationId = req.params.id;
         const userId = req.user?.email;
@@ -42,9 +43,8 @@ router.get("/:id", authenticate,  async (req, res) => {
         if (!notification) {
             return res.status(404).json({ message: "Notification not found" });
         }
-        
         if (notification.userId !== userId) {
-            return res.status(403).json({ message: "Cannot access this notification" });
+            return res.status(403).json({ message: "This notification does not belong to you" });
         }
 
         return res.status(200).json(notification);
@@ -55,9 +55,10 @@ router.get("/:id", authenticate,  async (req, res) => {
 });
 
 
-router.put("/:id",  async (req, res) => {
+router.put("/:id", authenticate, async (req: Request, res: Response) => {
     try {
         const notificationId = req.params.id;
+        const userId = req.user?.email;
     
         if(!notificationId){
             return res.status(404).json({ message: "Notification Id is required"})
@@ -68,15 +69,16 @@ router.put("/:id",  async (req, res) => {
                 id: notificationId
             }
         })
-
         if (!notification) {
             return res.status(404).json({ message: "Notification not found" });
         }
+        if (notification.userId !== userId) {
+            return res.status(403).json({ message: "This notification does not belong to you" });
+        }
 
-        const date = new Date()
         await AppDataSource.getRepository(Notification).update(notificationId, {
             isRead: true,
-            updatedAt: date
+            updatedAt: new Date()
         })
 
         return res.status(200).json({message: "Notification marked as read successfully"});
@@ -87,9 +89,7 @@ router.put("/:id",  async (req, res) => {
 });
 
 
-
-
-router.delete("/:id", authenticate,  async (req, res) => {
+router.delete("/:id", authenticate,  async (req: Request, res: Response) => {
     try {
         const notificationId = req.params.id;
         const userId = req.user?.email;
@@ -107,9 +107,8 @@ router.delete("/:id", authenticate,  async (req, res) => {
         if (!notification) {
             return res.status(404).json({ message: "Notification not found" });
         }
-
         if (notification.userId !== userId) {
-            return res.status(403).json({ message: "Cannot delete this notification" });
+            return res.status(403).json({ message: "This notification does not belong to you" });
         }
 
         await AppDataSource.getRepository(Notification).delete(notificationId);

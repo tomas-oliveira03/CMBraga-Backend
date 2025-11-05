@@ -1,5 +1,5 @@
 import { Station } from "@/db/entities/Station";
-import { StationType, TypeOfChat } from "./types";
+import { StationType, TypeOfChat, UserNotificationType } from "./types";
 
 export enum WebSocketEvent {
     NEW_MESSAGE = 'newMessage',
@@ -9,7 +9,8 @@ export enum WebSocketEvent {
     CHECK_IN = 'checkIn',
     CHECK_OUT = 'checkOut',
     NEXT_STOP = 'nextStop',
-    ARRIVED_AT_STOP = 'arrivedAtStop'
+    ARRIVED_AT_STOP = 'arrivedAtStop',
+    NOTIFICATION = 'notification'
 }
 
 export enum ConnectionStatus {
@@ -119,6 +120,18 @@ export type WebSocketMessage =
                 longitude: number;
                 isLastStation: boolean;
             };
+        }; 
+        timestamp: Date 
+    }
+    | 
+    { 
+        event: WebSocketEvent.NOTIFICATION; 
+        data: {
+            notificationId: string;
+            type: UserNotificationType;
+            title: string;
+            description: string;
+            uri: string | null;
         }; 
         timestamp: Date 
     };

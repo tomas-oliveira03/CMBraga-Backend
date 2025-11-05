@@ -94,6 +94,10 @@ router.post('/:id', authenticate, authorize(UserRole.ADMIN), async (req: Request
             return res.status(404).json({ message: "Activity session not found" });
         }
 
+        if(activitySession.startedAt){
+            return res.status(404).json({ message: "Cannot add instructors from an ongoing or past activity" });
+        }
+
         const instructors = await AppDataSource.getRepository(Instructor).find({
             where: { id: In(instructorIds) }
         });
@@ -160,6 +164,10 @@ router.delete('/:id', authenticate, authorize(UserRole.ADMIN), async (req: Reque
         });
         if (!activitySession) {
             return res.status(404).json({ message: "Activity session not found" });
+        }
+
+        if(activitySession.startedAt){
+            return res.status(404).json({ message: "Cannot remove instructor from an ongoing or past activity" });
         }
 
         const instructor = await AppDataSource.getRepository(Instructor).findOne({

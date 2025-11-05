@@ -3,7 +3,7 @@ import { webSocketManager } from "./websocket";
 import { AppDataSource } from "@/db";
 import { User } from "@/db/entities/User";
 import { logger } from "@/lib/logger";
-import { StationType, TypeOfChat } from "@/helpers/types";
+import { StationType, TypeOfChat, UserNotificationType } from "@/helpers/types";
 import { getAllInstructorsInActivityToNotify } from "./activity";
 
 
@@ -220,6 +220,35 @@ class WebSocketEvents {
             const usersToNotify = await getAllInstructorsInActivityToNotify(activitySessionId, senderInstructorId)
 
             webSocketManager.sendToUsers(usersToNotify, message);
+        }
+        catch(error){
+            logger.error(error instanceof Error ? error.message : String(error))
+        }
+    }
+
+
+    // Send user notification event
+    async sendUserNotification(userToNotify: string, notification: {
+        notificationId: string;
+        type: UserNotificationType;
+        title: string;
+        description: string;
+        uri: string | null;
+    }) {
+        try {
+            const message = {
+                event: WebSocketEvent.NOTIFICATION as WebSocketEvent.NOTIFICATION,
+                data: {
+                    notificationId: notification.notificationId,
+                    type: notification.type,
+                    title: notification.title,
+                    description: notification.description,
+                    uri: notification.uri
+                },
+                timestamp: new Date()
+            };
+
+            webSocketManager.sendToUser(userToNotify, message);
         }
         catch(error){
             logger.error(error instanceof Error ? error.message : String(error))
