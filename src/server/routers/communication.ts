@@ -11,13 +11,16 @@ import { User } from "@/db/entities/User";
 import { UserChat } from "@/db/entities/UserChat";
 import { Chat } from "@/db/entities/Chat";
 import { TypeOfChat } from "@/helpers/types";
-
-import { checkIfChatAlreadyExists, checkIfUserInChat, checkIfUserExists, checkIfChatExists, getMessagesFromChat, getChat, checkIfEmailsExist } from "../services/comms";
+import multer from "multer";
+import { checkIfChatAlreadyExists, checkIfUserInChat, checkIfUserExists, checkIfChatExists, getMessagesFromChat, getChat, checkIfEmailsExist, updateGroupPicture } from "../services/comms";
 import { webSocketEvents } from "../services/websocket-events";
 import informationHash from "@/lib/information-hash";
-const router = express.Router();
+import { isValidImageFile, GROUP_DEFAULT_PROFILE_PICTURE } from "@/helpers/storage";
 
-router.post("/", authenticate, async (req: Request, res: Response) => {
+const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
+
+router.post("/", upload.single('file'), authenticate, async (req: Request, res: Response) => {
     try {
         if (!req.user || !req.user.email) {
             return res.status(401).json({ message: "Unauthorized" });
@@ -57,10 +60,21 @@ router.post("/", authenticate, async (req: Request, res: Response) => {
 
         const newChat = {
             chatType: num_members > 2 ? TypeOfChat.GROUP_CHAT : TypeOfChat.INDIVIDUAL_CHAT,
-            destinatairePhoto: "default-photo-url",
+            destinatairePhoto: "",
             chatName: num_members > 2 ? parsed.chatName : null,
             messages: [],
         };
+
+        if (num_members > 2 && req.file) {
+            if (!isValidImageFile(req.file)){
+                return res.status(400).json({ message: "File must be a valid image type (JPEG, JPG, PNG, WEBP)" });
+            }
+            newChat.destinatairePhoto = await updateGroupPicture("", req.file.buffer);
+        } 
+
+        else if (!req.file && num_members > 2){
+            newChat.destinatairePhoto = GROUP_DEFAULT_PROFILE_PICTURE;
+        }
 
         let conversationId: string | undefined;
         await AppDataSource.transaction(async tx => {

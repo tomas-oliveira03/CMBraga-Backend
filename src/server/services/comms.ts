@@ -7,6 +7,8 @@ import { TypeOfChat, UserRole } from "@/helpers/types";
 import informationHash from "@/lib/information-hash";
 import { webSocketEvents } from "./websocket-events";
 import { In } from "typeorm";
+import { isDefaultGroupProfilePicture } from "@/helpers/storage";
+import { deleteImageSafe, uploadImageBuffer } from "./cloud";
 
 const MESSAGES_PER_PAGE = 20;
 const USERS_PER_PAGE = 10;
@@ -251,4 +253,20 @@ export async function addUserToGeneralChat(userId: string): Promise<void> {
         console.error("Error adding user to general chat:", error);
         throw new Error("Failed to add user to general chat");
     }
+}
+
+export async function updateGroupPicture(oldProfilePictureURL:string, newProfilePicturebuffer: Buffer){
+
+    if (oldProfilePictureURL === "") {
+        const profilePictureURL = await uploadImageBuffer(newProfilePicturebuffer, "group-picture", "groups");
+        return profilePictureURL
+    }
+
+    const isDefaultPicture = isDefaultGroupProfilePicture(oldProfilePictureURL);
+    if (!isDefaultPicture){
+        deleteImageSafe(oldProfilePictureURL);
+    }
+
+    const profilePictureURL = await uploadImageBuffer(newProfilePicturebuffer, "group-picture", "groups");
+    return profilePictureURL
 }
