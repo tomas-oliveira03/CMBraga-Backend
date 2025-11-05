@@ -80,7 +80,7 @@ router.get("/search", authenticate, async (req: Request, res: Response) => {
 });
 
 
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', authenticate, async (req: Request, res: Response) => {
     try {
         const userId = req.params.id;
 
