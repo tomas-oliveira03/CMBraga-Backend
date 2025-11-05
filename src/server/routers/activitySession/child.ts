@@ -317,6 +317,18 @@ router.post('/:id', authenticate, authorize(UserRole.PARENT), async (req: Reques
         const registrations: Partial<ChildActivitySession>[] = [];
 
         while (currentSession) {
+
+            const isAlreadyRegistered = await AppDataSource.getRepository(ChildActivitySession).findOne({
+                where: {
+                    childId: childId,
+                    activitySessionId: currentSession.id
+                }
+            });
+            if (isAlreadyRegistered) {
+                return res.status(400).json({ message: "Child is already registered in one of the linked activity sessions" });
+            }
+
+
             // If there is a transfer, determine the drop-off as the connecting station
             if (currentSession.activityTransferId) {
                 const routeConnector = await AppDataSource.getRepository(RouteConnection).findOne({
