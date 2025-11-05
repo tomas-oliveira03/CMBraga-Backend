@@ -12,10 +12,11 @@ import { UserChat } from "@/db/entities/UserChat";
 import { Chat } from "@/db/entities/Chat";
 import { TypeOfChat } from "@/helpers/types";
 import multer from "multer";
-import { checkIfChatAlreadyExists, checkIfUserInChat, checkIfUserExists, checkIfChatExists, getMessagesFromChat, getChat, checkIfEmailsExist, updateGroupPicture } from "../services/comms";
+import { checkIfChatAlreadyExists, checkIfUserInChat, checkIfUserExists, checkIfChatExists, getMessagesFromChat, getChat, checkIfEmailsExist } from "../services/comms";
 import { webSocketEvents } from "../services/websocket-events";
 import informationHash from "@/lib/information-hash";
 import { isValidImageFile, GROUP_DEFAULT_PROFILE_PICTURE } from "@/helpers/storage";
+import { uploadImageBuffer } from "../services/cloud";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -69,9 +70,8 @@ router.post("/", upload.single('file'), authenticate, async (req: Request, res: 
             if (!isValidImageFile(req.file)){
                 return res.status(400).json({ message: "File must be a valid image type (JPEG, JPG, PNG, WEBP)" });
             }
-            newChat.destinatairePhoto = await updateGroupPicture("", req.file.buffer);
+            newChat.destinatairePhoto = await uploadImageBuffer(req.file.buffer, "group-picture", "groups");
         } 
-
         else if (!req.file && num_members > 2){
             newChat.destinatairePhoto = GROUP_DEFAULT_PROFILE_PICTURE;
         }

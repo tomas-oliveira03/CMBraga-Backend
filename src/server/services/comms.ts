@@ -254,19 +254,3 @@ export async function addUserToGeneralChat(userId: string): Promise<void> {
         throw new Error("Failed to add user to general chat");
     }
 }
-
-export async function updateGroupPicture(oldProfilePictureURL:string, newProfilePicturebuffer: Buffer){
-
-    if (oldProfilePictureURL === "") {
-        const profilePictureURL = await uploadImageBuffer(newProfilePicturebuffer, "group-picture", "groups");
-        return profilePictureURL
-    }
-
-    const isDefaultPicture = isDefaultGroupProfilePicture(oldProfilePictureURL);
-    if (!isDefaultPicture){
-        deleteImageSafe(oldProfilePictureURL);
-    }
-
-    const profilePictureURL = await uploadImageBuffer(newProfilePicturebuffer, "group-picture", "groups");
-    return profilePictureURL
-}
