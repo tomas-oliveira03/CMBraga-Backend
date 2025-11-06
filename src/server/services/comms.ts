@@ -210,6 +210,22 @@ export async function getAlphabeticOrderedUsers(jump: number): Promise<User[]> {
     }
 }
 
+export async function getAlphabeticOrderedUsersWithoutTheChatMembers(jump: number, excludeUserIds: string[]): Promise<User[]> {
+    try {
+        const users = await AppDataSource.getRepository(User)
+            .createQueryBuilder("user")
+            .orderBy("user.name", "ASC")
+            .skip(jump * USERS_PER_PAGE)
+            .take(USERS_PER_PAGE)
+            .where("user.id NOT IN (:...excludeUserIds)", { excludeUserIds })
+            .getMany();
+        return users;
+    } catch (error) {
+        console.error("Error retrieving users:", error);
+        throw new Error("Failed to retrieve users");
+    }
+}
+
 // Helper: normalize user objects to { id, name, role }
 export function normalizeUsers(users: any[]) {
     return (users || []).map(u => {

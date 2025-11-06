@@ -1,5 +1,5 @@
 import express, { Request, Response } from "express";
-import { getAlphabeticOrderedUsers, searchSimilarUsers, normalizeUsers, searchSimilarUsersWithoutTheChatMember } from "../services/comms";
+import { getAlphabeticOrderedUsers, searchSimilarUsers, normalizeUsers, searchSimilarUsersWithoutTheChatMember, getAlphabeticOrderedUsersWithoutTheChatMembers } from "../services/comms";
 import { AppDataSource } from "@/db";
 import { User } from "@/db/entities/User";
 import { UserRole } from "@/helpers/types";
@@ -156,7 +156,7 @@ router.get("/:conversationId/search", authenticate, async (req: Request, res: Re
         }
 
         if (queryParam === undefined) {
-            users = await getAlphabeticOrderedUsers(pageNumber);
+            users = await getAlphabeticOrderedUsersWithoutTheChatMembers(pageNumber, inChatUsers.map(uc => uc.userId));
         } else if (typeof queryParam === "string") {
             const lowercaseQuery = queryParam.toLowerCase();
             users = await searchSimilarUsersWithoutTheChatMember(lowercaseQuery, pageNumber, inChatUsers.map(uc => uc.userId));
