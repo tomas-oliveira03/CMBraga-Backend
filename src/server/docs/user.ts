@@ -118,3 +118,94 @@
  *                   type: string
  *                   example: "Internal server error"
  */
+
+
+/**
+ * @swagger
+ * /user/{conversationId}/search:
+ *   get:
+ *     summary: Search users not in a specific conversation
+ *     description: >
+ *       Returns users that are not members of the specified conversation. The search and paging
+ *       parameters follow the same semantics as /user/search. The requesting user must be part
+ *       of the conversation, otherwise a 403 is returned.
+ *     tags:
+ *       - User
+ *     parameters:
+ *       - in: path
+ *         name: conversationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The conversation/chat ID to exclude members from
+ *       - in: query
+ *         name: query
+ *         schema:
+ *           type: string
+ *         required: false
+ *         description: The search query string
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: string
+ *         required: false
+ *         description: The page number to retrieve
+ *     responses:
+ *       200:
+ *         description: A list of users not in the specified conversation
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     description: The user's unique identifier (email)
+ *                   name:
+ *                     type: string
+ *                     description: The user's name
+ *                   role:
+ *                     type: string
+ *                     description: The user's role
+ *                   profilePictureURL:
+ *                     type: string
+ *                     description: URL to user's profile picture
+ *       400:
+ *         description: Missing or invalid parameters (e.g., page)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       401:
+ *         description: Unauthorized - authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       403:
+ *         description: Forbidden - requesting user is not part of the conversation
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ */

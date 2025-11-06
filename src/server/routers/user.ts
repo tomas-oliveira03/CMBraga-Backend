@@ -1,10 +1,11 @@
 import express, { Request, Response } from "express";
-import { getAlphabeticOrderedUsers, searchSimilarUsers, normalizeUsers } from "../services/comms";
+import { getAlphabeticOrderedUsers, searchSimilarUsers, normalizeUsers, searchSimilarUsersWithoutTheChatMember } from "../services/comms";
 import { AppDataSource } from "@/db";
 import { User } from "@/db/entities/User";
 import { UserRole } from "@/helpers/types";
 import { authenticate } from "../middleware/auth";
 import { checkIfChatAlreadyExists } from "../services/comms";
+import { UserChat } from "@/db/entities/UserChat";
 
 const router = express.Router();
 
@@ -115,6 +116,56 @@ router.get('/:id', authenticate, async (req: Request, res: Response) => {
             profilePictureURL: user.profilePictureURL,
             role: userRole
          });
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+});
+
+// Only show users that arent in the conversation, search format same as "/search" endpoint, verify user is part of conversation
+router.get("/:conversationId/search", authenticate, async (req: Request, res: Response) => {
+    try {
+        const rawQuery = req.query.query;
+        const rawPage = req.query.page;
+        const pageParam = Array.isArray(rawPage) ? rawPage[0] : rawPage;
+        let pageNumber = 0;
+        if (pageParam !== undefined) {
+            const parsed = parseInt(pageParam as string, 10);
+            if (isNaN(parsed) || parsed < 0) {
+                return res.status(400).json({ message: "Invalid page parameter. Page must be an integer >= 0" });
+            }
+            pageNumber = parsed;
+        }
+        const queryParam = Array.isArray(rawQuery) ? rawQuery[0] : rawQuery;
+        const conversationId = req.params.conversationId;
+        const userId = req.user?.email;
+        if (!userId) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+        if (!conversationId) {
+            return res.status(400).json({ message: "Missing conversationId parameter" });
+        }
+        let users;
+        const inChatUsers = await AppDataSource.getRepository(UserChat).find({
+            where: {
+                chatId: conversationId
+            }
+        });
+
+        if (!inChatUsers.map(uc => uc.userId).includes(userId)) {
+            return res.status(403).json({ message: "User not part of the conversation" });
+        }
+
+        if (queryParam === undefined) {
+            users = await getAlphabeticOrderedUsers(pageNumber);
+        } else if (typeof queryParam === "string") {
+            const lowercaseQuery = queryParam.toLowerCase();
+            users = await searchSimilarUsersWithoutTheChatMember(lowercaseQuery, pageNumber, inChatUsers.map(uc => uc.userId));
+        } else {
+            return res.status(400).json({ message: "Missing or invalid query parameter" });
+        }
+        if (!users) return res.status(200).json([]);
+        users = users.filter(u => u.id !== userId);
+        return res.status(200).json(normalizeUsers(users));
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }

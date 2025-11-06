@@ -178,6 +178,23 @@ export async function searchSimilarUsers(query: string, pageNumber: number): Pro
     }
 }
 
+export async function searchSimilarUsersWithoutTheChatMember(query: string, pageNumber: number, excludeUserIds: string[]): Promise<User[] | null> {
+    try {
+        // Given a part of a name or email, find if it belongs to any user, even if in middle of name or email
+        const users = await AppDataSource.getRepository(User)
+            .createQueryBuilder("user")
+            .skip(pageNumber * USERS_PER_PAGE)
+            .take(USERS_PER_PAGE)
+            .where("(user.name LIKE :query OR user.id LIKE :query)", { query: `%${query}%` })
+            .andWhere("user.id NOT IN (:...excludeUserIds)", { excludeUserIds })
+            .getMany();
+        return users;
+    } catch (error) {
+        console.error("Error searching for users:", error);
+        throw new Error("Failed to search for users");
+    }
+}
+
 export async function getAlphabeticOrderedUsers(jump: number): Promise<User[]> {
     try {
         const users = await AppDataSource.getRepository(User)
