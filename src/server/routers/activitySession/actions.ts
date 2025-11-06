@@ -395,6 +395,7 @@ router.post('/station/next-stop', authenticate, authorize(UserRole.INSTRUCTOR), 
 
         const previousStation = await AppDataSource.getRepository(StationActivitySession).findOne({
             where: {
+                activitySessionId: activitySessionId,
                 arrivedAt: Not(IsNull()),
                 leftAt: IsNull()
             }
