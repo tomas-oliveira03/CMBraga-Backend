@@ -11,12 +11,15 @@ import { UpdateBadgeSchema, CreateBadgeSchema } from "../schemas/badge";
 import { ParentStat } from "@/db/entities/ParentStat";
 import { ChildStat } from "@/db/entities/ChildStat";
 import { BadgeCriteria } from "@/helpers/types";
+import multer from "multer";
+import { isValidImageFile } from "@/helpers/storage";
+import { uploadImageBuffer, deleteImageSafe } from "../services/cloud";
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
 
-
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const badges = await AppDataSource.getRepository(Badge).find();
         return res.status(200).json(badges);
@@ -26,7 +29,7 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const badge = await AppDataSource.getRepository(Badge).findOne({ where: { id: req.params.id } });
         if (!badge) {
@@ -39,13 +42,18 @@ router.get('/:id', async (req: Request, res: Response) => {
 });
 
 
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const validatedData = CreateBadgeSchema.parse(req.body);
 
-        // Validate image URL
-        if (validatedData.imageUrl && !/^https?:\/\/.+\.(jpg|jpeg|png|gif)$/i.test(validatedData.imageUrl)) {
-            return res.status(400).json({ message: "Invalid image URL" });
+        if (req.file) {
+            if (!isValidImageFile(req.file)) {
+                return res.status(400).json({ message: "Invalid image file" });
+            }
+            const imageUrl = await uploadImageBuffer(req.file.buffer, "badge-picture", "badges");
+            validatedData.imageUrl = imageUrl;
+        } else {
+            return res.status(400).json({ message: "Badge image is required" });
         }
 
         // Check if a badge with the same name already exists
@@ -66,7 +74,7 @@ router.post('/', async (req: Request, res: Response) => {
 });
 
 
-router.put('/:id', async (req: Request, res: Response) => {
+router.put('/:id', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const validatedData = UpdateBadgeSchema.parse(req.body);
 
@@ -92,12 +100,24 @@ router.put('/:id', async (req: Request, res: Response) => {
 });
 
 
-router.delete('/:id', authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
+router.delete('/:id', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const badge = await AppDataSource.getRepository(Badge).findOne({ where: { id: req.params.id } });
         if (!badge) {
             return res.status(404).json({ message: "Badge not found" });
         }
+
+        const referencingClientBadge = await AppDataSource.getRepository(ClientBadge).findOne({ where: { badgeId: badge.id } });
+        if (referencingClientBadge) {
+            return res.status(400).json({ message: "Cannot delete badge; it is assigned to someone" });
+        }
+
+        const imageUrl = badge.imageUrl;
+        if (imageUrl) {
+            // Attempt to delete the image from cloud storage
+            await deleteImageSafe(imageUrl);
+        }
+
         await AppDataSource.getRepository(Badge).delete(badge.id);
         return res.status(200).json({ message: "Badge deleted successfully" });
     } catch (error) {

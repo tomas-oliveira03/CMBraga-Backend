@@ -39,7 +39,7 @@
  * /badge:
  *   post:
  *     summary: Create a new badge
- *     description: Creates a new badge
+ *     description: Creates a new badge. Expects multipart/form-data with the badge metadata and an image file.
  *     tags:
  *       - Badge
  *     security:
@@ -47,9 +47,30 @@
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
- *             $ref: '#/components/schemas/CreateBadge'
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: Unique badge name
+ *               description:
+ *                 type: string
+ *                 nullable: true
+ *               criteria:
+ *                 type: string
+ *                 description: Badge criteria (e.g. distance, calories, weather, points, participation, streak, leaderboard, special)
+ *               valueneeded:
+ *                 type: number
+ *                 nullable: true
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *                 description: Image file for the badge (required)
+ *             required:
+ *               - name
+ *               - criteria
+ *               - image
  *     responses:
  *       201:
  *         description: Badge created successfully
@@ -60,10 +81,14 @@
  *               properties:
  *                 message:
  *                   type: string
+ *                 id:
+ *                   type: string
  *       400:
- *         description: Validation error or name conflict
+ *         description: Validation error, missing fields, invalid image or name conflict
  *       401:
  *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (requires admin)
  */
 
 
