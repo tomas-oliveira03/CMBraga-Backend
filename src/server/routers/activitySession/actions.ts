@@ -480,6 +480,7 @@ router.post('/station/arrived-at-stop', authenticate, authorize(UserRole.INSTRUC
 
         const isAlreadyInAStop = await AppDataSource.getRepository(StationActivitySession).findOne({
             where: {
+                activitySessionId: activitySessionId,
                 arrivedAt: Not(IsNull()),
                 leftAt: IsNull()
             }
