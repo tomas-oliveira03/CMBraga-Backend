@@ -378,6 +378,7 @@ router.get("/my-chats", authenticate, async (req: Request, res: Response) => {
                     senderName: senderName,
                     timestamp: mostRecentMessage?.timestamp || null,
                     members: memberDetails,
+                    image: chat.chatType === TypeOfChat.GROUP_CHAT ? chat.destinatairePhoto : null,
                     seen
                 };
             })

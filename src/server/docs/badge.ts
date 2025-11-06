@@ -141,13 +141,45 @@
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: List of badges
+ *         description: List of badges assigned to the authenticated parent
  *         content:
  *           application/json:
  *             schema:
  *               type: array
  *               items:
- *                 $ref: '#/components/schemas/Badge'
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *                   name:
+ *                     type: string
+ *                     example: "Badge do Pedibus"
+ *                   description:
+ *                     type: string
+ *                     nullable: true
+ *                     example: "Awarded for completing X km"
+ *                   imageUrl:
+ *                     type: string
+ *                     format: uri
+ *                     nullable: true
+ *                     example: "https://storage.example.com/badges/badge-1.png"
+ *                   criteria:
+ *                     type: string
+ *                     example: "distance"
+ *                   valueneeded:
+ *                     type: number
+ *                     nullable: true
+ *                     example: 10
+ *                   createdAt:
+ *                     type: string
+ *                     format: date-time
+ *                     example: "2024-01-15T10:30:00.000Z"
+ *                   updatedAt:
+ *                     type: string
+ *                     format: date-time
+ *                     nullable: true
+ *                     example: null
  *       401:
  *         description: Unauthorized
  *       403:
