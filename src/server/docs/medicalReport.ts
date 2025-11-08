@@ -27,17 +27,15 @@
  *                   id:
  *                     type: string
  *                     example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
- *                   diagnosis:
- *                     type: string
- *                     example: "Asma brônquica leve"
- *                   recommendations:
- *                     type: string
- *                     nullable: true
- *                     example: "Evitar ambientes com fumo e poeira"
- *                   createdAt:
- *                     type: string
- *                     format: date-time
- *                     example: "2024-01-15T10:30:00.000Z"
+ *                   child:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         example: "c1d2e3f4-g5h6-7890-ijkl-mn1234567890"
+ *                       name:
+ *                         type: string
+ *                         example: "Maria Silva"
  *                   healthProfessional:
  *                     type: object
  *                     properties:
@@ -54,6 +52,22 @@
  *                       specialty:
  *                         type: string
  *                         example: "Pediatria"
+ *                   diagnosis:
+ *                     type: string
+ *                     example: "Asma brônquica leve"
+ *                   recommendations:
+ *                     type: string
+ *                     nullable: true
+ *                     example: "Evitar ambientes com fumo e poeira"
+ *                   createdAt:
+ *                     type: string
+ *                     format: date-time
+ *                     example: "2024-01-15T10:30:00.000Z"
+ *                   updatedAt:
+ *                     type: string
+ *                     format: date-time
+ *                     nullable: true
+ *                     example: "2024-01-20T14:45:30.000Z"
  *       404:
  *         description: Child not found
  *         content:
@@ -140,12 +154,31 @@
  *                 id:
  *                   type: string
  *                   example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
- *                 childId:
- *                   type: string
- *                   example: "c1d2e3f4-g5h6-7890-ijkl-mn1234567890"
- *                 healthProfessionalId:
- *                   type: string
- *                   example: "h1i2j3k4-l5m6-7890-nopq-rs1234567890"
+ *                 child:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       example: "c1d2e3f4-g5h6-7890-ijkl-mn1234567890"
+ *                     name:
+ *                       type: string
+ *                       example: "Maria Silva"
+ *                 healthProfessional:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       example: "h1i2j3k4-l5m6-7890-nopq-rs1234567890"
+ *                     name:
+ *                       type: string
+ *                       example: "Dr. João Pereira"
+ *                     email:
+ *                       type: string
+ *                       format: email
+ *                       example: "joao.pereira@hospital.pt"
+ *                     specialty:
+ *                       type: string
+ *                       example: "Pediatria"
  *                 diagnosis:
  *                   type: string
  *                   example: "Rinite alérgica"
