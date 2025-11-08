@@ -8,13 +8,14 @@ import multer from "multer";
 import { isValidImageFile } from "@/helpers/storage";
 import { updateProfilePicture } from "../services/user";
 import { User } from "@/db/entities/User";
-import { ActivityStatusType } from "@/helpers/types";
+import { ActivityStatusType, UserRole } from "@/helpers/types";
 import { IsNull } from "typeorm";
+import { authenticate, authorize } from "../middleware/auth";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const allInstructors = await AppDataSource.getRepository(Instructor).find();
         return res.status(200).json(allInstructors);
@@ -24,7 +25,7 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
     try {
         const instructorId = req.params.id;
         const instructor = await AppDataSource.getRepository(Instructor).findOne({
@@ -35,6 +36,10 @@ router.get('/:id', async (req: Request, res: Response) => {
         if (!instructor){
             return res.status(404).json({ message: "Instructor not found" })
         }
+        if (req.user!.role === UserRole.INSTRUCTOR && req.user!.userId !== instructor.id) {
+            return res.status(403).json({ message: "Forbidden: You can only access your own instructor profile." });
+        }
+
         return res.status(200).json(instructor);
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
@@ -42,9 +47,9 @@ router.get('/:id', async (req: Request, res: Response) => {
 });
 
 
-router.put('/:id', upload.single('file'), async (req: Request, res: Response) => {
+router.put('/:id', authenticate, authorize(UserRole.INSTRUCTOR), upload.single('file'), async (req: Request, res: Response) => {
     try {
-        const instructorId = req.params.id;
+        const instructorId = req.user!.userId;
         const validatedData = UpdateInstructorSchema.parse(req.body);
         
         const instructor = await AppDataSource.getRepository(Instructor).findOne({
@@ -112,7 +117,7 @@ router.put('/:id', upload.single('file'), async (req: Request, res: Response) =>
 
 
 // Get all instructor ongoing and upcoming activities
-router.get('/next-activities/:id', async (req: Request, res: Response) => {
+router.get('/next-activities/:id', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
     try {
         const instructorId = req.params.id;
         const instructor = await AppDataSource.getRepository(Instructor).findOne({
