@@ -177,7 +177,7 @@ router.post('/end', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Re
         })
 
         setActivityStats(activitySessionId)
-        awardBadgesAfterActivity(activitySessionId);
+        await awardBadgesAfterActivity(activitySessionId);
         webSocketEvents.sendActivityEnded(activitySessionId, req.user!.email);
 
 

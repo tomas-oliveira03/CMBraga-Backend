@@ -7,6 +7,7 @@ import { ClientBadge } from "@/db/entities/ClientBadge";
 import { In, IsNull, Not } from "typeorm";
 import { BadgeCriteria } from "@/helpers/types";
 import { logger } from "@/lib/logger";
+import { Route } from "@/db/entities/Route";
 
 export type Stat = {
     childId?: string;
@@ -16,11 +17,12 @@ export type Stat = {
     totalParticipations: number;
     totalDifferentWeatherTypes: number;
     totalPointsEarned: number;
+    actualStreak?: number;
 };
 
 
 export async function awardBadgesAfterActivity(activityId: string) {
-    try{
+    try {
         const activity = await AppDataSource.getRepository(ActivitySession).findOne({
             where: { id: activityId },
             relations: {
@@ -36,7 +38,7 @@ export async function awardBadgesAfterActivity(activityId: string) {
 
         const childrenStats: Stat[] = [];
         for (const childId of childIds) {
-            const childDBStats = await AppDataSource.getRepository(ChildStat).find({ 
+            const childDBStats = await AppDataSource.getRepository(ChildStat).find({
                 where: { childId: childId },
                 relations: {
                     activitySession: true
@@ -127,8 +129,23 @@ export async function awardBadgesAfterActivity(activityId: string) {
             parentsStats.push(stat);
         }
 
+        const { childStreakMap, parentStreakMap } = await checkStreakForClient(childIds, parentsIds);
+
+        for (const cs of childrenStats) {
+            const streak = childStreakMap.get(cs.childId!);
+            if (streak !== undefined) {
+                cs.actualStreak = streak;
+            }
+        }
+        for (const ps of parentsStats) {
+            const streak = parentStreakMap.get(ps.parentId!);
+            if (streak !== undefined) {
+                ps.actualStreak = streak;
+            }
+        }
+
         const badges = await AppDataSource.getRepository(Badge).find();
-        
+
         await evaluateAndAwardBadges(badges, childrenStats, parentsStats);
 
     }
@@ -140,7 +157,7 @@ export async function awardBadgesAfterActivity(activityId: string) {
 export function hasEnoughForBadge(stat: Stat, badge: Badge): boolean {
     switch (badge.criteria as BadgeCriteria) {
         case BadgeCriteria.STREAK:
-            return false;
+            return (stat.actualStreak || 0) >= badge.valueneeded;
 
         case BadgeCriteria.DISTANCE:
             return stat.totalDistanceMeters >= (badge.valueneeded * 1000);
@@ -154,13 +171,13 @@ export function hasEnoughForBadge(stat: Stat, badge: Badge): boolean {
         case BadgeCriteria.POINTS:
             return stat.totalPointsEarned >= badge.valueneeded;
 
-        case BadgeCriteria.LEADERBOARD:
-            return false;
-
         case BadgeCriteria.PARTICIPATION:
             return stat.totalParticipations >= badge.valueneeded;
 
         case BadgeCriteria.SPECIAL:
+            return false;
+            
+        case BadgeCriteria.LEADERBOARD:
             return false;
 
         default:
@@ -186,7 +203,7 @@ export async function evaluateAndAwardBadges(badges: Badge[], childStats: Stat[]
             }
         }
     }
-    
+
     for (const award of toAward) {
         const existing = await AppDataSource.getRepository(ClientBadge).findOne({
             where: {
@@ -206,5 +223,97 @@ export async function evaluateAndAwardBadges(badges: Badge[], childStats: Stat[]
             }
             await AppDataSource.getRepository(ClientBadge).save(clientBadge);
         }
+    }
+}
+
+export async function checkStreakForClient(childId: string[] | null, parentId: string[] | null) {
+    try {
+        if (!childId && !parentId) {
+            throw new Error("Either childId or parentId must be provided");
+        }
+
+        const routeIds = await AppDataSource.getRepository(Route).find().then(routes => routes.map(r => r.id));
+
+        let activitiesByRoute: Map<number, ActivitySession[]> = new Map();
+
+        let allActivities = await AppDataSource.getRepository(ActivitySession).find({
+            where: { finishedAt: Not(IsNull()) },
+            relations: {
+                childStations: true,
+                parentStations: true
+            },
+            order: {
+                finishedAt: "DESC"
+            }
+        });
+
+        let activitiesOrderedByRouteId: Map<string, ActivitySession[]> = new Map();
+
+        for (const routeId of routeIds) {
+            activitiesOrderedByRouteId.set(routeId, []);
+        }
+
+        for (const activity of allActivities) {
+            const routeId = activity.routeId;
+            if (activitiesOrderedByRouteId.has(routeId)) {
+                activitiesOrderedByRouteId.get(routeId)!.push(activity);
+            }
+        }
+
+        const leastLength = Math.min(...Array.from(activitiesOrderedByRouteId.values()).map(arr => arr.length));
+        for (let i = 0; i < leastLength; i++) {
+            activitiesByRoute.set(i, []);
+        }
+
+        for (let i = 0; i < leastLength; i++) {
+            for (const routeId of routeIds) {
+                const activitiesForRoute = activitiesOrderedByRouteId.get(routeId);
+                const activityNumberi = activitiesForRoute ? activitiesForRoute[i] : undefined;
+                if (activityNumberi !== undefined) {
+                    activitiesByRoute.get(i)!.push(activityNumberi);
+                }
+            }
+        }
+
+
+        let childStreakMap: Map<string, number> = new Map();
+        let parentStreakMap: Map<string, number> = new Map();
+
+        for (const entryChildId of childId || []) {
+            childStreakMap.set(entryChildId, 1);
+            for (const [_, activities] of activitiesByRoute) {
+                let combo = 0;
+                for (const activity of activities) {
+                    const participated = activity.childStations.some(cs => cs.childId === entryChildId);
+                    if (!participated) {
+                        break;
+                    } else {
+                        combo += 1;
+                        childStreakMap.set(entryChildId, combo);
+                    }
+                }
+            }
+        }
+
+        for (const entryParentId of parentId || []) {
+            parentStreakMap.set(entryParentId, 1);
+            for (const [_, activities] of activitiesByRoute) {
+                let combo = 1;
+                for (const activity of activities) {
+                    const participated = activity.parentStations.some(ps => ps.parentId === entryParentId);
+                    if (!participated) {
+                        break;
+                    } else {
+                        combo += 1;
+                        parentStreakMap.set(entryParentId, combo);
+                    }
+                }
+            }
+        }
+
+        return { childStreakMap, parentStreakMap };
+    } catch (error) {
+        logger.error("Error checking streak for client:", error);
+        return { childStreakMap: new Map(), parentStreakMap: new Map() };
     }
 }
