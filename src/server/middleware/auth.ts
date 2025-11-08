@@ -15,19 +15,20 @@ declare global {
 export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const token = AuthService.extractTokenFromHeader(req.headers.authorization);
-        
+        console.log("D1")
         if (!token) {
             return res.status(401).json({ message: 'Access token required' });
         }
-
+console.log("D2")
         // Check if token is blacklisted in Redis
         const isBlacklisted = await redisClient.get(`blacklist:${token}`);
         if (isBlacklisted) {
             return res.status(401).json({ message: 'Token has been revoked' });
         }
-
+console.log("D3")
         const decoded = AuthService.verifyToken(token);
         req.user = decoded;
+        console.log("D4")
         return next();
     } catch (error) {
         return res.status(401).json({ message: 'Invalid or expired token' });
@@ -35,6 +36,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 };
 
 export const authorize = (...allowedRoles: UserRole[]) => {
+    console.log("DDDD")
     return (req: Request, res: Response, next: NextFunction) => {
         if (!req.user) {
             return res.status(401).json({ message: 'Authentication required' });

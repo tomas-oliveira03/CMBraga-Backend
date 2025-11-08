@@ -17,9 +17,12 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 router.get('/', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
+        console.log("AAAA")
         const allInstructors = await AppDataSource.getRepository(Instructor).find();
+        console.log("BBBB")
         return res.status(200).json(allInstructors);
     } catch (error) {
+        console.log(error)
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
