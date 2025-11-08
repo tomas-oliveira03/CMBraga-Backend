@@ -213,72 +213,76 @@ router.get('/profile/badges-to-achieve', authenticate, authorize(UserRole.PARENT
         });
         const achievedIds = new Set(assignedClientBadges.map(cb => cb.badgeId));
 
-        // Exclude STREAK, LEADERBOARD and SPECIAL badges from "to-achieve" list
-        const excludedCriteria = [BadgeCriteria.STREAK, BadgeCriteria.LEADERBOARD, BadgeCriteria.SPECIAL];
+        // Exclude LEADERBOARD and SPECIAL badges from "to-achieve" list
+        const excludedCriteria = [BadgeCriteria.LEADERBOARD, BadgeCriteria.SPECIAL];
 
-        const badgesToAchieve = badges
-            .filter(b => !achievedIds.has(b.id) && !excludedCriteria.includes(b.criteria as BadgeCriteria))
-            .map(b => {
-                const needed = typeof b.valueneeded === 'number' ? b.valueneeded : null;
-                let percentComplete: number | null = null;
+        const badgesToAchieve = (await Promise.all(
+            badges
+                .filter(b => !achievedIds.has(b.id) && !excludedCriteria.includes(b.criteria as BadgeCriteria))
+                .map(async b => {
+                    const needed = typeof b.valueneeded === 'number' ? b.valueneeded : null;
+                    let percentComplete: number | null = null;
 
-                if (needed !== null) {
-                    switch (b.criteria as BadgeCriteria) {
-                        case BadgeCriteria.DISTANCE:
-                            percentComplete = needed <= 0 ? null : (parentStat.totalDistanceMeters / (needed * 1000)) * 100;
-                            break;
-                        case BadgeCriteria.CALORIES:
-                            percentComplete = needed <= 0 ? null : (parentStat.totalCaloriesBurned / needed) * 100;
-                            break;
-                        case BadgeCriteria.WEATHER:
-                            percentComplete = needed <= 0 ? null : (parentStat.totalDifferentWeatherTypes / needed) * 100;
-                            break;
-                        case BadgeCriteria.POINTS:
-                            percentComplete = needed <= 0 ? null : (parentStat.totalPointsEarned / needed) * 100;
-                            break;
-                        case BadgeCriteria.PARTICIPATION:
-                            percentComplete = needed <= 0 ? null : (parentStat.totalParticipations / needed) * 100;
-                            break;
-                        case BadgeCriteria.STREAK:
-                        case BadgeCriteria.LEADERBOARD:
-                        case BadgeCriteria.SPECIAL:
-                        default:
-                            percentComplete = null;
-                            break;
+                    if (needed !== null) {
+                        switch (b.criteria as BadgeCriteria) {
+                            case BadgeCriteria.DISTANCE:
+                                percentComplete = needed <= 0 ? null : (parentStat.totalDistanceMeters / (needed * 1000)) * 100;
+                                break;
+                            case BadgeCriteria.CALORIES:
+                                percentComplete = needed <= 0 ? null : (parentStat.totalCaloriesBurned / needed) * 100;
+                                break;
+                            case BadgeCriteria.WEATHER:
+                                percentComplete = needed <= 0 ? null : (parentStat.totalDifferentWeatherTypes / needed) * 100;
+                                break;
+                            case BadgeCriteria.POINTS:
+                                percentComplete = needed <= 0 ? null : (parentStat.totalPointsEarned / needed) * 100;
+                                break;
+                            case BadgeCriteria.PARTICIPATION:
+                                percentComplete = needed <= 0 ? null : (parentStat.totalParticipations / needed) * 100;
+                                break;
+                            case BadgeCriteria.STREAK:
+                                const totalStreaks = await getStreakForClient(null, userId);
+                                percentComplete = needed <= 0 ? null : (totalStreaks / needed) * 100;
+                                break;
+                            case BadgeCriteria.LEADERBOARD:
+                            case BadgeCriteria.SPECIAL:
+                            default:
+                                percentComplete = null;
+                                break;
+                        }
                     }
-                }
 
-                let percentMissing: number | null = null;
-                if (percentComplete === null) {
-                    percentMissing = null;
-                } else {
-                    const bounded = Math.max(0, Math.min(100, percentComplete));
-                    percentMissing = Math.round((100 - bounded) * 10) / 10;
-                }
+                    let percentMissing: number | null = null;
+                    if (percentComplete === null) {
+                        percentMissing = null;
+                    } else {
+                        const bounded = Math.max(0, Math.min(100, percentComplete));
+                        percentMissing = Math.round((100 - bounded) * 10) / 10;
+                    }
 
-                const computedPercentDone: number | null = (() => {
-                    if (percentMissing === null) return null;
-                    const val = 100 - percentMissing;
-                    return parseFloat(val.toFixed(2));
-                })();
+                    const computedPercentDone: number | null = (() => {
+                        if (percentMissing === null) return null;
+                        const val = 100 - percentMissing;
+                        return parseFloat(val.toFixed(2));
+                    })();
 
-                return {
-                    id: b.id,
-                    name: b.name,
-                    description: b.description,
-                    imageUrl: b.imageUrl,
-                    criteria: b.criteria,
-                    valueneeded: b.valueneeded,
-                    percentDone: computedPercentDone,
-                };
-            })
-            .sort((a, b) => {
-                const critCompare = String(a.criteria).localeCompare(String(b.criteria));
-                if (critCompare !== 0) return critCompare;
-                const valA = typeof a.valueneeded === 'number' ? a.valueneeded : Number.NEGATIVE_INFINITY;
-                const valB = typeof b.valueneeded === 'number' ? b.valueneeded : Number.NEGATIVE_INFINITY;
-                return valA - valB;
-            });
+                    return {
+                        id: b.id,
+                        name: b.name,
+                        description: b.description,
+                        imageUrl: b.imageUrl,
+                        criteria: b.criteria,
+                        valueneeded: b.valueneeded,
+                        percentDone: computedPercentDone,
+                    };
+                })
+        )).sort((a, b) => {
+            const critCompare = String(a.criteria).localeCompare(String(b.criteria));
+            if (critCompare !== 0) return critCompare;
+            const valA = typeof a.valueneeded === 'number' ? a.valueneeded : Number.NEGATIVE_INFINITY;
+            const valB = typeof b.valueneeded === 'number' ? b.valueneeded : Number.NEGATIVE_INFINITY;
+            return valA - valB;
+        });
 
         return res.status(200).json(badgesToAchieve);
     } catch (error) {
@@ -372,66 +376,72 @@ router.get('/profile/children-badges-to-achieve', authenticate, authorize(UserRo
         // Exclude criteria that do not apply to static progress
         const excludedCriteria = [BadgeCriteria.STREAK, BadgeCriteria.LEADERBOARD, BadgeCriteria.SPECIAL];
 
-        const badgesToAchieve = badges
-            .filter(b => !achievedIds.has(b.id) && !excludedCriteria.includes(b.criteria as BadgeCriteria))
-            .map(b => {
-                const needed = typeof b.valueneeded === 'number' ? b.valueneeded : null;
-                let percentComplete: number | null = null;
+        const badgesToAchieve = (await Promise.all(
+            badges
+                .filter(b => !achievedIds.has(b.id) && !excludedCriteria.includes(b.criteria as BadgeCriteria))
+                .map(async b => {
+                    const needed = typeof b.valueneeded === 'number' ? b.valueneeded : null;
+                    let percentComplete: number | null = null;
 
-                if (needed !== null) {
-                    switch (b.criteria as BadgeCriteria) {
-                        case BadgeCriteria.DISTANCE:
-                            percentComplete = needed <= 0 ? null : (childStat.totalDistanceMeters / (needed * 1000)) * 100;
-                            break;
-                        case BadgeCriteria.CALORIES:
-                            percentComplete = needed <= 0 ? null : (childStat.totalCaloriesBurned / needed) * 100;
-                            break;
-                        case BadgeCriteria.WEATHER:
-                            percentComplete = needed <= 0 ? null : (childStat.totalDifferentWeatherTypes / needed) * 100;
-                            break;
-                        case BadgeCriteria.POINTS:
-                            percentComplete = needed <= 0 ? null : (childStat.totalPointsEarned / needed) * 100;
-                            break;
-                        case BadgeCriteria.PARTICIPATION:
-                            percentComplete = needed <= 0 ? null : (childStat.totalParticipations / needed) * 100;
-                            break;
-                        default:
-                            percentComplete = null;
-                            break;
+                    if (needed !== null) {
+                        switch (b.criteria as BadgeCriteria) {
+                            case BadgeCriteria.DISTANCE:
+                                percentComplete = needed <= 0 ? null : (childStat.totalDistanceMeters / (needed * 1000)) * 100;
+                                break;
+                            case BadgeCriteria.CALORIES:
+                                percentComplete = needed <= 0 ? null : (childStat.totalCaloriesBurned / needed) * 100;
+                                break;
+                            case BadgeCriteria.WEATHER:
+                                percentComplete = needed <= 0 ? null : (childStat.totalDifferentWeatherTypes / needed) * 100;
+                                break;
+                            case BadgeCriteria.POINTS:
+                                percentComplete = needed <= 0 ? null : (childStat.totalPointsEarned / needed) * 100;
+                                break;
+                            case BadgeCriteria.PARTICIPATION:
+                                percentComplete = needed <= 0 ? null : (childStat.totalParticipations / needed) * 100;
+                                break;
+                            case BadgeCriteria.STREAK:
+                                const totalStreaks = await getStreakForClient(childId, null);
+                                percentComplete = needed <= 0 ? null : (totalStreaks / needed) * 100;
+                                break;
+                            case BadgeCriteria.LEADERBOARD:
+                            case BadgeCriteria.SPECIAL:
+                                percentComplete = null;
+                                break;
+                        }
                     }
-                }
 
-                let percentMissing: number | null = null;
-                if (percentComplete === null) {
-                    percentMissing = null;
-                } else {
-                    const bounded = Math.max(0, Math.min(100, percentComplete));
-                    percentMissing = Math.round((100 - bounded) * 10) / 10;
-                }
+                    let percentMissing: number | null = null;
+                    if (percentComplete === null) {
+                        percentMissing = null;
+                    } else {
+                        const bounded = Math.max(0, Math.min(100, percentComplete));
+                        percentMissing = Math.round((100 - bounded) * 10) / 10;
+                    }
 
-                const computedPercentDone: number | null = (() => {
-                    if (percentMissing === null) return null;
-                    const val = 100 - percentMissing;
-                    return parseFloat(val.toFixed(2));
-                })();
+                    const computedPercentDone: number | null = (() => {
+                        if (percentMissing === null) return null;
+                        const val = 100 - percentMissing;
+                        return parseFloat(val.toFixed(2));
+                    })();
 
-                return {
-                    id: b.id,
-                    name: b.name,
-                    description: b.description,
-                    imageUrl: b.imageUrl,
-                    criteria: b.criteria,
-                    valueneeded: b.valueneeded,
-                    percentDone: computedPercentDone,
-                };
-            })
-            .sort((a, b) => {
-                const critCompare = String(a.criteria).localeCompare(String(b.criteria));
-                if (critCompare !== 0) return critCompare;
-                const valA = typeof a.valueneeded === 'number' ? a.valueneeded : Number.NEGATIVE_INFINITY;
-                const valB = typeof b.valueneeded === 'number' ? b.valueneeded : Number.NEGATIVE_INFINITY;
-                return valA - valB;
-            });
+                    return {
+                        id: b.id,
+                        name: b.name,
+                        description: b.description,
+                        imageUrl: b.imageUrl,
+                        criteria: b.criteria,
+                        valueneeded: b.valueneeded,
+                        percentDone: computedPercentDone,
+                    };
+                })
+        )).sort((a, b) => {
+            const critCompare = String(a.criteria).localeCompare(String(b.criteria));
+            if (critCompare !== 0) return critCompare;
+            const valA = typeof a.valueneeded === 'number' ? a.valueneeded : Number.NEGATIVE_INFINITY;
+            const valB = typeof b.valueneeded === 'number' ? b.valueneeded : Number.NEGATIVE_INFINITY;
+            return valA - valB;
+        });
 
         return res.status(200).json(badgesToAchieve);
 
@@ -503,7 +513,7 @@ router.get('/profile/badges-progress', authenticate, authorize(UserRole.PARENT),
 
         const excludedCriteria = [BadgeCriteria.STREAK, BadgeCriteria.LEADERBOARD, BadgeCriteria.SPECIAL];
 
-        const result = badges.map(b => {
+        const result = (await Promise.all(badges.map(async b => {
             const achieved = achievedIds.has(b.id);
             let percentDone: number | null = null;
 
@@ -528,6 +538,10 @@ router.get('/profile/badges-progress', authenticate, authorize(UserRole.PARENT),
                         case BadgeCriteria.PARTICIPATION:
                             percentComplete = needed <= 0 ? null : (parentStat.totalParticipations / needed) * 100;
                             break;
+                        case BadgeCriteria.STREAK:
+                            const totalStreaks = await getStreakForClient(null, userId);
+                            percentComplete = needed <= 0 ? null : (totalStreaks / needed) * 100;
+                            break;
                         default:
                             percentComplete = null;
                             break;
@@ -550,7 +564,7 @@ router.get('/profile/badges-progress', authenticate, authorize(UserRole.PARENT),
                 achieved,
                 percentDone: achieved ? 100 : percentDone,
             };
-        }).sort((a, b) => {
+        }))).sort((a, b) => {
             if (a.achieved !== b.achieved) return a.achieved ? -1 : 1;
             const critCompare = String(a.criteria).localeCompare(String(b.criteria));
             if (critCompare !== 0) return critCompare;
@@ -612,7 +626,7 @@ router.get('/profile/children-badges-progress', authenticate, authorize(UserRole
 
         const excludedCriteria = [BadgeCriteria.STREAK, BadgeCriteria.LEADERBOARD, BadgeCriteria.SPECIAL];
 
-        const result = badges.map(b => {
+        const result = (await Promise.all(badges.map(async b => {
             const achieved = achievedIds.has(b.id);
             let percentDone: number | null = null;
 
@@ -637,6 +651,10 @@ router.get('/profile/children-badges-progress', authenticate, authorize(UserRole
                         case BadgeCriteria.PARTICIPATION:
                             percentComplete = needed <= 0 ? null : (childStat.totalParticipations / needed) * 100;
                             break;
+                        case BadgeCriteria.STREAK:
+                            const totalStreaks = await getStreakForClient(childId, null);
+                            percentComplete = needed <= 0 ? null : (totalStreaks / needed) * 100;
+                            break;
                         default:
                             percentComplete = null;
                             break;
@@ -659,7 +677,7 @@ router.get('/profile/children-badges-progress', authenticate, authorize(UserRole
                 achieved,
                 percentDone: achieved ? 100 : percentDone,
             };
-        }).sort((a, b) => {
+        }))).sort((a, b) => {
             if (a.achieved !== b.achieved) return a.achieved ? -1 : 1;
             const critCompare = String(a.criteria).localeCompare(String(b.criteria));
             if (critCompare !== 0) return critCompare;
