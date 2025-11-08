@@ -14,6 +14,7 @@ import { BadgeCriteria } from "@/helpers/types";
 import multer from "multer";
 import { isValidImageFile } from "@/helpers/storage";
 import { uploadImageBuffer, deleteImageSafe } from "../services/cloud";
+import { getStreakForClient } from "../services/badge";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -667,6 +668,32 @@ router.get('/profile/children-badges-progress', authenticate, authorize(UserRole
             return valA - valB;
         });
         return res.status(200).json(result);
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+});
+
+router.get('/streak', authenticate, authorize(UserRole.PARENT), async (req: Request, res: Response) => {
+    try {
+        const userId = req.user!.userId;
+
+        // Check if childId is passed as query param
+        const childId = req.query.childId as string | undefined;
+
+        if (childId) {
+            // Verify parent-child relationship
+            const isParent = await AppDataSource.getRepository(ParentChild).findOne({
+                where: { parentId: userId, childId }
+            });
+            if (!isParent) {
+                return res.status(403).json({ message: "You are not authorized to view this child's streak" });
+            }
+            const streak = await getStreakForClient(childId, null);
+            return res.status(200).json({ streak });
+        } else {
+            const streak = await getStreakForClient(null, userId);
+            return res.status(200).json({ streak });
+        }
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }

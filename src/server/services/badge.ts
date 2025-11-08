@@ -317,3 +317,22 @@ export async function checkStreakForClient(childId: string[] | null, parentId: s
         return { childStreakMap: new Map(), parentStreakMap: new Map() };
     }
 }
+
+export async function getStreakForClient(childId: string | null, parentId: string | null): Promise<number> {
+    try {
+        const { childStreakMap, parentStreakMap } = await checkStreakForClient(
+            childId ? [childId] : null,
+            parentId ? [parentId] : null
+        );
+        if (childId) {
+            return childStreakMap.get(childId) || 0;
+        }
+        if (parentId) {
+            return parentStreakMap.get(parentId) || 0;
+        }
+        return 0;
+    } catch (error) {
+        logger.error("Error getting streak for client:", error);
+        return 0;
+    }
+}

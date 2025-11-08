@@ -438,3 +438,42 @@
  *       403:
  *         description: Forbidden
  */
+
+
+/**
+ * @swagger
+ * /badge/streak:
+ *   get:
+ *     summary: Get streak for parent or child
+ *     description: |
+ *       Returns the current streak. If a query parameter `childId` is provided, the endpoint returns the child's streak (only if the authenticated parent is linked to that child).
+ *       If `childId` is not provided, returns the authenticated parent's streak.
+ *     tags:
+ *       - Badge
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: childId
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Optional child ID to get the child's streak (parent must be authorized for the child)
+ *     responses:
+ *       200:
+ *         description: Current streak value
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 streak:
+ *                   type: integer
+ *                   example: 5
+ *       400:
+ *         description: Bad request (e.g., invalid parameters)
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - parent not authorized for this child
+ */
