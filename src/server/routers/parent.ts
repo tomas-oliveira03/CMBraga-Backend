@@ -24,7 +24,7 @@ router.get('/', authenticate, authorize(UserRole.ADMIN), async (req: Request, re
 });
 
 
-router.get('/:id', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
+router.get('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.PARENT), async (req: Request, res: Response) => {
     try {
         const parentId = req.params.id;
 
