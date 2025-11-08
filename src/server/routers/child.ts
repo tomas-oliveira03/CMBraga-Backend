@@ -218,7 +218,7 @@ router.put('/:id', upload.single('file'), async (req: Request, res: Response) =>
 router.get('/available-activities/:id', async (req: Request, res: Response) => {
     try {
         const childId = req.params.id!;
-        const child = await AppDataSource.getRepository(Child).findOne({ where: { id: childId } })
+        const child = await AppDataSource.getRepository(Child).findOne({ where: { id: childId }, relations: { dropOffStation: true } })
         if (!child) {
             return res.status(404).json({ message: "Child not found" });
         }
@@ -240,7 +240,6 @@ router.get('/available-activities/:id', async (req: Request, res: Response) => {
             afac => !afac.childActivitySessions.some(cas => cas.childId === childId)
         );
 
-
         const allRouteConnectors = await AppDataSource.getRepository(RouteConnection).find({
             relations: {
                 toRoute: true
@@ -250,7 +249,6 @@ router.get('/available-activities/:id', async (req: Request, res: Response) => {
         const futureActivitySessionsSingleRoute = filteredActivitySessionsNotParticipating.filter(activitySession => {
             return activitySession.stationActivitySessions.some(sas => sas.stationId === child.dropOffStationId)
         });
-
 
         const futureActivitySessionsConnectorRoute = filteredActivitySessionsNotParticipating.filter(activitySession => {
             const isInSingleRoute = futureActivitySessionsSingleRoute.includes(activitySession);
@@ -285,20 +283,32 @@ router.get('/available-activities/:id', async (req: Request, res: Response) => {
             );
         });
 
-
         const combined = [
-            ...futureActivitySessionsSingleRoute.map(activitySession => ({
-                id: activitySession.id,
-                type: activitySession.type,
-                mode: activitySession.mode,
-                inLateRegistration: activitySession.inLateRegistration,
-                scheduledAt: activitySession.scheduledAt,
-                route: {
-                    id: activitySession.route.id,
-                    name: activitySession.route.name
-                },
-                requiresConnector: false
-            })),
+            ...futureActivitySessionsSingleRoute.map(activitySession => {
+                // Get stations before drop-off station
+                const dropOffStation = activitySession.stationActivitySessions.find(sas => sas.stationId === child.dropOffStationId);
+                const availablePickupStations = activitySession.stationActivitySessions
+                    .filter(sas => sas.stopNumber < dropOffStation!.stopNumber)
+                    .sort((a, b) => a.stopNumber - b.stopNumber)
+                    .map(sas => ({
+                        id: sas.station.id,
+                        name: sas.station.name
+                    }));
+
+                return {
+                    id: activitySession.id,
+                    type: activitySession.type,
+                    mode: activitySession.mode,
+                    inLateRegistration: activitySession.inLateRegistration,
+                    scheduledAt: activitySession.scheduledAt,
+                    route: {
+                        id: activitySession.route.id,
+                        name: activitySession.route.name
+                    },
+                    requiresConnector: false,
+                    availablePickupStations
+                };
+            }),
             
             ...futureActivitySessionsConnectorRoute.map(activitySession => {
                 const transferTarget = futureActivitySessionsSingleRoute.find(
@@ -310,7 +320,17 @@ router.get('/available-activities/:id', async (req: Request, res: Response) => {
                 );
                 const connectorStation = transferTarget?.stationActivitySessions.find(
                     sas => sas.stationId === connector?.stationId
-                )?.station;
+                );
+
+                // Get stations before connector station
+                const connectorData = activitySession.stationActivitySessions.find(sas => sas.stationId === connectorStation?.stationId);
+                const availablePickupStations = activitySession.stationActivitySessions
+                    .filter(sas => sas.stopNumber < connectorData!.stopNumber)
+                    .sort((a, b) => a.stopNumber - b.stopNumber)
+                    .map(sas => ({
+                        id: sas.station.id,
+                        name: sas.station.name
+                    }));
 
                 return {
                     id: activitySession.id,
@@ -323,18 +343,19 @@ router.get('/available-activities/:id', async (req: Request, res: Response) => {
                         name: activitySession.route.name
                     },
                     requiresConnector: true,
-                    connector: connector && connectorStation
+                    connector: connector && connectorStation?.station
                         ? {
                             route: {
                                 id: connector.toRoute.id,
                                 name: connector.toRoute.name
                             },
                             station: {
-                                id: connectorStation.id,
-                                name: connectorStation.name
+                                id: connectorStation.station.id,
+                                name: connectorStation.station.name
                             }
                         }
-                        : undefined
+                        : undefined,
+                    availablePickupStations,
                 };
             })
         ];
@@ -344,7 +365,13 @@ router.get('/available-activities/:id', async (req: Request, res: Response) => {
         );
 
 
-        return res.status(200).json(responsePayload)
+        return res.status(200).json({
+            activities: responsePayload,
+            dropOffStation: {
+                id: child.dropOffStationId,
+                name: child.dropOffStation.name
+            }
+        })
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }

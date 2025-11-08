@@ -310,7 +310,7 @@
  * /child/available-activities/{id}:
  *   get:
  *     summary: Get available activities for a child
- *     description: Returns a list of upcoming activity sessions that the child can register for, including connector information if applicable.
+ *     description: Returns a list of upcoming activity sessions that the child can register for, including available pickup stations for each activity and the child's drop-off station information.
  *     tags:
  *       - Child
  *     parameters:
@@ -323,46 +323,142 @@
  *         description: Child ID (UUID)
  *     responses:
  *       200:
- *         description: List of available activities for registration
+ *         description: Available activities with pickup stations and child's drop-off station
  *         content:
  *           application/json:
  *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: string
- *                   type:
- *                     type: string
- *                   mode:
- *                     type: string
- *                   inLateRegistration:
- *                     type: boolean
- *                   scheduledAt:
- *                     type: string
- *                     format: date-time
- *                   route:
+ *               type: object
+ *               properties:
+ *                 activities:
+ *                   type: array
+ *                   items:
  *                     type: object
  *                     properties:
- *                       id: { type: string }
- *                       name: { type: string }
- *                   requiresConnector:
- *                     type: boolean
- *                   connector:
- *                     type: object
- *                     nullable: true
- *                     properties:
+ *                       id:
+ *                         type: string
+ *                         example: "activity-session-uuid-1"
+ *                       type:
+ *                         type: string
+ *                         enum: [pedibus, ciclo_expresso]
+ *                         example: "ciclo_expresso"
+ *                       mode:
+ *                         type: string
+ *                         enum: [walk, bike]
+ *                         example: "bike"
+ *                       inLateRegistration:
+ *                         type: boolean
+ *                         example: false
+ *                       scheduledAt:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2024-01-20T08:00:00.000Z"
  *                       route:
  *                         type: object
  *                         properties:
- *                           id: { type: string }
- *                           name: { type: string }
- *                       station:
+ *                           id:
+ *                             type: string
+ *                             example: "route-uuid-1"
+ *                           name:
+ *                             type: string
+ *                             example: "Linha Azul"
+ *                       requiresConnector:
+ *                         type: boolean
+ *                         example: false
+ *                         description: "True if this activity requires a transfer to another route"
+ *                       connector:
  *                         type: object
+ *                         nullable: true
+ *                         description: "Present only when requiresConnector is true"
  *                         properties:
- *                           id: { type: string }
- *                           name: { type: string }
+ *                           route:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: string
+ *                                 example: "route-uuid-2"
+ *                               name:
+ *                                 type: string
+ *                                 example: "Linha Vermelha"
+ *                           station:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: string
+ *                                 example: "station-uuid-transfer"
+ *                               name:
+ *                                 type: string
+ *                                 example: "Av. 31 de Janeiro"
+ *                       availablePickupStations:
+ *                         type: array
+ *                         description: "Stations where the child can be picked up (before drop-off or connector station)"
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             id:
+ *                               type: string
+ *                               example: "station-uuid-pickup"
+ *                             name:
+ *                               type: string
+ *                               example: "Estação Central"
+ *                 dropOffStation:
+ *                   type: object
+ *                   description: "Child's designated drop-off station (school)"
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       example: "station-uuid-school"
+ *                     name:
+ *                       type: string
+ *                       example: "Escola Básica de Braga"
+ *             examples:
+ *               activities_with_and_without_connector:
+ *                 summary: Mix of activities with and without connector
+ *                 value:
+ *                   activities:
+ *                     - id: "activity-session-uuid-1"
+ *                       type: "ciclo_expresso"
+ *                       mode: "bike"
+ *                       inLateRegistration: false
+ *                       scheduledAt: "2024-01-20T08:00:00.000Z"
+ *                       route:
+ *                         id: "route-uuid-1"
+ *                         name: "Linha Azul"
+ *                       requiresConnector: false
+ *                       connector: null
+ *                       availablePickupStations:
+ *                         - id: "station-uuid-1"
+ *                           name: "Estação Central"
+ *                         - id: "station-uuid-2"
+ *                           name: "Biblioteca Municipal"
+ *                     - id: "activity-session-uuid-2"
+ *                       type: "ciclo_expresso"
+ *                       mode: "bike"
+ *                       inLateRegistration: false
+ *                       scheduledAt: "2024-01-21T08:00:00.000Z"
+ *                       route:
+ *                         id: "route-uuid-1"
+ *                         name: "Linha Azul"
+ *                       requiresConnector: true
+ *                       connector:
+ *                         route:
+ *                           id: "route-uuid-2"
+ *                           name: "Linha Vermelha"
+ *                         station:
+ *                           id: "station-uuid-transfer"
+ *                           name: "Av. 31 de Janeiro"
+ *                       availablePickupStations:
+ *                         - id: "station-uuid-1"
+ *                           name: "Estação Central"
+ *                   dropOffStation:
+ *                     id: "station-uuid-school"
+ *                     name: "Escola Básica de Braga"
+ *               no_activities_available:
+ *                 summary: No activities available for registration
+ *                 value:
+ *                   activities: []
+ *                   dropOffStation:
+ *                     id: "station-uuid-school"
+ *                     name: "Escola Básica de Braga"
  *       404:
  *         description: Child not found
  *         content:
@@ -373,6 +469,16 @@
  *                 message:
  *                   type: string
  *                   example: "Child not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
  */
 
 
