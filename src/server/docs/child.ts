@@ -2,10 +2,12 @@
  * @swagger
  * /child:
  *   get:
- *     summary: Get all children
- *     description: Returns a list of all children
+ *     summary: Get all children (Admin only)
+ *     description: Returns a list of all children. Requires admin authentication.
  *     tags:
  *       - Child
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: List of children
@@ -22,10 +24,22 @@
  *                   name:
  *                     type: string
  *                     example: "João Silva"
+ *                   profilePictureURL:
+ *                     type: string
+ *                     nullable: true
+ *                     example: "https://storage.example.com/profiles/child-1.jpg"
  *                   gender:
  *                     type: string
  *                     enum: [male, female]
  *                     example: "male"
+ *                   heightCentimeters:
+ *                     type: number
+ *                     nullable: true
+ *                     example: 140
+ *                   weightKilograms:
+ *                     type: number
+ *                     nullable: true
+ *                     example: 35
  *                   school:
  *                     type: string
  *                     example: "Escola Básica de Braga"
@@ -34,6 +48,15 @@
  *                     minimum: 1
  *                     maximum: 12
  *                     example: 4
+ *                   dropOffStation:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         example: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
+ *                       name:
+ *                         type: string
+ *                         example: "Escola Básica de Braga"
  *                   dateOfBirth:
  *                     type: string
  *                     format: date
@@ -62,13 +85,6 @@
  *                             year:
  *                               type: number
  *                         example: [{"type": "appendectomy", "year": 2020}]
- *                   dropOffStationId:
- *                     type: string
- *                     example: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
- *                     description: "School station ID where the child is dropped off"
- *                   profilePictureURL:
- *                     type: string
- *                     example: "https://storage.example.com/profiles/child-1.jpg"
  *                   createdAt:
  *                     type: string
  *                     format: date-time
@@ -78,6 +94,165 @@
  *                     format: date-time
  *                     nullable: true
  *                     example: "2024-01-20T14:45:30.000Z"
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Authentication required"
+ *       403:
+ *         description: Forbidden - Admin access required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Forbidden: Insufficient permissions"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
+
+
+/**
+ * @swagger
+ * /child/parent:
+ *   get:
+ *     summary: Get children associated with parent
+ *     description: Returns a list of children associated with the authenticated parent.
+ *     tags:
+ *       - Child
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of children associated with the parent
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *                   name:
+ *                     type: string
+ *                     example: "João Silva"
+ *                   profilePictureURL:
+ *                     type: string
+ *                     nullable: true
+ *                     example: "https://storage.example.com/profiles/child-1.jpg"
+ *                   gender:
+ *                     type: string
+ *                     enum: [male, female]
+ *                     example: "male"
+ *                   heightCentimeters:
+ *                     type: number
+ *                     nullable: true
+ *                     example: 140
+ *                   weightKilograms:
+ *                     type: number
+ *                     nullable: true
+ *                     example: 35
+ *                   school:
+ *                     type: string
+ *                     example: "Escola Básica de Braga"
+ *                   schoolGrade:
+ *                     type: integer
+ *                     minimum: 1
+ *                     maximum: 12
+ *                     example: 4
+ *                   dropOffStation:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         example: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
+ *                       name:
+ *                         type: string
+ *                         example: "Escola Básica de Braga"
+ *                   dateOfBirth:
+ *                     type: string
+ *                     format: date
+ *                     example: "2015-05-20"
+ *                   healthProblems:
+ *                     type: object
+ *                     nullable: true
+ *                     properties:
+ *                       allergies:
+ *                         type: array
+ *                         items:
+ *                           type: string
+ *                         example: ["peanuts", "lactose"]
+ *                       chronicDiseases:
+ *                         type: array
+ *                         items:
+ *                           type: string
+ *                         example: ["asthma"]
+ *                       surgeries:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             type:
+ *                               type: string
+ *                             year:
+ *                               type: number
+ *                         example: [{"type": "appendectomy", "year": 2020}]
+ *                   createdAt:
+ *                     type: string
+ *                     format: date-time
+ *                     example: "2024-01-15T10:30:00.000Z"
+ *                   updatedAt:
+ *                     type: string
+ *                     format: date-time
+ *                     nullable: true
+ *                     example: "2024-01-20T14:45:30.000Z"
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Authentication required"
+ *       403:
+ *         description: Forbidden - Parent access required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Forbidden: Insufficient permissions"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
  */
 
 
@@ -86,9 +261,11 @@
  * /child/{id}:
  *   get:
  *     summary: Get child by ID
- *     description: Returns a single child by their ID
+ *     description: Returns a single child by their ID. Admins can access any child, parents can only access their associated children.
  *     tags:
  *       - Child
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -111,10 +288,22 @@
  *                 name:
  *                   type: string
  *                   example: "Maria Santos"
+ *                 profilePictureURL:
+ *                   type: string
+ *                   nullable: true
+ *                   example: "https://storage.example.com/profiles/child-2.jpg"
  *                 gender:
  *                   type: string
  *                   enum: [male, female]
  *                   example: "female"
+ *                 heightCentimeters:
+ *                   type: number
+ *                   nullable: true
+ *                   example: 135
+ *                 weightKilograms:
+ *                   type: number
+ *                   nullable: true
+ *                   example: 32
  *                 school:
  *                   type: string
  *                   example: "Escola Básica de Braga"
@@ -123,6 +312,15 @@
  *                   minimum: 1
  *                   maximum: 12
  *                   example: 3
+ *                 dropOffStation:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       example: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
+ *                     name:
+ *                       type: string
+ *                       example: "Escola Básica de Braga"
  *                 dateOfBirth:
  *                   type: string
  *                   format: date
@@ -148,13 +346,6 @@
  *                             type: string
  *                           year:
  *                             type: number
- *                 dropOffStationId:
- *                   type: string
- *                   example: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
- *                   description: "School station ID where the child is dropped off"
- *                 profilePictureURL:
- *                   type: string
- *                   example: "https://storage.example.com/profiles/child-2.jpg"
  *                 createdAt:
  *                   type: string
  *                   format: date-time
@@ -164,6 +355,26 @@
  *                   format: date-time
  *                   nullable: true
  *                   example: null
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Authentication required"
+ *       403:
+ *         description: Forbidden - You do not have access to this child's information
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Forbidden: You do not have access to this child's information."
  *       404:
  *         description: Child not found
  *         content:
@@ -174,6 +385,16 @@
  *                 message:
  *                   type: string
  *                   example: "Child not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
  */
 
 

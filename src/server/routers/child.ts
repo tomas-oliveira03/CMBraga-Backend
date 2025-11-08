@@ -4,7 +4,7 @@ import express, { Request, Response } from "express";
 import { UpdateChildSchema } from "../schemas/child";
 import { map, z } from "zod";
 import { Station } from "@/db/entities/Station";
-import { ActivityLinkType, ChildStationType, StationType } from "@/helpers/types";
+import { ActivityLinkType, ChildStationType, StationType, UserRole } from "@/helpers/types";
 import multer from "multer";
 import { isValidImageFile } from "@/helpers/storage";
 import { updateProfilePicture } from "../services/user";
@@ -18,35 +18,127 @@ import { Feedback } from "@/db/entities/Feedback";
 import { OngoingActivityPayload, OngoingActivitySessionInfo, PreviousActivityPayload, PreviousActivitySessionInfo, UpcomingActivityPayload, UpcomingActivitySessionInfo } from "@/helpers/service-types";
 import { ActivitySession } from "@/db/entities/ActivitySession";
 import { RouteConnection } from "@/db/entities/RouteConnection";
+import { authenticate, authorize } from "../middleware/auth";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
-        const allChildren = await AppDataSource.getRepository(Child).find();
-        return res.status(200).json(allChildren);
+        const allChildren = await AppDataSource.getRepository(Child).find({
+            relations: {
+                dropOffStation: true
+            }
+        });
+
+        const childrenPayload = allChildren.map(child => ({
+            id: child.id,
+            name: child.name,
+            profilePictureURL: child.profilePictureURL,
+            gender: child.gender,
+            heightCentimeters: child.heightCentimeters,
+            weightKilograms: child.weightKilograms,
+            school: child.school,
+            schoolGrade: child.schoolGrade,
+            dropOffStation: {
+                id: child.dropOffStationId,
+                name: child.dropOffStation.name
+            },
+            dateOfBirth: child.dateOfBirth,
+            healthProblems: child.healthProblems,
+            createdAt: child.createdAt,
+            updatedAt: child.updatedAt
+        }));
+
+
+        return res.status(200).json(childrenPayload);
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 
 
-router.get('/:id', async (req: Request, res: Response) => {
+// Get all children from a parent's perspective
+router.get('/parent', authenticate, authorize(UserRole.PARENT), async (req: Request, res: Response) => {
+    try {
+        const allChildren = await AppDataSource.getRepository(Child).find({
+            where: {
+                parentChildren: {
+                    parentId: req.user!.userId
+                }
+            },
+            relations: {
+                dropOffStation: true,
+                parentChildren: true
+            }
+        });
+
+        const childrenPayload = allChildren.map(child => ({
+            id: child.id,
+            name: child.name,
+            profilePictureURL: child.profilePictureURL,
+            gender: child.gender,
+            heightCentimeters: child.heightCentimeters,
+            weightKilograms: child.weightKilograms,
+            school: child.school,
+            schoolGrade: child.schoolGrade,
+            dropOffStation: {
+                id: child.dropOffStationId,
+                name: child.dropOffStation.name
+            },
+            dateOfBirth: child.dateOfBirth,
+            healthProblems: child.healthProblems,
+            createdAt: child.createdAt,
+            updatedAt: child.updatedAt
+        }));
+
+
+        return res.status(200).json(childrenPayload);
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+});
+
+
+router.get('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.PARENT), async (req: Request, res: Response) => {
     try {
         const childId = req.params.id;
 
         const child = await AppDataSource.getRepository(Child).findOne({
             where: {
                 id: childId
+            },
+            relations: {
+                dropOffStation: true,
+                parentChildren: true
             }
         });
 
         if (!child) {
             return res.status(404).json({ message: "Child not found" })
         }
+        if (req.user!.role === UserRole.PARENT && !child.parentChildren.some(pc => pc.parentId === req.user!.userId)) {
+            return res.status(403).json({ message: "Forbidden: You do not have access to this child's information." });
+        }
 
-        return res.status(200).json(child);
+        return res.status(200).json({
+            id: child.id,
+            name: child.name,
+            profilePictureURL: child.profilePictureURL,
+            gender: child.gender,
+            heightCentimeters: child.heightCentimeters,
+            weightKilograms: child.weightKilograms,
+            school: child.school,
+            schoolGrade: child.schoolGrade,
+            dropOffStation: {
+                id: child.dropOffStationId,
+                name: child.dropOffStation.name
+            },
+            dateOfBirth: child.dateOfBirth,
+            healthProblems: child.healthProblems,
+            createdAt: child.createdAt,
+            updatedAt: child.updatedAt
+        });
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
