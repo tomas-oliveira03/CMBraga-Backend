@@ -57,8 +57,7 @@ router.get('/:id', async (req: Request, res: Response) => {
             .map(rs => ({
                 stationId: rs.stationId,
                 stopNumber: rs.stopNumber,
-                distanceFromStartMeters: rs.distanceFromStartMeters,
-                timeFromStartMinutes: rs.timeFromStartMinutes,
+                scheduledTime: new Date(activitySession.scheduledAt.getTime() + rs.timeFromStartMinutes * 60000),
                 distanceFromPreviousStationMeters: rs.distanceFromPreviousStationMeters,
                 name: rs.station.name,
                 type: rs.station.type,
@@ -71,9 +70,7 @@ router.get('/:id', async (req: Request, res: Response) => {
             id: route.id,
             name: route.name,
             activityType: route.activityType,
-            distanceMeters: route.distanceMeters,
-            createdAt: route.createdAt,
-            updatedAt: route.updatedAt,
+            scheduledAt: activitySession.scheduledAt,
             route: route.metadata,
             bounds: bounds,
             stops: stops,
@@ -84,12 +81,14 @@ router.get('/:id', async (req: Request, res: Response) => {
         if(route.fromRouteConnections && route.fromRouteConnections[0] && route.fromRouteConnections[0].toRouteId === connectorRouteId){
             const firstConnectorRoute = route.fromRouteConnections[0]
 
+            // Get the connector's scheduled time from the transfer activity session
+            const connectorScheduledTime = activitySession.activityTransfer?.scheduledAt || activitySession.scheduledAt;
+
             const connectorStops = firstConnectorRoute.toRoute.routeStations
                 .map(rs => ({
                     stationId: rs.stationId,
                     stopNumber: rs.stopNumber,
-                    distanceFromStartMeters: rs.distanceFromStartMeters,
-                    timeFromStartMinutes: rs.timeFromStartMinutes,
+                    scheduledTime: new Date(connectorScheduledTime.getTime() + rs.timeFromStartMinutes * 60000),
                     distanceFromPreviousStationMeters: rs.distanceFromPreviousStationMeters,
                     name: rs.station.name,
                     type: rs.station.type,

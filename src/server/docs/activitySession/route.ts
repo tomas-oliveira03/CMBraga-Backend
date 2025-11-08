@@ -85,12 +85,11 @@
  *                       stopNumber:
  *                         type: integer
  *                         example: 1
- *                       distanceFromStartMeters:
- *                         type: integer
- *                         example: 0
- *                       timeFromStartMinutes:
- *                         type: integer
- *                         example: 0
+ *                       scheduledTime:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2024-01-20T08:00:00.000Z"
+ *                         description: "Calculated scheduled time for this station based on activity start time"
  *                       distanceFromPreviousStationMeters:
  *                         type: integer
  *                         example: 0
@@ -159,10 +158,10 @@
  *                                 type: string
  *                               stopNumber:
  *                                 type: integer
- *                               distanceFromStartMeters:
- *                                 type: integer
- *                               timeFromStartMinutes:
- *                                 type: integer
+ *                               scheduledTime:
+ *                                 type: string
+ *                                 format: date-time
+ *                                 description: "Calculated scheduled time for connector route stations"
  *                               distanceFromPreviousStationMeters:
  *                                 type: integer
  *                               name:
@@ -197,8 +196,7 @@
  *                     {
  *                       stationId: "37b57f49-fecf-413d-bc90-6727682a8785",
  *                       stopNumber: 1,
- *                       distanceFromStartMeters: 0,
- *                       timeFromStartMinutes: 0,
+ *                       scheduledTime: "2024-01-20T08:00:00.000Z",
  *                       distanceFromPreviousStationMeters: 0,
  *                       name: "R. Manuel Ferreira Gomes",
  *                       type: "regular",
@@ -208,8 +206,7 @@
  *                     {
  *                       stationId: "48c68f50-ged1-524e-cd01-7838793b9896",
  *                       stopNumber: 2,
- *                       distanceFromStartMeters: 500,
- *                       timeFromStartMinutes: 5,
+ *                       scheduledTime: "2024-01-20T08:05:00.000Z",
  *                       distanceFromPreviousStationMeters: 500,
  *                       name: "Escola Primária",
  *                       type: "school",
@@ -237,8 +234,7 @@
  *                         {
  *                           stationId: "48c68f50-ged1-524e-cd01-7838793b9896",
  *                           stopNumber: 1,
- *                           distanceFromStartMeters: 0,
- *                           timeFromStartMinutes: 0,
+ *                           scheduledTime: "2024-01-20T08:30:00.000Z",
  *                           distanceFromPreviousStationMeters: 0,
  *                           name: "Escola Primária",
  *                           type: "school",
@@ -248,8 +244,7 @@
  *                         {
  *                           stationId: "59d79f61-hfe2-635f-de12-8949894c0907",
  *                           stopNumber: 2,
- *                           distanceFromStartMeters: 600,
- *                           timeFromStartMinutes: 6,
+ *                           scheduledTime: "2024-01-20T08:36:00.000Z",
  *                           distanceFromPreviousStationMeters: 600,
  *                           name: "Praça Municipal",
  *                           type: "regular",
@@ -281,8 +276,7 @@
  *                     {
  *                       stationId: "37b57f49-fecf-413d-bc90-6727682a8785",
  *                       stopNumber: 1,
- *                       distanceFromStartMeters: 0,
- *                       timeFromStartMinutes: 0,
+ *                       scheduledTime: "2024-01-20T08:00:00.000Z",
  *                       distanceFromPreviousStationMeters: 0,
  *                       name: "R. Manuel Ferreira Gomes",
  *                       type: "regular",
@@ -292,8 +286,7 @@
  *                     {
  *                       stationId: "48c68f50-ged1-524e-cd01-7838793b9896",
  *                       stopNumber: 2,
- *                       distanceFromStartMeters: 500,
- *                       timeFromStartMinutes: 5,
+ *                       scheduledTime: "2024-01-20T08:05:00.000Z",
  *                       distanceFromPreviousStationMeters: 500,
  *                       name: "Escola Primária",
  *                       type: "school", 
