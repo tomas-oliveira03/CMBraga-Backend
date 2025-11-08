@@ -28,20 +28,44 @@
  *                     enum: [walk, bike]
  *                     example: "walk"
  *                     description: "Transportation mode (walk for pedibus, bike for ciclo_expresso)"
- *                   routeId:
+ *                   inLateRegistration:
+ *                     type: boolean
+ *                     nullable: true
+ *                     example: false
+ *                   route:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         example: "b2c3d4e5-f6g7-8901-bcde-f23456789012"
+ *                       name:
+ *                         type: string
+ *                         example: "Rota Centro"
+ *                   weatherTemperature:
+ *                     type: number
+ *                     nullable: true
+ *                     example: 18.5
+ *                   weatherType:
  *                     type: string
  *                     nullable: true
- *                     example: "b2c3d4e5-f6g7-8901-bcde-f23456789012"
- *                     description: "Associated route ID (UUID)"
+ *                     example: "sunny"
  *                   scheduledAt:
  *                     type: string
  *                     format: date-time
  *                     example: "2024-01-20T08:00:00.000Z"
+ *                   startedById:
+ *                     type: string
+ *                     nullable: true
+ *                     example: "instructor-uuid-123"
  *                   startedAt:
  *                     type: string
  *                     format: date-time
  *                     nullable: true
  *                     example: "2024-01-20T08:05:00.000Z"
+ *                   finishedById:
+ *                     type: string
+ *                     nullable: true
+ *                     example: "instructor-uuid-456"
  *                   finishedAt:
  *                     type: string
  *                     format: date-time

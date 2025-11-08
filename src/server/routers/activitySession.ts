@@ -13,8 +13,34 @@ const router = express.Router();
 
 router.get('/', async (req: Request, res: Response) => {
     try {
-        const allSessions = await AppDataSource.getRepository(ActivitySession).find();
-        return res.status(200).json(allSessions);
+        const allSessions = await AppDataSource.getRepository(ActivitySession).find({
+            relations: {
+                route: true
+            }
+        });
+
+        const activityPayload = allSessions.map(session => ({
+            id: session.id,
+            type: session.type,
+            mode: session.mode,
+            inLateRegistration: session.inLateRegistration,
+            route: {
+                id: session.route.id,
+                name: session.route.name
+            },
+            weatherTemperature: session.weatherTemperature,
+            weatherType: session.weatherType,
+            scheduledAt: session.scheduledAt,
+            startedById: session.startedById,
+            startedAt: session.startedAt,
+            finishedById: session.finishedById,
+            finishedAt: session.finishedAt,
+            createdAt: session.createdAt,
+            updatedAt: session.updatedAt
+        }))
+
+
+        return res.status(200).json(activityPayload);
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
