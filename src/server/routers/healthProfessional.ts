@@ -8,11 +8,13 @@ import multer from "multer";
 import { isValidImageFile } from "@/helpers/storage";
 import { updateProfilePicture } from "../services/user";
 import { User } from "@/db/entities/User";
+import { UserRole } from "@/helpers/types";
+import { authenticate, authorize } from "../middleware/auth";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', authenticate, authorize(UserRole.ADMIN, UserRole.PARENT), async (req: Request, res: Response) => {
     try {
         const allHealthProfessionals = await AppDataSource.getRepository(HealthProfessional).find();
         return res.status(200).json(allHealthProfessionals);
@@ -22,7 +24,7 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL, UserRole.PARENT), async (req: Request, res: Response) => {
     try {
         const healthProfessionalId = req.params.id;
 
@@ -43,9 +45,9 @@ router.get('/:id', async (req: Request, res: Response) => {
 });
 
 
-router.put('/:id', upload.single('file'), async (req: Request, res: Response) => {
+router.put('/:id', authenticate, authorize(UserRole.HEALTH_PROFESSIONAL), upload.single('file'), async (req: Request, res: Response) => {
     try {
-        const healthProfessionalId = req.params.id;
+        const healthProfessionalId = req.user!.userId;
         const validatedData = UpdateHealthProfessionalSchema.parse(req.body);
         
         const healthProfessional = await AppDataSource.getRepository(HealthProfessional).findOne({
