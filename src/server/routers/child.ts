@@ -58,48 +58,6 @@ router.get('/', authenticate, authorize(UserRole.ADMIN), async (req: Request, re
 });
 
 
-// Get all children from a parent's perspective
-router.get('/parent', authenticate, authorize(UserRole.PARENT), async (req: Request, res: Response) => {
-    try {
-        const allChildren = await AppDataSource.getRepository(Child).find({
-            where: {
-                parentChildren: {
-                    parentId: req.user!.userId
-                }
-            },
-            relations: {
-                dropOffStation: true,
-                parentChildren: true
-            }
-        });
-
-        const childrenPayload = allChildren.map(child => ({
-            id: child.id,
-            name: child.name,
-            profilePictureURL: child.profilePictureURL,
-            gender: child.gender,
-            heightCentimeters: child.heightCentimeters,
-            weightKilograms: child.weightKilograms,
-            school: child.school,
-            schoolGrade: child.schoolGrade,
-            dropOffStation: {
-                id: child.dropOffStationId,
-                name: child.dropOffStation.name
-            },
-            dateOfBirth: child.dateOfBirth,
-            healthProblems: child.healthProblems,
-            createdAt: child.createdAt,
-            updatedAt: child.updatedAt
-        }));
-
-
-        return res.status(200).json(childrenPayload);
-    } catch (error) {
-        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
-    }
-});
-
-
 router.get('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.PARENT), async (req: Request, res: Response) => {
     try {
         const childId = req.params.id;

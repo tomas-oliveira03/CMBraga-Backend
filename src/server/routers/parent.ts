@@ -10,6 +10,7 @@ import { isValidImageFile } from "@/helpers/storage";
 import { User } from "@/db/entities/User";
 import { UserRole } from "@/helpers/types";
 import { authenticate, authorize } from "../middleware/auth";
+import { Child } from "@/db/entities/Child";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -18,6 +19,48 @@ router.get('/', authenticate, authorize(UserRole.ADMIN), async (req: Request, re
     try {
         const allParents = await AppDataSource.getRepository(Parent).find();
         return res.status(200).json(allParents);
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+});
+
+
+// Get all children from a parent perspective
+router.get('/child', authenticate, authorize(UserRole.PARENT), async (req: Request, res: Response) => {
+    try {
+        const allChildren = await AppDataSource.getRepository(Child).find({
+            where: {
+                parentChildren: {
+                    parentId: req.user!.userId
+                }
+            },
+            relations: {
+                dropOffStation: true,
+                parentChildren: true
+            }
+        });
+
+        const childrenPayload = allChildren.map(child => ({
+            id: child.id,
+            name: child.name,
+            profilePictureURL: child.profilePictureURL,
+            gender: child.gender,
+            heightCentimeters: child.heightCentimeters,
+            weightKilograms: child.weightKilograms,
+            school: child.school,
+            schoolGrade: child.schoolGrade,
+            dropOffStation: {
+                id: child.dropOffStationId,
+                name: child.dropOffStation.name
+            },
+            dateOfBirth: child.dateOfBirth,
+            healthProblems: child.healthProblems,
+            createdAt: child.createdAt,
+            updatedAt: child.updatedAt
+        }));
+
+
+        return res.status(200).json(childrenPayload);
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }

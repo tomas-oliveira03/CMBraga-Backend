@@ -209,3 +209,111 @@
  *       500:
  *         description: Internal server error
  */
+
+
+/**
+ * @swagger
+ * /parent/child:
+ *   get:
+ *     summary: Get all children from parent perspective
+ *     description: Returns a list of all children associated with the authenticated parent
+ *     tags:
+ *       - Parent
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of children for the parent
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     example: "c3d4e5f6-g7h8-9012-cdef-g23456789012"
+ *                   name:
+ *                     type: string
+ *                     example: "Ana Silva"
+ *                   profilePictureURL:
+ *                     type: string
+ *                     nullable: true
+ *                     example: "https://storage.example.com/profiles/child-1.jpg"
+ *                   gender:
+ *                     type: string
+ *                     example: "Female"
+ *                   heightCentimeters:
+ *                     type: number
+ *                     nullable: true
+ *                     example: 120
+ *                   weightKilograms:
+ *                     type: number
+ *                     nullable: true
+ *                     example: 25.5
+ *                   school:
+ *                     type: string
+ *                     nullable: true
+ *                     example: "Escola EB1 de Braga"
+ *                   schoolGrade:
+ *                     type: string
+ *                     nullable: true
+ *                     example: "3º ano"
+ *                   dropOffStation:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         example: "d4e5f6g7-h8i9-0123-defg-h34567890123"
+ *                       name:
+ *                         type: string
+ *                         example: "Estação Central de Braga"
+ *                   dateOfBirth:
+ *                     type: string
+ *                     format: date
+ *                     example: "2016-05-15"
+ *                   healthProblems:
+ *                     type: string
+ *                     nullable: true
+ *                     example: "Alergia a amendoins"
+ *                   createdAt:
+ *                     type: string
+ *                     format: date-time
+ *                     example: "2024-01-15T10:30:00.000Z"
+ *                   updatedAt:
+ *                     type: string
+ *                     format: date-time
+ *                     nullable: true
+ *                     example: "2024-01-20T14:45:30.000Z"
+ *       401:
+ *         description: Unauthorized - Invalid or missing authentication token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Unauthorized"
+ *       403:
+ *         description: Forbidden - User does not have parent role
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Forbidden"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
