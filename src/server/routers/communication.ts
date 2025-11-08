@@ -285,11 +285,15 @@ router.get("/chat/:conversationId", authenticate, async (req: Request, res: Resp
         const jump = parseInt(req.query.jump as string) || 0;
         const chatData = await getMessagesFromChat(conversationId, jump);
 
-        if (!chatData.messages || chatData.messages.length === 0) {
+        const chatExists = await getChat(conversationId);
+
+        if ((!chatData.messages || chatData.messages.length === 0) && !chatExists) {
             return res.status(404).json({ message: "Communication not found" });
+        } 
+        else if((!chatData.messages || chatData.messages.length === 0) && chatExists){
+            return res.status(200).json({ members: chatData.members, messages: [] });
         }
 
-        // Update seen status
         await AppDataSource.getRepository(UserChat).update(
             { chatId: conversationId, userId: senderId },
             { seen: true }
