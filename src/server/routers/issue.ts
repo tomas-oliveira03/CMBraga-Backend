@@ -9,45 +9,94 @@ import multer from 'multer';
 import { uploadImagesBuffer } from "../services/cloud";
 import { areValidImageFiles } from "@/helpers/storage";
 import { createNotificationForUser } from "../services/notification";
-import { UserNotificationType } from "@/helpers/types";
+import { UserNotificationType, UserRole } from "@/helpers/types";
+import { authenticate, authorize } from "../middleware/auth";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const allIssues = await AppDataSource.getRepository(Issue).find({
             order: {
                 createdAt: 'ASC'
+            },
+            relations: {
+                instructor: true,
+                activitySession: {
+                    route: true
+                }
             }
         });
-        return res.status(200).json(allIssues);
+        const issuesPayload = allIssues.map(issue => ({
+            id: issue.id,
+            description: issue.description,
+            imageURLs: issue.imageURLs,
+            createdAt: issue.createdAt,
+            updatedAt: issue.updatedAt,
+            resolvedAt: issue.resolvedAt,
+            instructor: {
+                id: issue.instructor.id,
+                name: issue.instructor.name
+            },
+            activitySession: {
+                id: issue.activitySession.id,
+                type: issue.activitySession.type,
+                routeName: issue.activitySession.route.name,
+                scheduledAt: issue.activitySession.scheduledAt
+            }
+        }));
+
+        return res.status(200).json(issuesPayload);
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 
 
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const issueId = req.params.id;
 
         const issue = await AppDataSource.getRepository(Issue).findOne({
-            where: { id: issueId}
+            where: { id: issueId},
+            relations: {
+                instructor: true,
+                activitySession: {
+                    route: true
+                }
+            }
         });
 
         if (!issue){
             return res.status(404).json({ message: "Issue not found" })
         }
 
-        return res.status(200).json(issue);
+        return res.status(200).json({
+            id: issue.id,
+            description: issue.description,
+            imageURLs: issue.imageURLs,
+            createdAt: issue.createdAt,
+            updatedAt: issue.updatedAt,
+            resolvedAt: issue.resolvedAt,
+            instructor: {
+                id: issue.instructor.id,
+                name: issue.instructor.name
+            },
+            activitySession: {
+                id: issue.activitySession.id,
+                type: issue.activitySession.type,
+                routeName: issue.activitySession.route.name,
+                scheduledAt: issue.activitySession.scheduledAt
+            }
+        });
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });
 
 
-router.post('/', upload.array('files'), async (req: Request, res: Response) => {
+router.post('/', authenticate, authorize(UserRole.INSTRUCTOR), upload.array('files'), async (req: Request, res: Response) => {
     try {
         const validatedData = CreateIssueSchema.parse(req.body);
 
@@ -124,7 +173,7 @@ router.post('/', upload.array('files'), async (req: Request, res: Response) => {
 
 
 // Toggle issue between read and not read
-router.put('/resolve/toggle/:id', async (req: Request, res: Response) => {
+router.put('/resolve/toggle/:id', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const issueId = req.params.id;
         

@@ -19,12 +19,6 @@
  *                   id:
  *                     type: string
  *                     example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
- *                   activitySessionId:
- *                     type: string
- *                     example: "s1t2u3v4-w5x6-7890-yz12-ab1234567890"
- *                   instructorId:
- *                     type: string
- *                     example: "i1j2k3l4-m5n6-7890-opqr-st1234567890"
  *                   description:
  *                     type: string
  *                     example: "Criança com dificuldade respiratória durante o percurso"
@@ -42,6 +36,36 @@
  *                     format: date-time
  *                     nullable: true
  *                     example: "2024-01-15T11:00:00.000Z"
+ *                   resolvedAt:
+ *                     type: string
+ *                     format: date-time
+ *                     nullable: true
+ *                     example: null
+ *                   instructor:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         example: "i1j2k3l4-m5n6-7890-opqr-st1234567890"
+ *                       name:
+ *                         type: string
+ *                         example: "João Santos"
+ *                   activitySession:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         example: "s1t2u3v4-w5x6-7890-yz12-ab1234567890"
+ *                       type:
+ *                         type: string
+ *                         example: "BIKE"
+ *                       routeName:
+ *                         type: string
+ *                         example: "Percurso do Parque"
+ *                       scheduledAt:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2024-01-15T09:00:00.000Z"
  */
 
 
@@ -72,12 +96,6 @@
  *                 id:
  *                   type: string
  *                   example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
- *                 activitySessionId:
- *                   type: string
- *                   example: "s1t2u3v4-w5x6-7890-yz12-ab1234567890"
- *                 instructorId:
- *                   type: string
- *                   example: "i1j2k3l4-m5n6-7890-opqr-st1234567890"
  *                 description:
  *                   type: string
  *                   example: "Bicicleta com pneu furado"
@@ -95,6 +113,36 @@
  *                   format: date-time
  *                   nullable: true
  *                   example: null
+ *                 resolvedAt:
+ *                   type: string
+ *                   format: date-time
+ *                   nullable: true
+ *                   example: null
+ *                 instructor:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       example: "i1j2k3l4-m5n6-7890-opqr-st1234567890"
+ *                     name:
+ *                       type: string
+ *                       example: "João Santos"
+ *                 activitySession:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       example: "s1t2u3v4-w5x6-7890-yz12-ab1234567890"
+ *                     type:
+ *                       type: string
+ *                       example: "BIKE"
+ *                     routeName:
+ *                       type: string
+ *                       example: "Percurso do Parque"
+ *                     scheduledAt:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2024-01-10T09:00:00.000Z"
  *       404:
  *         description: Issue not found
  *         content:
