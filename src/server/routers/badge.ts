@@ -20,7 +20,7 @@ const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
 
-router.get('/', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
+router.get('/', authenticate, async (req: Request, res: Response) => {
     try {
         const badges = await AppDataSource.getRepository(Badge).find();
         return res.status(200).json(badges);
@@ -30,7 +30,7 @@ router.get('/', authenticate, authorize(UserRole.ADMIN), async (req: Request, re
 });
 
 
-router.get('/:id', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
+router.get('/:id', authenticate, async (req: Request, res: Response) => {
     try {
         const badge = await AppDataSource.getRepository(Badge).findOne({ where: { id: req.params.id } });
         if (!badge) {
@@ -43,7 +43,7 @@ router.get('/:id', authenticate, authorize(UserRole.ADMIN), async (req: Request,
 });
 
 
-router.post('/', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
+router.post('/', authenticate, authorize(UserRole.ADMIN), upload.single('file'), async (req: Request, res: Response) => {
     try {
         const validatedData = CreateBadgeSchema.parse(req.body);
 
