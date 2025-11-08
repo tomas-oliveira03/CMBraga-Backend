@@ -8,11 +8,13 @@ import multer from "multer";
 import { updateProfilePicture } from "../services/user";
 import { isValidImageFile } from "@/helpers/storage";
 import { User } from "@/db/entities/User";
+import { UserRole } from "@/helpers/types";
+import { authenticate, authorize } from "../middleware/auth";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const allParents = await AppDataSource.getRepository(Parent).find();
         return res.status(200).json(allParents);
@@ -22,7 +24,7 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const parentId = req.params.id;
 
@@ -43,9 +45,9 @@ router.get('/:id', async (req: Request, res: Response) => {
 });
 
 
-router.put('/:id', upload.single('file'), async (req: Request, res: Response) => {
+router.put('/:id', authenticate, authorize(UserRole.PARENT), upload.single('file'), async (req: Request, res: Response) => {
     try {
-        const parentId = req.params.id;
+        const parentId = req.user!.userId
         const validatedData = UpdateParentSchema.parse(req.body);
         
         const parent = await AppDataSource.getRepository(Parent).findOne({

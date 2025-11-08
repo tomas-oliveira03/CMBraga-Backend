@@ -1,10 +1,12 @@
 import { AppDataSource } from "@/db";
 import { Station } from "@/db/entities/Station";
+import { UserRole } from "@/helpers/types";
 import express, { Request, Response } from "express";
+import { authenticate, authorize } from "../middleware/auth";
 
 const router = express.Router();
 
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const allStations = await AppDataSource.getRepository(Station).find();
         return res.status(200).json(allStations);
@@ -14,7 +16,7 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const stationId = req.params.id;
 

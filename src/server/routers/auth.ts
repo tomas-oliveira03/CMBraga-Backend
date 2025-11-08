@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import { z } from "zod";
 import { AuthenticationService } from "../services/auth";
-import { authenticate } from "../middleware/auth";
+import { authenticate, authorize } from "../middleware/auth";
 import { LoginSchema } from "../schemas/auth";
 import { envs } from "@/config";
 import { AppDataSource } from "@/db";
@@ -21,7 +21,7 @@ import { Child } from "@/db/entities/Child";
 import { ParentChild } from "@/db/entities/ParentChild";
 import { Station } from "@/db/entities/Station";
 import { selectRandomDefaultProfilePicture } from "@/helpers/storage";
-import { StationType } from "@/helpers/types";
+import { StationType, UserRole } from "@/helpers/types";
 import { In } from "typeorm";
 import { CreateChildSchema } from "../schemas/child";
 import { webSocketManager } from "../services/websocket";
@@ -96,7 +96,7 @@ router.get('/profile', authenticate, (req: Request, res: Response) => {
 });
 
 
-router.post('/register/admin', async (req: Request, res: Response) => {
+router.post('/register/admin', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const validatedData = CreateAdminSchema.parse(req.body);
         
@@ -146,7 +146,7 @@ router.post('/register/admin', async (req: Request, res: Response) => {
 });
 
 
-router.post('/register/instructor', async (req: Request, res: Response) => {
+router.post('/register/instructor', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const validatedData = CreateInstructorSchema.parse(req.body);
 
@@ -194,7 +194,7 @@ router.post('/register/instructor', async (req: Request, res: Response) => {
 });
 
 
-router.post('/register/health-professional', async (req: Request, res: Response) => {
+router.post('/register/health-professional', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const validatedData = CreateHealthProfessionalSchema.parse(req.body);
         
@@ -242,7 +242,8 @@ router.post('/register/health-professional', async (req: Request, res: Response)
     }
 });
 
-router.post('/register/parent', async (req: Request, res: Response) => {
+
+router.post('/register/parent', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const validatedData = CreateParentSchema.parse(req.body);
 
@@ -291,7 +292,7 @@ router.post('/register/parent', async (req: Request, res: Response) => {
 });
 
 
-router.post('/register/child', async (req: Request, res: Response) => {
+router.post('/register/child', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const validatedData = CreateChildSchema.parse(req.body);
             

@@ -5,7 +5,7 @@ import { CreateRouteSchema, InitialUpdateSchema, UpdateRouteSchema } from "../sc
 import z from "zod";
 import { processKMLFromURL } from "../services/kmlParser";
 import { Station } from "@/db/entities/Station";
-import { ActivityMode, ActivityType, StationType } from "@/helpers/types";
+import { ActivityMode, ActivityType, StationType, UserRole } from "@/helpers/types";
 import { RouteStation } from "@/db/entities/RouteStation";
 import multer from 'multer';
 import { deleteFile, uploadFileBuffer } from "../services/cloud";
@@ -13,11 +13,12 @@ import { MAX_KML_SIZE } from "@/helpers/storage";
 import { calculateTimeUntilArrival } from "../services/activity";
 import { RouteConnection } from "@/db/entities/RouteConnection";
 import { In, Not } from "typeorm";
+import { authenticate, authorize } from "../middleware/auth";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const allRoutes = await AppDataSource.getRepository(Route).find({
             relations: {
@@ -49,7 +50,7 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const routeId = req.params.id;
 
@@ -157,7 +158,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 });
 
 
-router.post('/', upload.single('file'), async (req: Request, res: Response) => {
+router.post('/', authenticate, authorize(UserRole.ADMIN), upload.single('file'), async (req: Request, res: Response) => {
     try {
         const validatedData = CreateRouteSchema.parse(req.body);
         
@@ -283,7 +284,7 @@ router.post('/', upload.single('file'), async (req: Request, res: Response) => {
 
 
 // Route call right after route insertion
-router.put('/initial-update/:id', async (req: Request, res: Response) => {
+router.put('/initial-update/:id', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const routeId = req.params.id;
         const validatedData = InitialUpdateSchema.parse(req.body);
@@ -336,7 +337,7 @@ router.put('/initial-update/:id', async (req: Request, res: Response) => {
 });
 
 
-router.put('/:id', async (req: Request, res: Response) => {
+router.put('/:id', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const routeId = req.params.id;
         const validatedData = UpdateRouteSchema.parse(req.body);
@@ -409,7 +410,7 @@ router.put('/:id', async (req: Request, res: Response) => {
 
 
 // All possible transfers a route can handle
-router.get('/possible-transfers/:id', async (req: Request, res: Response) => {
+router.get('/possible-transfers/:id', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const routeId = req.params.id!;
         const route = await AppDataSource.getRepository(Route).findOne({

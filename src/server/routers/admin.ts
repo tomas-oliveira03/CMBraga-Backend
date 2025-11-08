@@ -8,11 +8,13 @@ import multer from "multer";
 import { isValidImageFile } from "@/helpers/storage";
 import { updateProfilePicture } from "../services/user";
 import { User } from "@/db/entities/User";
+import { UserRole } from "@/helpers/types";
+import { authenticate, authorize } from "../middleware/auth";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const allAdmins = await AppDataSource.getRepository(Admin).find();
         return res.status(200).json(allAdmins);
@@ -21,7 +23,8 @@ router.get('/', async (req: Request, res: Response) => {
     }
 });
 
-router.get('/:id', async (req: Request, res: Response) => {
+
+router.get('/:id', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const adminId = req.params.id;
 
@@ -41,9 +44,10 @@ router.get('/:id', async (req: Request, res: Response) => {
     }
 });
 
-router.put('/:id', upload.single('file'), async (req: Request, res: Response) => {
+
+router.put('/:id', authenticate, authorize(UserRole.ADMIN), upload.single('file'), async (req: Request, res: Response) => {
     try {
-        const adminId = req.params.id;
+        const adminId = req.user!.userId
         const validatedData = UpdateAdminSchema.parse(req.body);
         
         const admin = await AppDataSource.getRepository(Admin).findOne({
