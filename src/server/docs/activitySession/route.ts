@@ -25,6 +25,10 @@
  *                 id:
  *                   type: string
  *                   example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *                 activitySessionId:
+ *                   type: string
+ *                   example: "c56ad528-3522-4557-8b34-a787a50900b7"
+ *                   description: "The activity session ID"
  *                 name:
  *                   type: string
  *                   example: "Rota Pedibus Centro"
@@ -177,6 +181,7 @@
  *               withConnector:
  *                 value:
  *                   id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *                   activitySessionId: "c56ad528-3522-4557-8b34-a787a50900b7"
  *                   name: "Rota Pedibus Centro"
  *                   activityType: "pedibus"
  *                   distanceMeters: 2500
@@ -257,6 +262,7 @@
  *               withoutConnector:
  *                 value:
  *                   id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *                   activitySessionId: "c56ad528-3522-4557-8b34-a787a50900b7"
  *                   name: "Rota Pedibus Centro"
  *                   activityType: "pedibus"
  *                   distanceMeters: 2500

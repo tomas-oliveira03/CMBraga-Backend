@@ -68,6 +68,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 
         let response = {
             id: route.id,
+            activitySessionId: activitySessionId,
             name: route.name,
             activityType: route.activityType,
             scheduledAt: activitySession.scheduledAt,
