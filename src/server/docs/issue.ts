@@ -50,6 +50,10 @@
  *                       name:
  *                         type: string
  *                         example: "João Santos"
+ *                       profilePictureURL:
+ *                         type: string
+ *                         nullable: true
+ *                         example: "https://example.com/profile.jpg"
  *                   activitySession:
  *                     type: object
  *                     properties:
@@ -127,6 +131,10 @@
  *                     name:
  *                       type: string
  *                       example: "João Santos"
+ *                     profilePictureURL:
+ *                       type: string
+ *                       nullable: true
+ *                       example: "https://example.com/profile.jpg"
  *                 activitySession:
  *                   type: object
  *                   properties:

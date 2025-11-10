@@ -37,7 +37,8 @@ router.get('/', authenticate, authorize(UserRole.ADMIN), async (req: Request, re
             resolvedAt: issue.resolvedAt,
             instructor: {
                 id: issue.instructor.id,
-                name: issue.instructor.name
+                name: issue.instructor.name,
+                profilePictureURL: issue.instructor.profilePictureURL
             },
             activitySession: {
                 id: issue.activitySession.id,
@@ -81,7 +82,8 @@ router.get('/:id', authenticate, authorize(UserRole.ADMIN), async (req: Request,
             resolvedAt: issue.resolvedAt,
             instructor: {
                 id: issue.instructor.id,
-                name: issue.instructor.name
+                name: issue.instructor.name,
+                profilePictureURL: issue.instructor.profilePictureURL
             },
             activitySession: {
                 id: issue.activitySession.id,
