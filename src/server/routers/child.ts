@@ -103,16 +103,22 @@ router.get('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.PARENT), asy
 });
 
 
-router.put('/:id', upload.single('file'), async (req: Request, res: Response) => {
+router.put('/:id', authenticate, authorize(UserRole.PARENT), upload.single('file'), async (req: Request, res: Response) => {
     try {
         const childId = req.params.id;
         const validatedData = UpdateChildSchema.parse(req.body);
 
         const child = await AppDataSource.getRepository(Child).findOne({
-            where: { id: childId }
+            where: { id: childId },
+            relations: {
+                parentChildren: true
+            }
         })
         if (!child) {
             return res.status(404).json({ message: "Child not found" });
+        }
+        if (!child.parentChildren.some(pc => pc.parentId === req.user!.userId)) {
+            return res.status(403).json({ message: "Forbidden: You do not have permission to update this child's information." });
         }
 
         if (validatedData.dropOffStationId) {
@@ -265,12 +271,15 @@ router.put('/:id', upload.single('file'), async (req: Request, res: Response) =>
 });
 
 
-router.get('/available-activities/:id', async (req: Request, res: Response) => {
+router.get('/available-activities/:id', authenticate, authorize(UserRole.PARENT), async (req: Request, res: Response) => {
     try {
         const childId = req.params.id!;
-        const child = await AppDataSource.getRepository(Child).findOne({ where: { id: childId }, relations: { dropOffStation: true } })
+        const child = await AppDataSource.getRepository(Child).findOne({ where: { id: childId }, relations: { dropOffStation: true, parentChildren: true } })
         if (!child) {
             return res.status(404).json({ message: "Child not found" });
+        }
+        if (!child.parentChildren.some(pc => pc.parentId === req.user!.userId)) {
+            return res.status(403).json({ message: "Forbidden: You do not have access to this child's information." });
         }
 
         const allFutureActivitySessions = await AppDataSource.getRepository(ActivitySession).find({
@@ -428,12 +437,15 @@ router.get('/available-activities/:id', async (req: Request, res: Response) => {
 })
 
 
-router.get('/upcoming-activities/:id', async (req: Request, res: Response) => {
+router.get('/upcoming-activities/:id', authenticate, authorize(UserRole.PARENT), async (req: Request, res: Response) => {
     try {
         const childId = req.params.id;
-        const childExists = await AppDataSource.getRepository(Child).findOne({ where: { id: childId } })
+        const childExists = await AppDataSource.getRepository(Child).findOne({ where: { id: childId }, relations: { parentChildren: true } })
         if (!childExists) {
             return res.status(404).json({ message: "Child not found" });
+        }
+        if (!childExists.parentChildren.some(pc => pc.parentId === req.user!.userId)) {
+            return res.status(403).json({ message: "Forbidden: You do not have access to this child's information." });
         }
 
         const childData = await AppDataSource.getRepository(Child).findOne({
@@ -541,12 +553,15 @@ router.get('/upcoming-activities/:id', async (req: Request, res: Response) => {
 })
 
 
-router.get('/ongoing-activities/:id', async (req: Request, res: Response) => {
+router.get('/ongoing-activities/:id', authenticate, authorize(UserRole.PARENT), async (req: Request, res: Response) => {
     try {
         const childId = req.params.id;
-        const childExists = await AppDataSource.getRepository(Child).findOne({ where: { id: childId } })
+        const childExists = await AppDataSource.getRepository(Child).findOne({ where: { id: childId }, relations: { parentChildren: true } })
         if (!childExists) {
             return res.status(404).json({ message: "Child not found" });
+        }
+        if (!childExists.parentChildren.some(pc => pc.parentId === req.user!.userId)) {
+            return res.status(403).json({ message: "Forbidden: You do not have access to this child's information." });
         }
 
         const childData = await AppDataSource.getRepository(Child).findOne({
@@ -660,12 +675,15 @@ router.get('/ongoing-activities/:id', async (req: Request, res: Response) => {
 })
 
 
-router.get('/previous-activities/:id', async (req: Request, res: Response) => {
+router.get('/previous-activities/:id', authenticate, authorize(UserRole.PARENT), async (req: Request, res: Response) => {
     try {
         const childId = req.params.id;
-        const childExists = await AppDataSource.getRepository(Child).findOne({ where: { id: childId } })
+        const childExists = await AppDataSource.getRepository(Child).findOne({ where: { id: childId }, relations: { parentChildren: true } })
         if (!childExists) {
             return res.status(404).json({ message: "Child not found" });
+        }
+        if (!childExists.parentChildren.some(pc => pc.parentId === req.user!.userId)) {
+            return res.status(403).json({ message: "Forbidden: You do not have access to this child's information." });
         }
 
         const childData = await AppDataSource.getRepository(Child).findOne({

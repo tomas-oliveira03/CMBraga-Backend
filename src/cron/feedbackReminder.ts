@@ -3,9 +3,12 @@ import { logger } from '@/lib/logger';
 import { AppDataSource } from '@/db';
 import { ActivitySession } from '@/db/entities/ActivitySession';
 import { Feedback } from '@/db/entities/Feedback';
-import { Not, IsNull, Between } from 'typeorm';
+import { Between } from 'typeorm';
 import { sendFeedbackReminder } from '@/server/services/email';
 import { envs } from '@/config';
+import { ChildStationType } from '@/helpers/types';
+import { ChildActivitySession } from '@/db/entities/ChildActivitySession';
+import { CronExpression } from '@/helpers/utils';
 
 class FeedbackReminderCron {
     private static job: ScheduledTask | null = null;
@@ -16,7 +19,7 @@ class FeedbackReminderCron {
             return;
         }
 
-        this.job = cron.schedule('0 20 * * *', async () => {
+        this.job = cron.schedule(CronExpression.EVERY_DAY_AT_8PM, async () => {
             try {
                 logger.cron('FeedbackReminderCron: Starting feedback reminder job execution');
                 
@@ -29,35 +32,50 @@ class FeedbackReminderCron {
                 const finishedActivities = await AppDataSource.getRepository(ActivitySession).find({
                     where: {
                         finishedAt: Between(today, tomorrow),
+                        childStations: {
+                            type: ChildStationType.OUT
+                        }
                     },
                     relations: {
-                        childActivitySessions: {
-                            child: true,
-                            parent: true
-                        }
+                        childStations: true
                     }
                 });
 
                 let emailsSent = 0;
+                
 
                 for (const activity of finishedActivities) {
-                    for (const childActivity of activity.childActivitySessions) {
+                    for (const childActivity of activity.childStations) {
                      
                         const existingFeedback = await AppDataSource.getRepository(Feedback).findOne({
                             where: {
                                 activitySessionId: activity.id,
-                                childId: childActivity.childId,
-                                parentId: childActivity.parentId
+                                childId: childActivity.childId
                             }
                         });
 
                         if (!existingFeedback) {
-                            const feedbackLink = `${envs.BASE_URL}/feedback?activityId=${activity.id}&childId=${childActivity.childId}&parentId=${childActivity.parentId}`;
 
-                            await sendFeedbackReminder(childActivity.parent.email, childActivity.parent.name, childActivity.child.name, activity.type, feedbackLink);
+                            const childActivitySession = await AppDataSource.getRepository(ChildActivitySession).findOne({
+                                where: {
+                                    activitySessionId: activity.id,
+                                    childId: childActivity.childId
+                                },
+                                relations: {
+                                    parent: true,
+                                }
+                            });
+                            if (!childActivitySession) {
+                                logger.cron(`FeedbackReminderCron: No booking found for child ${childActivity.childId} in activity ${activity.id}. Skipping email.`);
+                                continue;
+                            }
+                            const parent = childActivitySession.parent;
 
+                            const feedbackLink = `${envs.BASE_URL}/feedback?activityId=${activity.id}&childId=${childActivity.childId}&parentId=${parent.id}`;
+
+                            await sendFeedbackReminder(parent.email, parent.name, childActivity.child.name, activity.type, feedbackLink);
                             emailsSent++;
-                            logger.cron(`FeedbackReminderCron: Sent feedback reminder to ${childActivity.parent.email} for child ${childActivity.child.name}`);
+                            logger.cron(`FeedbackReminderCron: Sent feedback reminder to ${parent.email} for child ${childActivity.child.name}`);
                         }
                     }
                 }

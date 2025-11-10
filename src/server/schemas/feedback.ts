@@ -11,7 +11,6 @@ export const FeedbackSchema = z.object({
     overallRating: z.number().int().min(1).max(5),
     activitySessionId: z.string(),
     childId: z.string(),
-    parentId: z.string(),
     submitedAt: z.date()
 });
 

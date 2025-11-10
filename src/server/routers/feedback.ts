@@ -9,10 +9,12 @@ import express, { Request, Response } from "express";
 import { CreateFeedbackSchema } from "@/server/schemas/feedback";
 import { z } from "zod";
 import { ChildStation } from "@/db/entities/ChildStation";
+import { ChildStationType, UserRole } from "@/helpers/types";
+import { authenticate, authorize } from "../middleware/auth";
 
 const router = express.Router();
 
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const feedbacks = await AppDataSource.getRepository(Feedback).find();
         return res.status(200).json(feedbacks);
@@ -22,7 +24,7 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const feedbackId = req.params.id;
 
@@ -42,7 +44,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 
 
 // Get all feedbacks for a given child
-router.get('/child/:childId', async (req: Request, res: Response) => {
+router.get('/child/:childId', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const childId = req.params.childId;
 
@@ -65,7 +67,7 @@ router.get('/child/:childId', async (req: Request, res: Response) => {
 
 
 // Get all feedbacks for a given activity session
-router.get('/activity/:activitySessionId', async (req: Request, res: Response) => {
+router.get('/activity/:activitySessionId', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const activitySessionId = req.params.activitySessionId;
 
@@ -87,14 +89,14 @@ router.get('/activity/:activitySessionId', async (req: Request, res: Response) =
 });
 
 
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', authenticate, authorize(UserRole.PARENT), async (req: Request, res: Response) => {
     try {
         const validatedData = CreateFeedbackSchema.parse(req.body);
+        const parentId = req.user!.userId;
 
         const activitySession = await AppDataSource.getRepository(ActivitySession).findOne({
             where: { id: validatedData.activitySessionId }
         });
-
         if (!activitySession) {
             return res.status(404).json({ message: "Activity session not found" });
         }
@@ -102,45 +104,32 @@ router.post('/', async (req: Request, res: Response) => {
         const child = await AppDataSource.getRepository(Child).findOne({
             where: { id: validatedData.childId }
         });
-
         if (!child) {
             return res.status(404).json({ message: "Child not found" });
         }
 
         const parent = await AppDataSource.getRepository(Parent).findOne({
-            where: { id: validatedData.parentId }
+            where: { id: parentId }
         });
-
         if (!parent) {
             return res.status(404).json({ message: "Parent not found" });
         }
 
         const parentChild = await AppDataSource.getRepository(ParentChild).findOne({
             where: {
-                parentId: validatedData.parentId,
+                parentId: parentId,
                 childId: validatedData.childId
             }
         });
-
         if (!parentChild) {
             return res.status(403).json({ message: "Parent is not responsible for this child" });
-        }
-
-        const childActivitySession = await AppDataSource.getRepository(ChildActivitySession).findOne({
-            where: {
-                childId: validatedData.childId,
-                activitySessionId: validatedData.activitySessionId
-            }
-        });
-
-        if (!childActivitySession) {
-            return res.status(403).json({ message: "Child is not registered in this activity session" });
         }
 
         const childParticipated = await AppDataSource.getRepository(ChildStation).findOne({
             where: {
                 childId: validatedData.childId,
-                activitySessionId: validatedData.activitySessionId
+                activitySessionId: validatedData.activitySessionId,
+                type: ChildStationType.OUT
             }
         });
         if (!childParticipated) {
@@ -153,7 +142,6 @@ router.post('/', async (req: Request, res: Response) => {
                 childId: validatedData.childId
             }
         });
-
         if (existingFeedback) {
             return res.status(400).json({ message: "Feedback already exists for this activity session" });
         }
