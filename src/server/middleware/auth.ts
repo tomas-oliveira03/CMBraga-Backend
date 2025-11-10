@@ -25,7 +25,6 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
         }
         const decoded = AuthService.verifyToken(token);
         req.user = decoded;
-        console.log("D4")
         return next();
     } catch (error) {
         return res.status(401).json({ message: 'Invalid or expired token' });

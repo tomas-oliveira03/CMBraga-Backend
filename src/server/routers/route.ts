@@ -113,7 +113,6 @@ router.get('/:id', authenticate, authorize(UserRole.ADMIN), async (req: Request,
         // Add route connector logic if available
         if(route.fromRouteConnections && route.fromRouteConnections[0]){
             const firstConnectorRoute = route.fromRouteConnections[0]
-            console.log(firstConnectorRoute)
             const connectorStops = firstConnectorRoute.toRoute.routeStations
                 .map(rs => ({
                     stationId: rs.stationId,

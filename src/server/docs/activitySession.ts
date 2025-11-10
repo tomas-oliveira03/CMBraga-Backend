@@ -321,3 +321,129 @@
  *                   type: string
  *                   example: "Internal server error"
  */
+
+
+/**
+ * @swagger
+ * /activity-session/finished/instructor/{id}:
+ *   get:
+ *     summary: Get finished activity session statistics for instructor
+ *     description: Returns detailed statistics for a finished activity session. Only accessible by instructors who were associated with the session.
+ *     tags:
+ *       - Activity Session
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *         description: Activity Session ID (UUID)
+ *     responses:
+ *       200:
+ *         description: Finished activity session statistics
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 activity:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *                     type:
+ *                       type: string
+ *                       enum: [pedibus, ciclo_expresso]
+ *                       example: "pedibus"
+ *                     mode:
+ *                       type: string
+ *                       enum: [walk, bike]
+ *                       example: "walk"
+ *                 route:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       example: "b2c3d4e5-f6g7-8901-bcde-f23456789012"
+ *                     name:
+ *                       type: string
+ *                       example: "Rota Centro"
+ *                 schedule:
+ *                   type: object
+ *                   properties:
+ *                     scheduledAt:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2024-01-20T08:00:00.000Z"
+ *                     startedAt:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2024-01-20T08:05:00.000Z"
+ *                     finishedAt:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2024-01-20T09:00:00.000Z"
+ *                 stats:
+ *                   type: object
+ *                   properties:
+ *                     durationMinutes:
+ *                       type: integer
+ *                       example: 55
+ *                       description: "Duration in minutes (rounded)"
+ *                     distanceMeters:
+ *                       type: number
+ *                       example: 2500
+ *                       description: "Total route distance in meters"
+ *                     totalParents:
+ *                       type: integer
+ *                       example: 12
+ *                       description: "Number of parent participants"
+ *                     totalChildren:
+ *                       type: integer
+ *                       example: 6
+ *                       description: "Number of child participants (divided by 2)"
+ *                     totalInstructors:
+ *                       type: integer
+ *                       example: 2
+ *                       description: "Number of instructors in the session"
+ *                     totalStops:
+ *                       type: integer
+ *                       example: 8
+ *                       description: "Number of stations/stops in the route"
+ *       400:
+ *         description: Bad request - session not finished or instructor not associated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               not_finished:
+ *                 value:
+ *                   message: "Session not finished yet"
+ *               not_associated:
+ *                 value:
+ *                   message: "Instructor not associated with this session"
+ *       401:
+ *         description: Unauthorized - authentication required
+ *       403:
+ *         description: Forbidden - instructor role required
+ *       404:
+ *         description: Activity session not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Session not found"
+ *       500:
+ *         description: Internal server error
+ */

@@ -277,7 +277,6 @@ export async function addUserToGeneralChat(userId: string): Promise<void> {
                 userId: userId,
                 chatId: generalChat!.id
             });
-            console.log(`User ${userId} added to general chat`);
 
             webSocketEvents.addNewUserToChatRoom(generalChat.id, userId);
         }
