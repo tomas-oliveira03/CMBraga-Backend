@@ -153,6 +153,71 @@ router.get('/finished/instructor/:id', authenticate, authorize(UserRole.INSTRUCT
 });
 
 
+router.get('/finished/admin/:id', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
+    try {
+        const sessionId = req.params.id;
+
+        const session = await AppDataSource.getRepository(ActivitySession).findOne({
+            where: {
+                id: sessionId
+            },
+            relations: {
+                instructorActivitySessions: true,
+                route: true,
+                parentStations: true,
+                childStations: true,
+                stationActivitySessions: {
+                    station: true
+                }
+            }
+        });
+        if (!session){
+            return res.status(404).json({ message: "Session not found" })
+        }
+        if(!session.finishedAt){
+            return res.status(400).json({ message: "Session not finished yet" });
+        }
+
+        const finalPayload = {
+            activity: {
+                id: session.id,
+                type: session.type,
+                mode: session.mode
+            },
+            route: {
+                id: session.route.id,
+                name: session.route.name,
+            },
+            schedule: {
+                scheduledAt: session.scheduledAt,
+                startedAt: session.startedAt!,
+                finishedAt: session.finishedAt
+            },
+            stats: {
+                durationMinutes: Math.round((session.finishedAt!.getTime() - session.startedAt!.getTime()) / 60000),
+                distanceMeters: session.route.distanceMeters,
+                totalParents: session.parentStations.length,
+                totalChildren: session.childStations.length / 2,
+                totalInstructors: session.instructorActivitySessions.length,
+                totalStops: session.stationActivitySessions.length
+            },
+            stations: session.stationActivitySessions.map(sas => ({
+                id: sas.stationId,
+                name: sas.station.name,
+                stopNumber: sas.stopNumber,
+                scheduledAt: sas.scheduledAt,
+                arrivedAt: sas.arrivedAt,
+                leftAt: sas.leftAt
+            })).sort((a, b) => a.stopNumber - b.stopNumber)
+        }
+
+        return res.status(200).json(finalPayload);
+        
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+});
+
 
 router.post('/', async (req: Request, res: Response) => {
   try {

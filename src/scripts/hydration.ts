@@ -679,7 +679,39 @@ async function dbHydration() {
       finishedById: instrutores[1]!.id
     });
     await activityRepo.save(finishedActivity);
-    await createStationActivitySessions(finishedActivity.id, linhaVermelha!.id, finishedActivity.scheduledAt);
+    
+    // Create station activity sessions with realistic arrival/departure times for finished activity
+    const finishedRouteStations = await routeStationRepo.find({
+      where: { routeId: linhaVermelha!.id },
+      order: { stopNumber: 'ASC' }
+    });
+    
+    const finishedStationSessions = [];
+    for (const rs of finishedRouteStations) {
+      const scheduledTime = new Date(finishedActivity.scheduledAt.getTime() + (rs.timeFromStartMinutes * 60 * 1000));
+      
+      // Add some realistic delays (1-3 minutes behind schedule)
+      const delayMinutes = Math.floor(Math.random() * 3) + 1;
+      const arrivedAt = new Date(scheduledTime.getTime() + delayMinutes * 60 * 1000);
+      
+      // Stay at station for 2-5 minutes
+      const stayDuration = (Math.floor(Math.random() * 4) + 2) * 60 * 1000;
+      const leftAt = new Date(arrivedAt.getTime() + stayDuration);
+      
+      const session = stationActivityRepo.create({
+        stationId: rs.stationId,
+        activitySessionId: finishedActivity.id,
+        stopNumber: rs.stopNumber,
+        scheduledAt: scheduledTime,
+        arrivedAt: arrivedAt,
+        leftAt: leftAt
+      });
+      
+      finishedStationSessions.push(session);
+    }
+    
+    await stationActivityRepo.save(finishedStationSessions);
+    
     await instructorActivityRepo.save(
       instructorActivityRepo.create({ instructorId: instrutores[1]!.id, activitySessionId: finishedActivity.id })
     );
