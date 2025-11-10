@@ -12,7 +12,7 @@ import { authenticate, authorize } from "../middleware/auth";
 const router = express.Router();
 
 
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', authenticate, async (req: Request, res: Response) => {
     try {
         const allSessions = await AppDataSource.getRepository(ActivitySession).find({
             relations: {
@@ -48,7 +48,7 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', authenticate, async (req: Request, res: Response) => {
     try {
         const sessionId = req.params.id;
 
@@ -219,7 +219,7 @@ router.get('/finished/admin/:id', authenticate, authorize(UserRole.ADMIN), async
 });
 
 
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
   try {
     const validatedData = CreateActivitySessionSchema.parse(req.body);
 
@@ -283,7 +283,7 @@ router.post('/', async (req: Request, res: Response) => {
 });
 
 
-router.delete('/:id', async (req: Request, res: Response) => {
+router.delete('/:id', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const sessionId = req.params.id;
         

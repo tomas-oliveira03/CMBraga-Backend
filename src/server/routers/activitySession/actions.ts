@@ -1046,7 +1046,7 @@ router.delete('/child/check-out', authenticate, authorize(UserRole.INSTRUCTOR), 
 
 
 
-router.get('/child/allActivities', async (req: Request, res: Response) => {
+router.get('/child/allActivities', authenticate, authorize(UserRole.PARENT, UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const childId = req.query.childId;
 
@@ -1059,9 +1059,15 @@ router.get('/child/allActivities', async (req: Request, res: Response) => {
                 childId: childId
             },
             relations: {
-                activitySession: true
+                activitySession: true,
+                child: {
+                    parentChildren: true
+                }
             }
         });
+        if (req.user!.role === UserRole.PARENT && !childActivities.some(ca => ca.child.parentChildren.some(pc => pc.parentId === req.user!.userId))) {
+            return res.status(403).json({ message: "You do not have access to this child's activities" });
+        }
 
         return res.status(200).json(childActivities.map(ca => ca.activitySession));
 

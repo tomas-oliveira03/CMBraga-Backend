@@ -10,7 +10,7 @@ import { createNotificationForUser } from "@/server/services/notification";
 
 const router = express.Router();
 
-router.get('/all/:id', async (req: Request, res: Response) => {
+router.get('/all/:id', authenticate, authorize(UserRole.INSTRUCTOR, UserRole.ADMIN, UserRole.PARENT), async (req: Request, res: Response) => {
     try {
         const activityId = req.params.id;
 
@@ -42,7 +42,7 @@ router.get('/all/:id', async (req: Request, res: Response) => {
 });
 
 
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', authenticate, authorize(UserRole.INSTRUCTOR, UserRole.ADMIN, UserRole.PARENT), async (req: Request, res: Response) => {
     try {
         const activityId = req.params.id;
         

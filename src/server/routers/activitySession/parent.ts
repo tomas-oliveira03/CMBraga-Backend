@@ -8,7 +8,7 @@ import { authenticate, authorize } from "@/server/middleware/auth";
 
 const router = express.Router();
 
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', authenticate, authorize(UserRole.INSTRUCTOR, UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const activityId = req.query.id;
 

@@ -1,12 +1,13 @@
 import { AppDataSource } from "@/db";
 import express, { Request, Response } from "express";
 import { ActivitySession } from "@/db/entities/ActivitySession";
+import { authenticate } from "@/server/middleware/auth";
 
 const router = express.Router();
 
 
 // Get all stations from an activity
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', authenticate, async (req: Request, res: Response) => {
     try {
         const activityId = req.params.id;
         

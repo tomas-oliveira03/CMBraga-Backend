@@ -1,11 +1,12 @@
 import { AppDataSource } from "@/db";
 import { ActivitySession } from "@/db/entities/ActivitySession";
 import { Route } from "@/db/entities/Route";
+import { authenticate } from "@/server/middleware/auth";
 import express, { Request, Response } from "express";
 
 const router = express.Router();
 
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', authenticate, async (req: Request, res: Response) => {
     try {
         const activitySessionId = req.params.id;
 

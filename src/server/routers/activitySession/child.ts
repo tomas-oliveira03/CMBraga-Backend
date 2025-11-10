@@ -11,7 +11,7 @@ import { RouteConnection } from "@/db/entities/RouteConnection";
 
 const router = express.Router();
 
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', authenticate, authorize(UserRole.INSTRUCTOR, UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
         const activityId = req.params.id;
         
@@ -43,7 +43,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 }); 
 
 
-router.get('/available-stations/:id', async (req: Request, res: Response) => {
+router.get('/available-stations/:id', authenticate, authorize(UserRole.PARENT), async (req: Request, res: Response) => {
     try {
         const activitySessionId = req.params.id;
         const childId = req.query.childId;
@@ -73,10 +73,16 @@ router.get('/available-stations/:id', async (req: Request, res: Response) => {
         }
 
         const child = await AppDataSource.getRepository(Child).findOne({
-            where: { id: childId }
+            where: { id: childId },
+            relations: {
+                parentChildren: true
+            }
         });
         if (!child) {
             return res.status(404).json({ message: "Child not found" });
+        }
+        if (!child.parentChildren.some(pc => pc.parentId === req.user!.userId)) {
+            return res.status(403).json({ message: "You are not authorized to view stations for this child" });
         }
 
         if (!activitySession.activityTransferId) {
