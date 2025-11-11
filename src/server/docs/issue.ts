@@ -3,9 +3,18 @@
  * /issue:
  *   get:
  *     summary: Get all issues
- *     description: Returns a list of all issues
+ *     description: Returns a list of all issues, can filter by archived status
  *     tags:
  *       - Issue
+ *     parameters:
+ *       - in: query
+ *         name: archived
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [true, false]
+ *           example: "false"
+ *         description: Filter by archived status. If "true", returns resolved issues. If "false", returns unresolved issues. If omitted, returns all issues.
  *     responses:
  *       200:
  *         description: List of issues

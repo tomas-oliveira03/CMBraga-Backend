@@ -11,13 +11,25 @@ import { areValidImageFiles } from "@/helpers/storage";
 import { createNotificationForUser } from "../services/notification";
 import { UserNotificationType, UserRole } from "@/helpers/types";
 import { authenticate, authorize } from "../middleware/auth";
+import { IsNull, Not } from "typeorm";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
 router.get('/', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
     try {
+        const isArchived = req.query.archived === 'true';
+        const isActive = req.query.archived === 'false';
+        
+        let issueRestriction = undefined
+        if (isArchived) { issueRestriction = Not(IsNull()) }
+        else if (isActive) { issueRestriction = IsNull() }
+
+
         const allIssues = await AppDataSource.getRepository(Issue).find({
+            where: {
+                resolvedAt: issueRestriction
+            },
             order: {
                 createdAt: 'ASC'
             },
