@@ -308,6 +308,7 @@ router.delete('/:id', authenticate, authorize(UserRole.ADMIN), async (req: Reque
             return res.status(400).json({ message: "Session has active child, parent or instructor sessions" });
         }
 
+        await AppDataSource.getRepository(StationActivitySession).delete({ activitySessionId: session.id });
         await AppDataSource.getRepository(ActivitySession).delete(session.id);
         
         return res.status(200).json({ message: "Session deleted successfully" });
