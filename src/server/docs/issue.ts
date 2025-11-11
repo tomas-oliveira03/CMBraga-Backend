@@ -278,16 +278,24 @@
  *             schema:
  *               type: object
  *               properties:
- *                 message:
+ *                 id:
  *                   type: string
- *                   example: "Issue updated successfully"
+ *                   example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *                   description: "The ID of the updated issue"
+ *                 resolvedAt:
+ *                   type: string
+ *                   format: date-time
+ *                   nullable: true
+ *                   description: "Date when issue was resolved (null if reopened)"
  *             examples:
  *               marked_resolved:
  *                 value:
- *                   message: "Issue marked as resolved"
+ *                   id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *                   resolvedAt: "2024-01-15T14:30:00.000Z"
  *               reopened:
  *                 value:
- *                   message: "Issue reopened"
+ *                   id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *                   resolvedAt: null
  *       404:
  *         description: Issue not found
  *         content:

@@ -199,7 +199,10 @@ router.put('/resolve/toggle/:id', authenticate, authorize(UserRole.ADMIN), async
             resolvedAt: resolvedAt
         });
         
-        return res.status(200).json({ message: "Issue updated successfully" });
+        return res.status(200).json({ 
+            id: issue.id,
+            resolvedAt: resolvedAt
+        });
 
     } catch (error) {
         if (error instanceof z.ZodError) {
