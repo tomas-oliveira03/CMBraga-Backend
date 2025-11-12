@@ -456,15 +456,15 @@ async function dbHydration() {
       childHistories.push(
         childHistoryRepo.create({
           childId: child.id,
-          heightCentimeters: child.heightCentimeters - 6,
-          weightKilograms: child.weightKilograms - 3,
+          heightCentimeters: child.heightCentimeters! - 6,
+          weightKilograms: child.weightKilograms! - 3,
           age: age - 1,
           createdAt: new Date(currentDate.getTime() - 180 * 24 * 60 * 60 * 1000)
         }),
         childHistoryRepo.create({
           childId: child.id,
-          heightCentimeters: child.heightCentimeters - 3,
-          weightKilograms: child.weightKilograms - 1,
+          heightCentimeters: child.heightCentimeters! - 3,
+          weightKilograms: child.weightKilograms! - 1,
           age: age,
           createdAt: new Date(currentDate.getTime() - 90 * 24 * 60 * 60 * 1000)
         }),
