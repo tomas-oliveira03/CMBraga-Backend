@@ -333,16 +333,6 @@ router.post('/register/child', authenticate, authorize(UserRole.ADMIN), async (r
             }));
 
             await tx.getRepository(ParentChild).insert(parentChildConnector);
-
-
-            const age = differenceInYears(new Date(), childData.dateOfBirth);
-
-            await tx.getRepository(ChildHistory).insert({
-                childId: childId,
-                heightCentimeters: childData.heightCentimeters,
-                weightKilograms: childData.weightKilograms,
-                age: age
-            })
         });
 
         return res.status(201).json({message: "Child created successfully"});

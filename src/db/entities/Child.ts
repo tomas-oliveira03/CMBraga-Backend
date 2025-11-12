@@ -24,11 +24,11 @@ export class Child {
 	@Column({ type: 'varchar' })
 	gender!: ChildGender;
 
-	@Column({ type: 'int'})
-	heightCentimeters!: number;
+	@Column({ type: 'int', nullable: true, default: null })
+	heightCentimeters!: number | null;
 
-	@Column({ type: 'int'})
-	weightKilograms!: number; 
+	@Column({ type: 'int', nullable: true, default: null })
+	weightKilograms!: number | null; 
 
 	@Column({ type: 'varchar' })
 	school!: string;
@@ -43,8 +43,8 @@ export class Child {
 	@Column({ type: 'date' })
 	dateOfBirth!: Date;
 
-	@Column({ type: 'jsonb', nullable: true })
-	healthProblems!: ChildHealthProblems;
+	@Column({ type: 'jsonb', nullable: true, default: null })
+	healthProblems!: ChildHealthProblems | null;
 
 	@Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
 	createdAt!: Date;

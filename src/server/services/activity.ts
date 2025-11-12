@@ -29,8 +29,8 @@ export function calculateCaloriesBurned(
     timeSeconds: number, 
     activityType: ActivityMode,
     childData: {
-        weightKilograms: number;
-        heightCentimeters: number;
+        weightKilograms: number | null;
+        heightCentimeters: number | null;
         dateOfBirth: Date;
         gender: ChildGender;
     }
@@ -79,7 +79,7 @@ export function calculateCaloriesBurned(
     }
 
     const timeMinutes = timeSeconds / 60;
-    const calories = met * 3.5 * childData.weightKilograms * timeMinutes / 200 * ageMultiplier;
+    const calories = met * 3.5 * (childData.weightKilograms ?? 25) * timeMinutes / 200 * ageMultiplier;
 
     return Math.round(calories); 
 }

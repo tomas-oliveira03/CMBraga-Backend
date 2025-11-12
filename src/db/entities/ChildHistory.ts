@@ -10,11 +10,11 @@ export class ChildHistory {
     @Column({ type: 'varchar' })
     childId!: string;
 
-    @Column({ type: 'int'})
-    heightCentimeters!: number;
+    @Column({ type: 'int', nullable: true })
+    heightCentimeters!: number | null;
 
-    @Column({ type: 'int'})
-    weightKilograms!: number; 
+    @Column({ type: 'int', nullable: true })
+    weightKilograms!: number | null; 
 
     @Column({ type: 'int'})
     age!: number;

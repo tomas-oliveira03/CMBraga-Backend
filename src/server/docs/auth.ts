@@ -419,30 +419,6 @@
  *                 nullable: true
  *                 example: 25
  *                 description: "Child's weight in kilograms"
- *               healthProblems:
- *                 type: object
- *                 nullable: true
- *                 properties:
- *                   allergies:
- *                     type: array
- *                     items:
- *                       type: string
- *                     example: ["peanuts"]
- *                   chronicDiseases:
- *                     type: array
- *                     items:
- *                       type: string
- *                     example: ["asthma"]
- *                   surgeries:
- *                     type: array
- *                     items:
- *                       type: object
- *                       properties:
- *                         type:
- *                           type: string
- *                         year:
- *                           type: number
- *                     example: [{"type": "tonsillectomy", "year": 2022}]
  *               parentIds:
  *                 type: array
  *                 items:
@@ -460,10 +436,6 @@
  *             dateOfBirth: "2016-02-14"
  *             heightCentimeters: 110
  *             weightKilograms: 22
- *             healthProblems:
- *               allergies: ["lactose"]
- *               chronicDiseases: []
- *               surgeries: []
  *             parentIds: ["a1b2c3d4-e5f6-7890-abcd-ef1234567890"]
  *             dropOffStationId: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"
  *     responses:
