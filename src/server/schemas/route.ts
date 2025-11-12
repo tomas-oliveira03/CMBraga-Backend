@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { ActivityTypeEnum } from "./activitySession";
 import { StationTypeEnum } from "./station";
+import { RouteColor } from "@/helpers/types";
+
+export const RouteColorEnum = z.enum([RouteColor.RED, RouteColor.BLUE, RouteColor.GREEN, RouteColor.YELLOW, RouteColor.ORANGE, RouteColor.PURPLE]);
 
 export const RoutePointSchema = z.object({
   lat: z.number(),
@@ -11,6 +14,7 @@ export const RouteSchema = z.object({
     id: z.string(),
     name: z.string(),
     activityType: ActivityTypeEnum,
+    color: RouteColorEnum,
     distanceMeters: z.number(),
     boundsNorth: z.number(),
     boundsSouth: z.number(),

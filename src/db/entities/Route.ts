@@ -1,4 +1,4 @@
-import { ActivityType, RoutePoint } from "@/helpers/types";
+import { ActivityType, RouteColor, RoutePoint } from "@/helpers/types";
 import { Check, Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm"
 import { ActivitySession } from "./ActivitySession";
 import { RouteStation } from "./RouteStation";
@@ -6,6 +6,7 @@ import { RouteConnection } from "./RouteConnection";
 
 @Entity()
 @Check(`"activity_type" IN ('pedibus', 'ciclo_expresso')`)
+@Check(`"color" IN ('red', 'blue', 'green', 'yellow', 'orange', 'purple')`)
 export class Route {
     @PrimaryGeneratedColumn("uuid")
     id!: string;
@@ -15,6 +16,9 @@ export class Route {
 
     @Column({ type: 'varchar' })
     activityType!: ActivityType;
+
+    @Column({ type: 'varchar' })
+    color!: RouteColor;
 
     @Column({ type: 'int' })
     distanceMeters!: number;

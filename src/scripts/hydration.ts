@@ -230,9 +230,9 @@ async function dbHydration() {
         stations.push(station);
       }
       
-      const routeName = routeFile.replace('.json', '');
       const route = routeRepo.create({
-        name: routeName,
+        name: routeData.name,
+        color: routeData.color,
         activityType: "ciclo_expresso" as any,
         distanceMeters: Math.round(routeData.totalDistance * 1000),
         boundsNorth: routeData.bounds.north,
@@ -264,8 +264,8 @@ async function dbHydration() {
     console.log(`✅ Total routes: ${allRoutes.length}, Total stations: ${stationMap.size}`);
 
     // Create route connections
-    const linhaAzul = allRoutes.find(r => r.name === "LinhaAzul");
-    const linhaVermelha = allRoutes.find(r => r.name === "LinhaVermelha");
+    const linhaAzul = allRoutes.find(r => r.name === "Linha Azul");
+    const linhaVermelha = allRoutes.find(r => r.name === "Linha Vermelha");
     const mergeStop = await stationRepo.findOne({ where: { name: "Av. 31 de Janeiro" } });
 
     if (linhaAzul && linhaVermelha && mergeStop) {

@@ -1,4 +1,6 @@
 {
+  "name": "Linha Vermelha",
+  "color": "red",
   "route": [
     {
       "lat": 41.537618,

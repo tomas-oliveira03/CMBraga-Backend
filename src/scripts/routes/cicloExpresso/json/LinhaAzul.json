@@ -1,4 +1,6 @@
 {
+  "name": "Linha Azul",
+  "color": "blue",
   "route": [
     {
       "lat": 41.540742,

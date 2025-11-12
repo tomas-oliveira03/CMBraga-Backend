@@ -207,6 +207,7 @@ router.post('/', authenticate, authorize(UserRole.ADMIN), upload.single('file'),
             const route = await tx.getRepository(Route).insert({
                 name: validatedData.name,
                 activityType: validatedData.activityType,
+                color: validatedData.color,
                 distanceMeters: routeData.totalDistance,
                 boundsNorth: routeData.bounds.north,
                 boundsEast: routeData.bounds.east,

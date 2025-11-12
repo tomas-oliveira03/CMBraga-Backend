@@ -102,6 +102,15 @@ export interface RoutePoint {
     lon: number;
 }
 
+export enum RouteColor {
+    RED = 'red',
+    BLUE = 'blue',
+    GREEN = 'green',
+    YELLOW = 'yellow',
+    ORANGE = 'orange',
+    PURPLE = 'purple'
+}
+
 
 // Activity Types
 export enum ActivityLinkType {

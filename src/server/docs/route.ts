@@ -353,6 +353,7 @@
  *             required:
  *               - name
  *               - activityType
+ *               - color
  *               - file
  *             properties:
  *               name:
@@ -365,6 +366,11 @@
  *                 enum: [pedibus, ciclo_expresso]
  *                 example: "pedibus"
  *                 description: "Type of activity for this route"
+ *               color:
+ *                 type: string
+ *                 enum: [red, blue, green, yellow, orange, purple]
+ *                 example: "red"
+ *                 description: "Color of the route"
  *               file:
  *                 type: string
  *                 format: binary
@@ -552,6 +558,10 @@
  *                 type: string
  *                 enum: [pedibus, ciclo_expresso]
  *                 example: "pedibus"
+ *               color:
+ *                 type: string
+ *                 enum: [red, blue, green, yellow, orange, purple]
+ *                 example: "blue"
  *     responses:
  *       200:
  *         description: Route updated successfully
