@@ -71,6 +71,7 @@ router.get('/:id', authenticate, async (req: Request, res: Response) => {
             id: route.id,
             activitySessionId: activitySessionId,
             name: route.name,
+            color: route.color,
             activityType: route.activityType,
             scheduledAt: activitySession.scheduledAt,
             route: route.metadata,
@@ -110,13 +111,13 @@ router.get('/:id', authenticate, async (req: Request, res: Response) => {
                 },
                 connectorRoute: {
                     id: firstConnectorRoute.toRoute.id,
+                    activitySessionId: activitySession.activityTransfer!.id,
                     name: firstConnectorRoute.toRoute.name,
+                    color: firstConnectorRoute.toRoute.color,
                     activityType: firstConnectorRoute.toRoute.activityType,
-                    distanceMeters: firstConnectorRoute.toRoute.distanceMeters,
-                    createdAt: firstConnectorRoute.toRoute.createdAt,
-                    updatedAt: firstConnectorRoute.toRoute.updatedAt,
+                    scheduledAt: connectorScheduledTime,
                     route: firstConnectorRoute.toRoute.metadata,
-                    stops: connectorStops,
+                    stops: connectorStops
                 }
             }
         }

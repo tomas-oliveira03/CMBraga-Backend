@@ -6,7 +6,7 @@ import { RouteConnection } from "./RouteConnection";
 
 @Entity()
 @Check(`"activity_type" IN ('pedibus', 'ciclo_expresso')`)
-@Check(`"color" IN ('red', 'blue', 'green', 'yellow', 'orange', 'purple')`)
+@Check(`"color" IN ('red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink', 'brown')`)
 export class Route {
     @PrimaryGeneratedColumn("uuid")
     id!: string;

@@ -32,22 +32,18 @@
  *                 name:
  *                   type: string
  *                   example: "Rota Pedibus Centro"
+ *                 color:
+ *                   type: string
+ *                   example: "red"
  *                 activityType:
  *                   type: string
  *                   enum: [pedibus, ciclo_expresso]
  *                   example: "pedibus"
- *                 distanceMeters:
- *                   type: integer
- *                   example: 2500
- *                   description: "Total route distance in meters"
- *                 createdAt:
+ *                 scheduledAt:
  *                   type: string
  *                   format: date-time
- *                   example: "2024-01-15T10:30:00.000Z"
- *                 updatedAt:
- *                   type: string
- *                   format: date-time
- *                   nullable: true
+ *                   example: "2024-01-20T08:00:00.000Z"
+ *                   description: "Scheduled start time for this activity session"
  *                 route:
  *                   type: array
  *                   items:
@@ -129,21 +125,24 @@
  *                         id:
  *                           type: string
  *                           example: "route-uuid-2"
+ *                         activitySessionId:
+ *                           type: string
+ *                           example: "transfer-session-uuid"
+ *                           description: "Activity session ID for the connector route"
  *                         name:
  *                           type: string
  *                           example: "Rota Pedibus Sul"
+ *                         color:
+ *                           type: string
+ *                           example: "blue"
  *                         activityType:
  *                           type: string
  *                           enum: [pedibus, ciclo_expresso]
- *                         distanceMeters:
- *                           type: integer
- *                         createdAt:
+ *                         scheduledAt:
  *                           type: string
  *                           format: date-time
- *                         updatedAt:
- *                           type: string
- *                           format: date-time
- *                           nullable: true
+ *                           example: "2024-01-20T08:30:00.000Z"
+ *                           description: "Scheduled start time for the connector route"
  *                         route:
  *                           type: array
  *                           items:
@@ -183,10 +182,9 @@
  *                   id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
  *                   activitySessionId: "c56ad528-3522-4557-8b34-a787a50900b7"
  *                   name: "Rota Pedibus Centro"
+ *                   color: "red"
  *                   activityType: "pedibus"
- *                   distanceMeters: 2500
- *                   createdAt: "2024-01-15T10:30:00.000Z"
- *                   updatedAt: null
+ *                   scheduledAt: "2024-01-20T08:00:00.000Z"
  *                   route: [
  *                     { lat: 41.553404, lon: -8.397567 },
  *                     { lat: 41.553890, lon: -8.397123 }
@@ -226,26 +224,16 @@
  *                     },
  *                     connectorRoute: {
  *                       id: "b2c3d4e5-f6g7-8901-bcde-f23456789012",
+ *                       activitySessionId: "transfer-session-uuid",
  *                       name: "Rota Pedibus Sul",
+ *                       color: "blue",
  *                       activityType: "pedibus",
- *                       distanceMeters: 3000,
- *                       createdAt: "2024-01-15T10:35:00.000Z",
- *                       updatedAt: null,
+ *                       scheduledAt: "2024-01-20T08:30:00.000Z",
  *                       route: [
  *                         { lat: 41.553890, lon: -8.397123 },
  *                         { lat: 41.554200, lon: -8.396800 }
  *                       ],
  *                       stops: [
- *                         {
- *                           stationId: "48c68f50-ged1-524e-cd01-7838793b9896",
- *                           stopNumber: 1,
- *                           scheduledTime: "2024-01-20T08:30:00.000Z",
- *                           distanceFromPreviousStationMeters: 0,
- *                           name: "Escola Primária",
- *                           type: "school",
- *                           latitude: 41.553890,
- *                           longitude: -8.397123
- *                         },
  *                         {
  *                           stationId: "59d79f61-hfe2-635f-de12-8949894c0907",
  *                           stopNumber: 2,
@@ -264,10 +252,9 @@
  *                   id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
  *                   activitySessionId: "c56ad528-3522-4557-8b34-a787a50900b7"
  *                   name: "Rota Pedibus Centro"
+ *                   color: "red"
  *                   activityType: "pedibus"
- *                   distanceMeters: 2500
- *                   createdAt: "2024-01-15T10:30:00.000Z"
- *                   updatedAt: null
+ *                   scheduledAt: "2024-01-20T08:00:00.000Z"
  *                   route: [
  *                     { lat: 41.553404, lon: -8.397567 },
  *                     { lat: 41.553890, lon: -8.397123 }

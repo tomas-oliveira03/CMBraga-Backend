@@ -22,6 +22,10 @@
  *                   name:
  *                     type: string
  *                     example: "Rota Pedibus Centro"
+ *                   color:
+ *                     type: string
+ *                     enum: [red, blue, green, yellow, orange, purple, pink, brown]
+ *                     example: "red"
  *                   activityType:
  *                     type: string
  *                     enum: [pedibus, ciclo_expresso]
@@ -71,6 +75,10 @@
  *                 name:
  *                   type: string
  *                   example: "Rota Pedibus Centro"
+ *                 color:
+ *                   type: string
+ *                   enum: [red, blue, green, yellow, orange, purple, pink, brown]
+ *                   example: "red"  
  *                 activityType:
  *                   type: string
  *                   enum: [pedibus, ciclo_expresso]
@@ -172,6 +180,10 @@
  *                         name:
  *                           type: string
  *                           example: "Rota Pedibus Sul"
+ *                         color:
+ *                           type: string
+ *                           enum: [red, blue, green, yellow, orange, purple, pink, brown]
+ *                           example: "blue"
  *                         activityType:
  *                           type: string
  *                           enum: [pedibus, ciclo_expresso]
@@ -195,11 +207,34 @@
  *                                 type: number
  *                         stops:
  *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               stationId:
+ *                                 type: string
+ *                               stopNumber:
+ *                                 type: integer
+ *                               distanceFromStartMeters:
+ *                                 type: integer
+ *                               timeFromStartMinutes:
+ *                                 type: integer
+ *                               distanceFromPreviousStationMeters:
+ *                                 type: integer
+ *                               name:
+ *                                 type: string
+ *                               type:
+ *                                 type: string
+ *                                 enum: [regular, school]
+ *                               latitude:
+ *                                 type: number
+ *                               longitude:
+ *                                 type: number
  *             examples:
  *               withConnector:
  *                 value:
  *                   id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
  *                   name: "Rota Pedibus Centro"
+ *                   color: "red"
  *                   activityType: "pedibus"
  *                   distanceMeters: 2500
  *                   createdAt: "2024-01-15T10:30:00.000Z"
@@ -246,6 +281,7 @@
  *                     connectorRoute: {
  *                       id: "b2c3d4e5-f6g7-8901-bcde-f23456789012",
  *                       name: "Rota Pedibus Sul",
+ *                       color: "blue",
  *                       activityType: "pedibus",
  *                       distanceMeters: 3000,
  *                       createdAt: "2024-01-15T10:35:00.000Z",
@@ -255,17 +291,6 @@
  *                         { lat: 41.554200, lon: -8.396800 }
  *                       ],
  *                       stops: [
- *                         {
- *                           stationId: "48c68f50-ged1-524e-cd01-7838793b9896",
- *                           stopNumber: 1,
- *                           distanceFromStartMeters: 0,
- *                           timeFromStartMinutes: 0,
- *                           distanceFromPreviousStationMeters: 0,
- *                           name: "Escola Primária",
- *                           type: "school",
- *                           latitude: 41.553890,
- *                           longitude: -8.397123
- *                         },
  *                         {
  *                           stationId: "59d79f61-hfe2-635f-de12-8949894c0907",
  *                           stopNumber: 2,
@@ -284,6 +309,7 @@
  *                 value:
  *                   id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
  *                   name: "Rota Pedibus Centro"
+ *                   color: "red"
  *                   activityType: "pedibus"
  *                   distanceMeters: 2500
  *                   createdAt: "2024-01-15T10:30:00.000Z"
@@ -368,7 +394,7 @@
  *                 description: "Type of activity for this route"
  *               color:
  *                 type: string
- *                 enum: [red, blue, green, yellow, orange, purple]
+ *                 enum: [red, blue, green, yellow, orange, purple, pink, brown]
  *                 example: "red"
  *                 description: "Color of the route"
  *               file:
@@ -560,7 +586,7 @@
  *                 example: "pedibus"
  *               color:
  *                 type: string
- *                 enum: [red, blue, green, yellow, orange, purple]
+ *                 enum: [red, blue, green, yellow, orange, purple, pink, brown]
  *                 example: "blue"
  *     responses:
  *       200:

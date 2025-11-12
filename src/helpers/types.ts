@@ -108,7 +108,9 @@ export enum RouteColor {
     GREEN = 'green',
     YELLOW = 'yellow',
     ORANGE = 'orange',
-    PURPLE = 'purple'
+    PURPLE = 'purple',
+    PINK = 'pink',
+    BROWN = 'brown'
 }
 
 

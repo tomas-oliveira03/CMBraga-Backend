@@ -27,6 +27,7 @@ router.get('/', authenticate, authorize(UserRole.ADMIN), async (req: Request, re
             select: {
                 id: true,
                 name: true,
+                color: true,
                 activityType: true,
                 distanceMeters: true,
                 createdAt: true
@@ -36,6 +37,7 @@ router.get('/', authenticate, authorize(UserRole.ADMIN), async (req: Request, re
         const routesWithStationCount = allRoutes.map(route => ({
             id: route.id,
             name: route.name,
+            color: route.color,
             activityType: route.activityType,
             distanceMeters: route.distanceMeters,
             createdAt: route.createdAt,
@@ -100,6 +102,7 @@ router.get('/:id', authenticate, authorize(UserRole.ADMIN), async (req: Request,
         let response = {
             id: route.id,
             name: route.name,
+            color: route.color,
             activityType: route.activityType,
             distanceMeters: route.distanceMeters,
             createdAt: route.createdAt,
@@ -139,6 +142,7 @@ router.get('/:id', authenticate, authorize(UserRole.ADMIN), async (req: Request,
                 connectorRoute: {
                     id: firstConnectorRoute.toRoute.id,
                     name: firstConnectorRoute.toRoute.name,
+                    color: firstConnectorRoute.toRoute.color,
                     activityType: firstConnectorRoute.toRoute.activityType,
                     distanceMeters: firstConnectorRoute.toRoute.distanceMeters,
                     createdAt: firstConnectorRoute.toRoute.createdAt,
