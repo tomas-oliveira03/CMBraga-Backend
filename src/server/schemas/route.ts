@@ -6,7 +6,7 @@ import { RouteColor } from "@/helpers/types";
 export const RouteColorEnum = z.enum([RouteColor.RED, RouteColor.BLUE, RouteColor.GREEN, RouteColor.YELLOW, RouteColor.ORANGE, RouteColor.PURPLE, RouteColor.PINK, RouteColor.BROWN]);
 
 export const RoutePointSchema = z.object({
-  lat: z.number(),
+  lat: z.number(), 
   lon: z.number(),
 });
 
