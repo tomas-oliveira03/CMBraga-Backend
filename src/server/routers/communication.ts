@@ -131,12 +131,12 @@ router.post("/chats/:conversationId/members", authenticate, async (req: Request,
         if (!chat) {
             return res.status(404).json({ message: "Conversation not found" });
         }
-        if (chat.chatType !== TypeOfChat.GROUP_CHAT) {
+        if (chat.chatType === TypeOfChat.INDIVIDUAL_CHAT) {
             return res.status(400).json({ message: "Cannot add members to an individual chat" });
         }
         const isUserInChat = await checkIfUserInChat(userId, conversationId);
-        if (!isUserInChat) {
-            return res.status(403).json({ message: "You are not a member of this conversation" });
+        if (isUserInChat) {
+            return res.status(403).json({ message: "You are a member of this conversation" });
         }
         const filteredNewMembers = Array.isArray(newMembers) ? newMembers.filter((email: any) => typeof email === "string" && email.trim().length > 0) : [];
         if (filteredNewMembers.length === 0) {
@@ -147,12 +147,12 @@ router.post("/chats/:conversationId/members", authenticate, async (req: Request,
         if (!allExist) {
             return res.status(400).json({ message: "One or more specified users do not exist" });
         }
-        const userChatRepository = AppDataSource.getRepository(UserChat);
+        
         const newUserChats = filteredNewMembers.map((email: string) => ({
             userId: email,
             chatId: conversationId,
         }));
-        await userChatRepository.insert(newUserChats);
+        await AppDataSource.getRepository(UserChat).insert(newUserChats);
 
         webSocketEvents.addNewUserToChatRoom(conversationId, userId);
         return res.status(200).json({ message: "New members added successfully" });
@@ -180,11 +180,10 @@ router.post("/chats/:conversationId/leave", authenticate, async (req: Request, r
             return res.status(400).json({ message: "Cannot leave an individual chat" });
         }
         const isUserInChat = await checkIfUserInChat(userId, conversationId);
-        if (!isUserInChat) {
-            return res.status(403).json({ message: "You are not a member of this conversation" });
+        if (isUserInChat) {
+            return res.status(403).json({ message: "You are a member of this conversation" });
         }
-        const userChatRepository = AppDataSource.getRepository(UserChat);
-        await userChatRepository.delete({ userId, chatId: conversationId });
+        await AppDataSource.getRepository(UserChat).delete({ userId, chatId: conversationId});
 
         webSocketEvents.removeUserFromChatRoom(conversationId, userId);
 
@@ -225,9 +224,6 @@ router.post("/messages/:conversationId", authenticate, async (req: Request, res:
         if (!isUserInChat) {
             return res.status(403).json({ message: "Sender is not a member of the conversation" });
         }
-
-        const user = await AppDataSource.getRepository(User).findOne({ where: { id: sender_id } });
-        const senderName = user ? user.name : "Unknown";
 
         const newMessage = {
             content: informationHash.encrypt(parsed.content),
