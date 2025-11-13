@@ -1,10 +1,14 @@
+init:
+	@echo "Building and starting all containers for the first time..."
+	@docker compose up -d --build --remove-orphans
+
 du: 
-	@echo "Running docker-compose up..."
-	@docker-compose up -d --remove-orphans
+	@echo "Starting containers..."
+	@docker compose up -d --remove-orphans
 
 dd:
-	@echo "Running docker-compose down..."
-	@docker-compose down --remove-orphans
+	@echo "Stopping and removing containers..."
+	@docker compose down --remove-orphans
 
 mig-gen:
 	@read -p "Enter migration name: " name; \

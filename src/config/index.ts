@@ -15,13 +15,28 @@ class Envs {
     public readonly DOCKER_BUILD: boolean = this.getBool("DOCKER_BUILD", false);
     public readonly HOST: string = this.getString("HOST", "localhost");
     public readonly PORT: number = this.getInt("PORT", 3001);
+    
+    // Database configuration
+    private readonly DB_HOST: string = this.getString("DB_HOST", "localhost");
+    private readonly DB_PORT: number = this.getInt("DB_PORT", 5201);
+    private readonly DB_NAME: string = this.getString("DB_NAME", "cmbraga-service");
+    private readonly DB_USER: string = this.getString("DB_USER", "cmbraga-service");
+    private readonly DB_PASSWORD: string = this.getString("DB_PASSWORD", "cmbraga-service");
+    public readonly DB_HAS_SSL: boolean = this.getBool("DB_HAS_SSL", false);
+
     public readonly DATABASE_URL: string = this.getString(
         "DATABASE_URL",
-        "postgres://cmbraga-service:cmbraga-service@localhost:5201/cmbraga-service",
+        `postgres://${this.DB_USER}:${this.DB_PASSWORD}@${this.DB_HOST}:${this.DB_PORT}/${this.DB_NAME}`,
     );
+    
+    
+    // Redis configuration
+    private readonly REDIS_HOST: string = this.getString("REDIS_HOST", "localhost");
+    private readonly REDIS_PORT: number = this.getInt("REDIS_PORT", 6420);
+    
     public readonly REDIS_URL: string = this.getString(
         "REDIS_URL",
-        "redis://localhost:6420",
+        `redis://${this.REDIS_HOST}:${this.REDIS_PORT}`,
     );
     public readonly ENCRYPTION_SECRET_IV: string = this.getString(
         "ENCRYPTION_SECRET_IV",

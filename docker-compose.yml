@@ -1,21 +1,41 @@
 services:
+  cmbraga-service-app:
+    container_name: cmbraga-service-app
+    build: .
+    ports:
+      - '3001:3001'
+    depends_on:
+      - cmbraga-service-db
+      - cmbraga-service-redis
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      SERVICE: ${SERVICE}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+    # restart: always
+
   cmbraga-service-db:
     container_name: cmbraga-service-db
     image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes: ['cmbraga-service-db-data:/var/lib/postgresql/data']
     ports:
-      - '5201:5432'
+      - '5201:5432' # DO NOT EXPOSE IN PRODUCTION
     restart: always
-    environment:
-      POSTGRES_DB: 'cmbraga-service'
-      POSTGRES_PASSWORD: 'cmbraga-service'
-      POSTGRES_USER: 'cmbraga-service'
 
   cmbraga-service-redis:
     container_name: cmbraga-service-redis
     image: redis:6.2.6-alpine
     ports:
-      - '6420:6379'
+      - '6420:6379' # DO NOT EXPOSE IN PRODUCTION
     restart: always
 
 volumes:
