@@ -558,7 +558,7 @@
  * /route/{id}:
  *   put:
  *     summary: Update route by ID
- *     description: Updates the route's information by its ID. Only name and activityType can be updated.
+ *     description: Updates the route's information by its ID. Only name, color, and routeConnector can be updated.
  *     tags:
  *       - Route
  *     parameters:
@@ -580,14 +580,19 @@
  *                 type: string
  *                 minLength: 1
  *                 example: "Rota Pedibus Centro"
- *               activityType:
- *                 type: string
- *                 enum: [pedibus, ciclo_expresso]
- *                 example: "pedibus"
  *               color:
  *                 type: string
  *                 enum: [red, blue, green, yellow, orange, purple, pink, brown]
  *                 example: "blue"
+ *               routeConnector:
+ *                 type: object
+ *                 properties:
+ *                   routeId:
+ *                     type: string
+ *                     example: "b2c3d4e5-f6g7-8901-bcde-f23456789012"
+ *                   stationId:
+ *                     type: string
+ *                     example: "station-uuid-1"
  *     responses:
  *       200:
  *         description: Route updated successfully

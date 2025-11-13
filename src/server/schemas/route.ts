@@ -26,7 +26,7 @@ export const RouteSchema = z.object({
     routeConnector: z.object({
         routeId: z.string(),
         stationId: z.string()
-    }).nullable()
+    })
 });
 
 export const InitialUpdateSchema = z.array(z.object({
