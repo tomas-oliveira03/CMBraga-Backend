@@ -430,7 +430,10 @@ router.get('/possible-transfers/:id', authenticate, authorize(UserRole.ADMIN), a
         const allRoutesThatLink = await AppDataSource.getRepository(RouteStation).find({
             where: {
                 routeId: Not(routeId),
-                stationId: In(allStations)
+                stationId: In(allStations),
+                route: {
+                    activityType: route.activityType
+                }
             },
             relations: {
                 route: true,
