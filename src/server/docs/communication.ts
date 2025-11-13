@@ -314,7 +314,7 @@
  *       401:
  *         description: Authentication required.
  *       403:
- *         description: Forbidden - requester is not a member of the conversation.
+ *         description: At least one member is already in the chat.
  *       404:
  *         description: Conversation not found or not a group chat.
  *       500:

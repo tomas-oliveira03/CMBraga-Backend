@@ -68,6 +68,23 @@ export async function checkIfUserInChat(email: string, chatId: string): Promise<
     }
 }
 
+
+export async function checkIfAnyUserInChat(email: string[], chatId: string): Promise<boolean> {
+    try {
+        const userChat = await AppDataSource.getRepository(UserChat)
+            .findOne({ 
+                where: { 
+                    userId: In(email),
+                    chatId: chatId
+                } 
+            });
+        return userChat !== null;
+    } catch (error) {
+        console.error("Error checking if users are in chat:", error);
+        throw new Error("Failed to check if users are in chat");
+    }
+}
+
 export async function checkIfUserExists(userId: string): Promise<boolean> {
     try {
         const user = await AppDataSource.getRepository(User)
