@@ -38,5 +38,17 @@ services:
       - '6420:6379' # DO NOT EXPOSE IN PRODUCTION
     restart: always
 
+
+  nginx:
+    image: nginx:alpine
+    container_name: cmbraga-service-nginx
+    ports:
+      - '80:80' # external port
+    depends_on:
+      - cmbraga-service-app
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: always
+
 volumes:
   cmbraga-service-db-data:
