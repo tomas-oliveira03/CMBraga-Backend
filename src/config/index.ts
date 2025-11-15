@@ -22,7 +22,6 @@ class Envs {
     private readonly DB_NAME: string = this.getString("DB_NAME", "cmbraga-service");
     private readonly DB_USER: string = this.getString("DB_USER", "cmbraga-service");
     private readonly DB_PASSWORD: string = this.getString("DB_PASSWORD", "cmbraga-service");
-    public readonly DB_HAS_SSL: boolean = this.getBool("DB_HAS_SSL", false);
 
     public readonly DATABASE_URL: string = this.getString(
         "DATABASE_URL",

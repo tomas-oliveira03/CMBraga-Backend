@@ -11,7 +11,7 @@ const migrationsPaths = envs.DOCKER_BUILD
     : "src/db/migrations/*.ts";
 
 
-const sslConfig = envs.DB_HAS_SSL
+const sslConfig = envs.RENDER_DEPLOY
   ? { rejectUnauthorized: false }
   : false;
 
