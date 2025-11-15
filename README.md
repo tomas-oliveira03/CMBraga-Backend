@@ -76,7 +76,6 @@ Create a `.env` file in the root directory and configure the following variables
 DATABASE_URL=postgres://username:password@localhost:5432/cmbraga
 REDIS_URL=redis://localhost:6379
 ENCRYPTION_SECRET_KEY=your_secret_key
-ENCRYPTION_SECRET_IV=your_secret_iv
 JWT_SECRET=your_jwt_secret
 ```
 

@@ -17,4 +17,4 @@ EXPOSE 3001
 ENV NODE_ENV=production
 ENV DOCKER_BUILD=true
 
-CMD npm run prod:server
+CMD npm run mig:run && npm run prod:server

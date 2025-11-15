@@ -276,16 +276,13 @@ async function dbHydration() {
       console.log(`✅ Created route connections at ${mergeStop.name}`);
     }
 
-    // Create users (admins, instructors, parents, health professionals)
-    const encryptedPassword = informationHash.encrypt("Person23!");
-
     const hpEntities: HealthProfessional[] = [];
     if (Array.isArray(seedData.healthProfessionals) && seedData.healthProfessionals.length) {
       for (const hp of seedData.healthProfessionals) {
         const hpEnt = hpRepo.create({
           name: hp.name,
           email: hp.email,
-          password: encryptedPassword,
+          password: informationHash.encrypt("Person23!"),
           phone: hp.phone,
           specialty: hp.specialty as any,
           activatedAt: new Date(),
@@ -310,7 +307,7 @@ async function dbHydration() {
         const adminEnt = adminRepo.create({
           name: a.name,
           email: a.email,
-          password: encryptedPassword,
+          password: informationHash.encrypt("Person23!"),
           phone: a.phone,
           activatedAt: new Date(),
           profilePictureURL: selectRandomDefaultProfilePicture()
@@ -334,7 +331,7 @@ async function dbHydration() {
         const parent = parentRepo.create({
           name: p.name,
           email: p.email,
-          password: encryptedPassword,
+          password: informationHash.encrypt("Person23!"),
           phone: p.phone,
           address: p.address,
           activatedAt: new Date(),
@@ -359,7 +356,7 @@ async function dbHydration() {
         const instEnt = instructorRepo.create({
           name: ins.name,
           email: ins.email,
-          password: encryptedPassword,
+          password: informationHash.encrypt("Person23!"),
           phone: ins.phone,
           activatedAt: new Date(),
           profilePictureURL: selectRandomDefaultProfilePicture()

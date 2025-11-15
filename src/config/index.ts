@@ -37,13 +37,9 @@ class Envs {
         "REDIS_URL",
         `redis://${this.REDIS_HOST}:${this.REDIS_PORT}`,
     );
-    public readonly ENCRYPTION_SECRET_IV: string = this.getString(
-        "ENCRYPTION_SECRET_IV",
-        "your_secret",
-    );
     public readonly ENCRYPTION_SECRET_KEY: string = this.getString(
         "ENCRYPTION_SECRET_KEY",
-        "your_secret",
+        "your_secret_with_minimum_16_characters",
     );
     public readonly FRONTEND_URL: string = this.getString(
         "FRONTEND_URL",

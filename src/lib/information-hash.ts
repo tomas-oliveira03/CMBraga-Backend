@@ -1,47 +1,56 @@
 import { envs } from "@/config";
 import crypto from "crypto";
 
-class InformationHash {
-    private key: string;
-    private encryptionIV: string;
+class SecureInformationHash {
+    private secret: string;
 
     constructor() {
-        this.key = crypto
-            .createHash("sha512")
-            .update(envs.ENCRYPTION_SECRET_KEY)
-            .digest("hex")
-            .substring(0, 32);
-        this.encryptionIV = crypto
-            .createHash("sha512")
-            .update(envs.ENCRYPTION_SECRET_IV)
-            .digest("hex")
-            .substring(0, 16);
+        const secret = envs.ENCRYPTION_SECRET_KEY;
+        if (secret.length < 16) {
+            throw new Error("Secret must be at least 16 characters long");
+        }
+        this.secret = secret;
     }
 
     encrypt(data: string) {
-        const cipher = crypto.createCipheriv(
-            "aes-256-cbc",
-            this.key,
-            this.encryptionIV,
-        );
-        return Buffer.from(
-            cipher.update(data, "utf8", "hex") + cipher.final("hex"),
-        ).toString("base64"); // Encrypts data and converts to hex and base64
+        // Generate a random 16-byte salt for key derivation
+        const salt = crypto.randomBytes(16);
+
+        // Derive a 32-byte key using scrypt (strong KDF)
+        const key = crypto.scryptSync(this.secret, salt, 32);
+
+        // Generate a random 12-byte IV for AES-GCM
+        const iv = crypto.randomBytes(12);
+
+        // Encrypt data
+        const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+        const encrypted = Buffer.concat([cipher.update(data, "utf8"), cipher.final()]);
+
+        // Get authentication tag
+        const tag = cipher.getAuthTag();
+
+        // Return concatenated salt + iv + tag + ciphertext as base64
+        return Buffer.concat([salt, iv, tag, encrypted]).toString("base64");
     }
 
     decrypt(data: string) {
         const buff = Buffer.from(data, "base64");
-        const decipher = crypto.createDecipheriv(
-            "aes-256-cbc",
-            this.key,
-            this.encryptionIV,
-        );
-        return (
-            decipher.update(buff.toString("utf8"), "hex", "utf8") +
-            decipher.final("utf8")
-        ); // Decrypts data and converts to utf8
+
+        // Extract components
+        const salt = buff.slice(0, 16);
+        const iv = buff.slice(16, 28);
+        const tag = buff.slice(28, 44);
+        const encrypted = buff.slice(44);
+
+        // Derive the key again using the same secret and salt
+        const key = crypto.scryptSync(this.secret, salt, 32);
+
+        // Decrypt
+        const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
+        decipher.setAuthTag(tag);
+
+        return decipher.update(encrypted, undefined, "utf8") + decipher.final("utf8");
     }
 }
 
-const informationHash = new InformationHash();
-export default informationHash;
+export default new SecureInformationHash();
