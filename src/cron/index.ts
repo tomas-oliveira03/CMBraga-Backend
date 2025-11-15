@@ -11,7 +11,7 @@ export function initCronJobs(): void {
     ActivityCheckCron.start();
     FeedbackReminderCron.start();
 
-    if(envs.isProd){
+    if(envs.RENDER_DEPLOY) {
         HealthCheck.start()
     }
 }

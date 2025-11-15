@@ -54,6 +54,8 @@ class Envs {
         "NODE_ENV",
         EnvName.LOCAL,
     );
+    public readonly RENDER_DEPLOY: boolean = this.getBool("RENDER_DEPLOY", false);
+
     public readonly LOGDNA_KEY: string = this.getString("LOGDNA_KEY", "");
     public readonly JWT_SECRET: string = this.getString(
         "JWT_SECRET", 
@@ -75,11 +77,11 @@ class Envs {
     public readonly CLOUD_API_KEY: string = this.getString("CLOUD_API_KEY", "your_secret");
     public readonly CLOUD_API_SECRET: string = this.getString("CLOUD_API_SECRET", "your_secret");
 
-    public readonly BASE_URL = this.isProd 
+    public readonly BASE_URL = this.RENDER_DEPLOY 
         ? `${this.HOST}`
         : `http://${this.HOST}:${this.PORT}`;
 
-    public readonly WEBSOCKET_BASE_URL = this.isProd
+    public readonly WEBSOCKET_BASE_URL = this.RENDER_DEPLOY
         ? `wss://${this.HOST.replace(/^https?:\/\//, '')}`
         : `ws://${this.HOST}:${this.PORT}`;
     
