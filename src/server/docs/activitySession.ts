@@ -387,6 +387,19 @@
  *                       type: string
  *                       format: date-time
  *                       example: "2024-01-20T09:00:00.000Z"
+ *                 weather:
+ *                   type: object
+ *                   properties:
+ *                     temperature:
+ *                       type: number
+ *                       nullable: true
+ *                       example: 18.5
+ *                       description: "Weather temperature in Celsius"
+ *                     type:
+ *                       type: string
+ *                       nullable: true
+ *                       example: "sunny"
+ *                       description: "Weather type/condition"
  *                 stats:
  *                   type: object
  *                   properties:
@@ -513,6 +526,19 @@
  *                       type: string
  *                       format: date-time
  *                       example: "2024-01-20T09:00:00.000Z"
+ *                 weather:
+ *                   type: object
+ *                   properties:
+ *                     temperature:
+ *                       type: number
+ *                       nullable: true
+ *                       example: 18.5
+ *                       description: "Weather temperature in Celsius"
+ *                     type:
+ *                       type: string
+ *                       nullable: true
+ *                       example: "sunny"
+ *                       description: "Weather type/condition"
  *                 stats:
  *                   type: object
  *                   properties:

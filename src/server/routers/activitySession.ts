@@ -135,6 +135,10 @@ router.get('/finished/instructor/:id', authenticate, authorize(UserRole.INSTRUCT
                 startedAt: session.startedAt!,
                 finishedAt: session.finishedAt
             },
+            weather: {
+                temperature: session.weatherTemperature,
+                type: session.weatherType
+            },
             stats: {
                 durationMinutes: Math.round((session.finishedAt!.getTime() - session.startedAt!.getTime()) / 60000),
                 distanceMeters: session.route.distanceMeters,
@@ -192,6 +196,10 @@ router.get('/finished/admin/:id', authenticate, authorize(UserRole.ADMIN), async
                 scheduledAt: session.scheduledAt,
                 startedAt: session.startedAt!,
                 finishedAt: session.finishedAt
+            },
+            weather: {
+                temperature: session.weatherTemperature,
+                type: session.weatherType
             },
             stats: {
                 durationMinutes: Math.round((session.finishedAt!.getTime() - session.startedAt!.getTime()) / 60000),
