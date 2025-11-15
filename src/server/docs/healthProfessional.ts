@@ -146,10 +146,6 @@
  *               phone:
  *                 type: string
  *                 example: "987654321"
- *               password:
- *                 type: string
- *                 minLength: 6
- *                 example: "NewPassword456!"
  *               specialty:
  *                 type: string
  *                 enum: [pediatrician, nutritionist, general_practitioner]
@@ -173,10 +169,6 @@
  *               phone:
  *                 type: string
  *                 example: "987654321"
- *               password:
- *                 type: string
- *                 minLength: 6
- *                 example: "NewPassword456!"
  *               specialty:
  *                 type: string
  *                 enum: [pediatrician, nutritionist, general_practitioner]

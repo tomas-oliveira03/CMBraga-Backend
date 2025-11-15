@@ -138,10 +138,6 @@
  *               phone:
  *                 type: string
  *                 example: "987654321"
- *               password:
- *                 type: string
- *                 minLength: 6
- *                 example: "NewPassword456!"
  *               file:
  *                 type: string
  *                 format: binary
@@ -161,10 +157,6 @@
  *               phone:
  *                 type: string
  *                 example: "987654321"
- *               password:
- *                 type: string
- *                 minLength: 6
- *                 example: "NewPassword456!"
  *           example:
  *             name: "Sofia Mendes"
  *             email: "sofia.mendes@cmbraga.pt"

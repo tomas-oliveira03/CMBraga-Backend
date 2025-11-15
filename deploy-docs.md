@@ -5,7 +5,7 @@ sudo apt update && sudo apt upgrade -y
 
 ### 2. Install dependencies
 ```bash
-sudo apt install -y ca-certificates curl make gnupg lsb-release software-properties-common
+sudo apt install -y net-tools ca-certificates curl make gnupg lsb-release software-properties-common
 ```
 
 ### 3. Add Docker’s official GPG key and repository

@@ -6,7 +6,6 @@ export const HealthProfessionalSchema = z.object({
     name: z.string(),
     email: z.string(),
     phone: z.string(),
-    password: z.string(),
     specialty: z.nativeEnum(HealthProfessionalSpecialty),
     createdAt: z.date(),
     activatedAt: z.date().nullable(),

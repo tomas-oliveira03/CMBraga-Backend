@@ -4,7 +4,6 @@ export const InstructorSchema = z.object({
     id: z.string(),
     name: z.string(),
     email: z.string(),
-    password: z.string(),
     phone: z.string(),
     createdAt: z.date(),
     activatedAt: z.date().nullable(),

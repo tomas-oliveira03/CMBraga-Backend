@@ -135,10 +135,6 @@
  *                 type: string
  *                 format: email
  *                 example: "pedro.oliveira@cmbraga.pt"
- *               password:
- *                 type: string
- *                 minLength: 6
- *                 example: "NewPassword456!"
  *               phone:
  *                 type: string
  *                 example: "+351 937 890 123"
@@ -158,10 +154,6 @@
  *                 type: string
  *                 format: email
  *                 example: "pedro.oliveira@cmbraga.pt"
- *               password:
- *                 type: string
- *                 minLength: 6
- *                 example: "NewPassword456!"
  *               phone:
  *                 type: string
  *                 example: "+351 937 890 123"

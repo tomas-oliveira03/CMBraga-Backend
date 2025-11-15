@@ -5,7 +5,6 @@ export const AdminSchema = z.object({
     name: z.string(),
     email: z.string(),
     phone: z.string(),
-    password: z.string(),
     createdAt: z.date(),
     activatedAt: z.date().nullable(),
     updatedAt: z.date().nullable()

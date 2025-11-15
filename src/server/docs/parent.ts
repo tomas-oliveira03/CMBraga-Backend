@@ -141,10 +141,6 @@
  *                 type: string
  *                 format: email
  *                 example: "pedro.oliveira@gmail.com"
- *               password:
- *                 type: string
- *                 minLength: 6
- *                 example: "NewPassword456!"
  *               phone:
  *                 type: string
  *                 example: "+351 934 567 890"
@@ -167,10 +163,6 @@
  *                 type: string
  *                 format: email
  *                 example: "pedro.oliveira@gmail.com"
- *               password:
- *                 type: string
- *                 minLength: 6
- *                 example: "NewPassword456!"
  *               phone:
  *                 type: string
  *                 example: "+351 934 567 890"

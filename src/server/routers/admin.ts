@@ -62,10 +62,6 @@ router.put('/:id', authenticate, authorize(UserRole.ADMIN), upload.single('file'
             profilePictureURL: admin.profilePictureURL
         }
 
-        if (validatedData.password) {
-            adminData.password = informationHash.encrypt(validatedData.password);
-        }
-
         if (req.file){
             if (!isValidImageFile(req.file)){
                 return res.status(400).json({ message: "File must be a valid image type (JPEG, JPG, PNG, WEBP)" });

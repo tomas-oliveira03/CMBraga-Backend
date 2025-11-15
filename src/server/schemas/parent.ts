@@ -4,7 +4,6 @@ export const ParentSchema = z.object({
     id: z.string(),
     name: z.string(),
     email: z.string(),
-    password: z.string(),
     phone: z.string(),
     address: z.string(),
     createdAt: z.date(),

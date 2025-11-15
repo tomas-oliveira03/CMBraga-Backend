@@ -64,10 +64,6 @@ router.put('/:id', authenticate, authorize(UserRole.INSTRUCTOR), upload.single('
             profilePictureURL: instructor.profilePictureURL
         }
 
-        if (validatedData.password) {
-            instructorData.password = informationHash.encrypt(validatedData.password);
-        }
-
         if (req.file){
             if (!isValidImageFile(req.file)){
                 return res.status(400).json({ message: "File must be a valid image type (JPEG, JPG, PNG, WEBP)" });
