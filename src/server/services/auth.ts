@@ -6,6 +6,7 @@ import { HealthProfessional } from "@/db/entities/HealthProfessional";
 import informationHash from "@/lib/information-hash";
 import { AuthService } from "@/lib/auth";
 import { UserRole } from "@/helpers/types";
+import { User } from "@/db/entities/User";
 
 export interface LoginCredentials {
     email: string;
@@ -27,69 +28,37 @@ export class AuthenticationService {
     static async login(credentials: LoginCredentials): Promise<LoginResponse> {
         const { email, password } = credentials;
         
-        // Try to find user in all user tables
-        const admin = await AppDataSource.getRepository(Admin).findOne({
-            where: { email },
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                profilePictureURL: true,
-                password: true,
-                activatedAt: true
-            }
-        });
-        
-        if (admin && admin.activatedAt && this.verifyPassword(password, admin.password)) {
-            return this.createAuthResponse(admin, UserRole.ADMIN);
+        const user = await AppDataSource.getRepository(User)
+            .createQueryBuilder("user")
+            .leftJoinAndSelect("user.admin", "admin")
+            .leftJoinAndSelect("user.instructor", "instructor")
+            .leftJoinAndSelect("user.parent", "parent")
+            .leftJoinAndSelect("user.healthProfessional", "hp")
+            .where("user.id = :id", { id: email })
+            .addSelect("admin.password")
+            .addSelect("instructor.password")
+            .addSelect("parent.password")
+            .addSelect("hp.password")
+            .getOne();
+
+        if (!user) {
+            throw new Error('Invalid email or password');
         }
 
-        const instructor = await AppDataSource.getRepository(Instructor).findOne({
-            where: { email },
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                profilePictureURL: true,
-                password: true,
-                activatedAt: true
-            }
-        });
-
-        if (instructor && instructor.activatedAt && this.verifyPassword(password, instructor.password)) {
-            return this.createAuthResponse(instructor, UserRole.INSTRUCTOR);
+        if (user.admin && user.admin.activatedAt && this.verifyPassword(password, user.admin.password)) {
+            return this.createAuthResponse(user.admin, UserRole.ADMIN);
         }
 
-        const parent = await AppDataSource.getRepository(Parent).findOne({
-            where: { email },
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                profilePictureURL: true,
-                password: true,
-                activatedAt: true
-            }
-        });
-
-        if (parent && parent.activatedAt && this.verifyPassword(password, parent.password)) {
-            return this.createAuthResponse(parent, UserRole.PARENT);
+        if (user.instructor && user.instructor.activatedAt && this.verifyPassword(password, user.instructor.password)) {
+            return this.createAuthResponse(user.instructor, UserRole.INSTRUCTOR);
         }
 
-        const healthProfessional = await AppDataSource.getRepository(HealthProfessional).findOne({
-            where: { email },
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                profilePictureURL: true,
-                password: true,
-                activatedAt: true
-            }
-        });
+        if (user.parent && user.parent.activatedAt && this.verifyPassword(password, user.parent.password)) {
+            return this.createAuthResponse(user.parent, UserRole.PARENT);
+        }
 
-        if (healthProfessional && healthProfessional.activatedAt && this.verifyPassword(password, healthProfessional.password)) {
-            return this.createAuthResponse(healthProfessional, UserRole.HEALTH_PROFESSIONAL);
+        if (user.healthProfessional && user.healthProfessional.activatedAt && this.verifyPassword(password, user.healthProfessional.password)) {
+            return this.createAuthResponse(user.healthProfessional, UserRole.HEALTH_PROFESSIONAL);
         }
 
         throw new Error('Invalid email or password');
