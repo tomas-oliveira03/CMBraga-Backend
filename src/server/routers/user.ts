@@ -6,6 +6,12 @@ import { UserRole } from "@/helpers/types";
 import { authenticate } from "../middleware/auth";
 import { checkIfChatAlreadyExists } from "../services/comms";
 import { UserChat } from "@/db/entities/UserChat";
+import passwordHash from "@/lib/password-hash";
+import { HealthProfessional } from "@/db/entities/HealthProfessional";
+import { Instructor } from "@/db/entities/Instructor";
+import { Parent } from "@/db/entities/Parent";
+import { Admin } from "@/db/entities/Admin";
+import { resetPassword, verifyToken } from "../services/email";
 
 const router = express.Router();
 
@@ -166,6 +172,161 @@ router.get("/:conversationId/search", authenticate, async (req: Request, res: Re
         if (!users) return res.status(200).json([]);
         users = users.filter(u => u.id !== userId);
         return res.status(200).json(normalizeUsers(users));
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+});
+
+
+// Change user password using a token
+router.post('/change-password', authenticate, async (req: Request, res: Response) => {
+    try {
+        const { oldPassword, newPassword } = req.body;
+
+        if (!oldPassword || !newPassword || typeof oldPassword !== 'string' || typeof newPassword !== 'string') {
+            return res.status(400).json({ message: "Old password and new password are required" });
+        }
+
+        const user = await AppDataSource.getRepository(User)
+            .createQueryBuilder("user")
+            .leftJoinAndSelect("user.admin", "admin")
+            .leftJoinAndSelect("user.instructor", "instructor")
+            .leftJoinAndSelect("user.parent", "parent")
+            .leftJoinAndSelect("user.healthProfessional", "hp")
+            .where("user.id = :id", { id: req.user!.email })
+            .addSelect("admin.password")
+            .addSelect("instructor.password")
+            .addSelect("parent.password")
+            .addSelect("hp.password")
+            .getOne();
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const hashedNewPassword = await passwordHash.hash(newPassword);
+        if (user.admin && user.admin.activatedAt && await passwordHash.verify(oldPassword, user.admin.password)) {
+            await AppDataSource.getRepository(Admin).update({ id: user.admin.id }, { password: hashedNewPassword });
+        }
+        else if (user.instructor && user.instructor.activatedAt && await passwordHash.verify(oldPassword, user.instructor.password)) {
+            await AppDataSource.getRepository(Instructor).update({ id: user.instructor.id }, { password: hashedNewPassword });
+        }
+        else if (user.parent && user.parent.activatedAt && await passwordHash.verify(oldPassword, user.parent.password)) {
+            await AppDataSource.getRepository(Parent).update({ id: user.parent.id }, { password: hashedNewPassword });
+        }
+        else if (user.healthProfessional && user.healthProfessional.activatedAt && await passwordHash.verify(oldPassword, user.healthProfessional.password)) {
+            await AppDataSource.getRepository(HealthProfessional).update({ id: user.healthProfessional.id }, { password: hashedNewPassword });
+        }
+        else {
+            return res.status(400).json({ message: "Old password is incorrect" });
+        }
+
+        return res.status(200).json({ message: "Password changed successfully" });
+
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+});
+
+
+// Set user password
+router.post('/set-password', async (req: Request, res: Response) => {
+    try {
+        const { token, password } = req.body;
+
+        if (!token || !password || typeof token !== 'string' || typeof password !== 'string') {
+            return res.status(400).json({ message: "Token and password are required" });
+        }
+
+        const decoded = verifyToken(token);
+        const email = decoded.userEmail;
+
+        const hashedPassword = await passwordHash.hash(password);
+
+        const user = await AppDataSource.getRepository(User).findOne({
+            where: { id: email },
+            select: {
+                adminId: true,
+                parentId: true,
+                healthProfessionalId: true,
+                instructorId: true
+            }
+        });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        
+        if (user.adminId) {
+            await AppDataSource.createQueryBuilder().update(Admin)
+            .set({
+                    password: hashedPassword,
+                    updatedAt: new Date(),
+                    activatedAt: () => `CASE WHEN "activated_at" IS NULL THEN NOW() ELSE "activated_at" END`,
+            })
+            .where("id = :id", { id: user.adminId })
+            .execute();
+            
+        } else if (user.instructorId) {
+            await AppDataSource.createQueryBuilder().update(Instructor)
+            .set({
+                    password: hashedPassword,
+                    updatedAt: new Date(),
+                    activatedAt: () => `CASE WHEN "activated_at" IS NULL THEN NOW() ELSE "activated_at" END`,
+            })
+            .where("id = :id", { id: user.instructorId })
+            .execute();
+
+        } else if (user.parentId) {
+            await AppDataSource.createQueryBuilder().update(Parent)
+                .set({
+                    password: hashedPassword,
+                    updatedAt: new Date(),
+                    activatedAt: () => `CASE WHEN "activated_at" IS NULL THEN NOW() ELSE "activated_at" END`,
+                })
+                .where("id = :id", { id: user.parentId })
+                .execute();
+
+        } else if (user.healthProfessionalId) {
+            await AppDataSource.createQueryBuilder().update(HealthProfessional)
+                .set({
+                    password: hashedPassword,
+                    updatedAt: new Date(),
+                    activatedAt: () => `CASE WHEN "activated_at" IS NULL THEN NOW() ELSE "activated_at" END`,
+                })
+                .where("id = :id", { id: user.healthProfessionalId })
+                .execute();
+
+        } else {
+            return res.status(404).json({ message: "User role not found" });
+        }
+    
+        return res.status(200).json({ message: "Password set successfully" });
+
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+});
+
+
+// Recover password (send reset email)
+router.post('/recover-password', async (req: Request, res: Response) => {
+    try {
+        const { email } = req.body;
+        
+        if (!email || typeof email !== 'string') {
+            return res.status(400).json({ message: "Email is required" });
+        }
+
+        const user = await AppDataSource.getRepository(User).findOne({
+            where: { id: email }
+        });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        await resetPassword(email, user.name);
+
+        return res.status(200).json({ message: "Password reset email sent" });
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }

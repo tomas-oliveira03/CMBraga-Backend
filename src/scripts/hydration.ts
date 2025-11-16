@@ -34,6 +34,7 @@ import { Chat } from "@/db/entities/Chat";
 import { UserChat } from "@/db/entities/UserChat";
 import { Message } from "@/db/entities/Message";
 import { TypeOfChat } from "@/helpers/types";
+import passwordHash from "@/lib/password-hash";
 
 
 async function cloudHydration(){
@@ -282,7 +283,7 @@ async function dbHydration() {
         const hpEnt = hpRepo.create({
           name: hp.name,
           email: hp.email,
-          password: informationHash.encrypt("Person23!"),
+          password: await passwordHash.hash("Person23!"),
           phone: hp.phone,
           specialty: hp.specialty as any,
           activatedAt: new Date(),
@@ -307,7 +308,7 @@ async function dbHydration() {
         const adminEnt = adminRepo.create({
           name: a.name,
           email: a.email,
-          password: informationHash.encrypt("Person23!"),
+          password: await passwordHash.hash("Person23!"),
           phone: a.phone,
           activatedAt: new Date(),
           profilePictureURL: selectRandomDefaultProfilePicture()
@@ -331,7 +332,7 @@ async function dbHydration() {
         const parent = parentRepo.create({
           name: p.name,
           email: p.email,
-          password: informationHash.encrypt("Person23!"),
+          password: await passwordHash.hash("Person23!"),
           phone: p.phone,
           address: p.address,
           activatedAt: new Date(),
@@ -356,7 +357,7 @@ async function dbHydration() {
         const instEnt = instructorRepo.create({
           name: ins.name,
           email: ins.email,
-          password: informationHash.encrypt("Person23!"),
+          password: await passwordHash.hash("Person23!"),
           phone: ins.phone,
           activatedAt: new Date(),
           profilePictureURL: selectRandomDefaultProfilePicture()

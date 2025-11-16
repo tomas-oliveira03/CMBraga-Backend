@@ -3,7 +3,7 @@ import { Admin } from "@/db/entities/Admin";
 import { Instructor } from "@/db/entities/Instructor";
 import { Parent } from "@/db/entities/Parent";
 import { HealthProfessional } from "@/db/entities/HealthProfessional";
-import informationHash from "@/lib/information-hash";
+import passwordHash from "@/lib/password-hash";
 import { AuthService } from "@/lib/auth";
 import { UserRole } from "@/helpers/types";
 import { User } from "@/db/entities/User";
@@ -45,29 +45,28 @@ export class AuthenticationService {
             throw new Error('Invalid email or password');
         }
 
-        if (user.admin && user.admin.activatedAt && this.verifyPassword(password, user.admin.password)) {
+        if (user.admin && user.admin.activatedAt && await this.verifyPassword(password, user.admin.password)) {
             return this.createAuthResponse(user.admin, UserRole.ADMIN);
         }
 
-        if (user.instructor && user.instructor.activatedAt && this.verifyPassword(password, user.instructor.password)) {
+        if (user.instructor && user.instructor.activatedAt && await this.verifyPassword(password, user.instructor.password)) {
             return this.createAuthResponse(user.instructor, UserRole.INSTRUCTOR);
         }
 
-        if (user.parent && user.parent.activatedAt && this.verifyPassword(password, user.parent.password)) {
+        if (user.parent && user.parent.activatedAt && await this.verifyPassword(password, user.parent.password)) {
             return this.createAuthResponse(user.parent, UserRole.PARENT);
         }
 
-        if (user.healthProfessional && user.healthProfessional.activatedAt && this.verifyPassword(password, user.healthProfessional.password)) {
+        if (user.healthProfessional && user.healthProfessional.activatedAt && await this.verifyPassword(password, user.healthProfessional.password)) {
             return this.createAuthResponse(user.healthProfessional, UserRole.HEALTH_PROFESSIONAL);
         }
 
         throw new Error('Invalid email or password');
     }
 
-    private static verifyPassword(plainPassword: string, hashedPassword: string): boolean {
+    private static async verifyPassword(plainPassword: string, hashedPassword: string): Promise<boolean> {
         try {
-            const decrypted = informationHash.decrypt(hashedPassword);
-            return decrypted === plainPassword;
+            return await passwordHash.verify(plainPassword, hashedPassword);
         } catch {
             return false;
         }

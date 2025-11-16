@@ -29,6 +29,7 @@ import { ChildHistory } from "@/db/entities/ChildHistory";
 import { differenceInYears } from "date-fns";
 import redisClient from "@/lib/redis";
 import { addUserToGeneralChat } from "../services/comms";
+import passwordHash from "@/lib/password-hash";
 
 const router = express.Router();
 
@@ -107,6 +108,7 @@ router.post('/register/admin', authenticate, authorize(UserRole.ADMIN), async (r
 
         const dateNow = new Date()
         const profilePictureURL = selectRandomDefaultProfilePicture()
+        const hashedPassword = await passwordHash.hash("Person23!");
         
         await AppDataSource.transaction(async tx => {
             
@@ -115,7 +117,7 @@ router.post('/register/admin', authenticate, authorize(UserRole.ADMIN), async (r
                 updatedAt: dateNow,
                 activatedAt: dateNow,
                 profilePictureURL: profilePictureURL,
-                password: informationHash.encrypt("Person23!"),
+                password: hashedPassword,
             });
             const adminId = admin.identifiers[0]?.id
 
@@ -157,6 +159,7 @@ router.post('/register/instructor', authenticate, authorize(UserRole.ADMIN), asy
 
         const dateNow = new Date()
         const profilePictureURL = selectRandomDefaultProfilePicture()
+        const hashedPassword = await passwordHash.hash("Person23!");
 
         await AppDataSource.transaction(async tx => {
 
@@ -165,7 +168,7 @@ router.post('/register/instructor', authenticate, authorize(UserRole.ADMIN), asy
                 updatedAt: dateNow,
                 activatedAt: dateNow,
                 profilePictureURL: profilePictureURL,
-                password: informationHash.encrypt("Person23!"),
+                password: hashedPassword,
             });
             const instructorId = instructor.identifiers[0]?.id
 
@@ -205,6 +208,7 @@ router.post('/register/health-professional', authenticate, authorize(UserRole.AD
 
         const dateNow = new Date()
         const profilePictureURL = selectRandomDefaultProfilePicture()
+        const hashedPassword = await passwordHash.hash("Person23!");
 
         await AppDataSource.transaction(async tx => {
             
@@ -213,7 +217,7 @@ router.post('/register/health-professional', authenticate, authorize(UserRole.AD
                 updatedAt: dateNow,
                 activatedAt: dateNow,
                 profilePictureURL: profilePictureURL,
-                password: informationHash.encrypt("Person23!"),
+                password: hashedPassword,
             });
             const healthProfessionalId = healthProfessional.identifiers[0]?.id
             
@@ -254,6 +258,7 @@ router.post('/register/parent', authenticate, authorize(UserRole.ADMIN), async (
 
         const dateNow = new Date()
         const profilePictureURL = selectRandomDefaultProfilePicture()
+        const hashedPassword = await passwordHash.hash("Person23!");
         
         await AppDataSource.transaction(async tx => {
             
@@ -262,7 +267,7 @@ router.post('/register/parent', authenticate, authorize(UserRole.ADMIN), async (
                 updatedAt: dateNow,
                 activatedAt: dateNow,
                 profilePictureURL: profilePictureURL,
-                password: informationHash.encrypt("Person23!"),
+                password: hashedPassword,
             });
             const parentId = parent.identifiers[0]?.id
             
@@ -349,103 +354,5 @@ router.post('/register/child', authenticate, authorize(UserRole.ADMIN), async (r
     }
 });
 
-
-router.post('/set-password', async (req: Request, res: Response) => {
-    try {
-        const { token, password } = req.body;
-
-        const decoded = verifyToken(token);
-        const email = decoded.userEmail;
-
-        const hashedPassword = informationHash.encrypt(password);
-
-        const user = await AppDataSource.getRepository(User).findOne({
-            where: { id: email },
-            select: {
-                adminId: true,
-                parentId: true,
-                healthProfessionalId: true,
-                instructorId: true
-            }
-        });
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-        
-        if (user.adminId) {
-            await AppDataSource.createQueryBuilder().update(Admin)
-            .set({
-                    password: hashedPassword,
-                    updatedAt: new Date(),
-                    activatedAt: () => `CASE WHEN "activated_at" IS NULL THEN NOW() ELSE "activated_at" END`,
-            })
-            .where("id = :id", { id: user.adminId })
-            .execute();
-            
-        } else if (user.instructorId) {
-            await AppDataSource.createQueryBuilder().update(Instructor)
-            .set({
-                    password: hashedPassword,
-                    updatedAt: new Date(),
-                    activatedAt: () => `CASE WHEN "activated_at" IS NULL THEN NOW() ELSE "activated_at" END`,
-            })
-            .where("id = :id", { id: user.instructorId })
-            .execute();
-
-        } else if (user.parentId) {
-            await AppDataSource.createQueryBuilder().update(Parent)
-                .set({
-                    password: hashedPassword,
-                    updatedAt: new Date(),
-                    activatedAt: () => `CASE WHEN "activated_at" IS NULL THEN NOW() ELSE "activated_at" END`,
-                })
-                .where("id = :id", { id: user.parentId })
-                .execute();
-
-        } else if (user.healthProfessionalId) {
-            await AppDataSource.createQueryBuilder().update(HealthProfessional)
-                .set({
-                    password: hashedPassword,
-                    updatedAt: new Date(),
-                    activatedAt: () => `CASE WHEN "activated_at" IS NULL THEN NOW() ELSE "activated_at" END`,
-                })
-                .where("id = :id", { id: user.healthProfessionalId })
-                .execute();
-
-        } else {
-            return res.status(404).json({ message: "User role not found" });
-        }
-    
-        return res.status(200).json({ message: "Password set successfully" });
-
-    } catch (error) {
-        return res.status(400).json({ message: "Invalid or expired token" });
-    }
-});
-
-
-router.post('/recover-password', async (req: Request, res: Response) => {
-    try {
-        const { email } = req.body;
-        
-        if (!email) {
-            return res.status(400).json({ message: "Email is required" });
-        }
-
-        const user = await AppDataSource.getRepository(User).findOne({
-            where: { id: email }
-        });
-
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-        await resetPassword(email, user.name);
-
-        return res.status(200).json({ message: "Password reset email sent" });
-    } catch (error) {
-        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
-    }
-});
 
 export default router;

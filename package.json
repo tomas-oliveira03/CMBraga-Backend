@@ -50,6 +50,7 @@
   },
   "dependencies": {
     "@logdna/logger": "^2.6.11",
+    "bcryptjs": "^3.0.3",
     "chalk": "^4.1.2",
     "cloudinary": "^2.7.0",
     "cors": "^2.8.5",
