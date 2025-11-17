@@ -128,8 +128,10 @@ const startServer = async () => {
         // CORS configuration
         app.use(cors());
 
-        // Swagger documentation
+        // Swagger documentation - only in non-production environments
+        // if (!envs.isProd) {
         app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+        // }
         
         app.use("/api", apiRouter);
 
@@ -139,7 +141,9 @@ const startServer = async () => {
         server.listen(envs.PORT, () => {
             logger.port(`Server is running at ${envs.BASE_URL}`);
             logger.port(`WebSocket server available at ${envs.WEBSOCKET_BASE_URL}`);
-            logger.port(`Swagger documentation available at ${envs.BASE_URL}/api-docs`);
+            // if (!envs.isProd) {
+                logger.port(`Swagger documentation available at ${envs.BASE_URL}/api-docs`);
+            // }
             logger.websocket(`WebSocket manager initialized. Connected users: ${webSocketManager.getConnectedUsersCount()}`);
         });
 
