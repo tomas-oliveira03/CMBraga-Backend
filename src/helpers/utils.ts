@@ -88,4 +88,5 @@ export enum CronExpression {
 	MONDAY_TO_FRIDAY_AT_10PM = '0 0 22 * * 1-5',
 	MONDAY_TO_FRIDAY_AT_11PM = '0 0 23 * * 1-5',
 	MONDAY_AT_9AM = '0 9 * * 1',
+	MONTHLY_AT_235959 = '59 59 23 L * *',
 }

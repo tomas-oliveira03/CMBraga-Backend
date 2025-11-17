@@ -41,7 +41,6 @@ export function getLeaderboardTimeframes(timeframe: RankingTimeframe, back: numb
 
 export async function getStats(type: RankingType, start: Date | null, end: Date | null) {
     switch(type) {
-
         case RankingType.PARENTS: {
             const repo = AppDataSource.getRepository(ParentStat);
             const where: any = {};
