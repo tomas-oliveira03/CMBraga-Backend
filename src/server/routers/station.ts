@@ -6,7 +6,7 @@ import { authenticate, authorize } from "../middleware/auth";
 
 const router = express.Router();
 
-router.get('/', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
+router.get('/', authenticate, authorize(UserRole.ADMIN, UserRole.PARENT), async (req: Request, res: Response) => {
     try {
         const allStations = await AppDataSource.getRepository(Station).find();
         return res.status(200).json(allStations);
