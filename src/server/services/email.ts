@@ -33,10 +33,10 @@ export async function sendEmail({ to, subject, html }: { to: string, subject: st
 
 
 
-export async function createPassword(email: string, name: string){
+export async function createPasswordEmail(email: string, name: string){
     const token = generateToken( email );
     
-    const link = `${envs.BASE_URL}/api/auth/register/set-password?token=${token}`;
+    const link = `${envs.BASE_URL}/api/user/set-password?token=${token}`;
     
     await sendEmail({
         to: email,
@@ -55,7 +55,7 @@ export async function createPassword(email: string, name: string){
 export async function resetPassword(email: string, name: string){
     const token = generateToken( email );
     
-    const link = `${envs.BASE_URL}/api/auth/register/set-password?token=${token}`;
+    const link = `${envs.BASE_URL}/api/user/set-password?token=${token}`;
     
     await sendEmail({
         to: email,
