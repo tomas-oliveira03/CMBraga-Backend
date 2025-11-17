@@ -3,7 +3,6 @@ import { Admin } from "@/db/entities/Admin";
 import express, { Request, Response } from "express";
 import { UpdateAdminSchema } from "../schemas/admin";
 import { z } from "zod";
-import informationHash from "@/lib/information-hash";
 import multer from "multer";
 import { isValidImageFile } from "@/helpers/storage";
 import { updateProfilePicture } from "../services/user";

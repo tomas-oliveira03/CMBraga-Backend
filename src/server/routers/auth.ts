@@ -6,7 +6,6 @@ import { LoginSchema } from "../schemas/auth";
 import { envs } from "@/config";
 import { AppDataSource } from "@/db";
 import { User } from "@/db/entities/User";
-import informationHash from "@/lib/information-hash";
 import { checkIfEmailExists } from "../services/validator";
 import { CreateAdminSchema } from "../schemas/admin";
 import { Admin } from "@/db/entities/Admin";
@@ -25,10 +24,8 @@ import { StationType, UserRole } from "@/helpers/types";
 import { In } from "typeorm";
 import { CreateChildSchema } from "../schemas/child";
 import { webSocketManager } from "../services/websocket";
-import { ChildHistory } from "@/db/entities/ChildHistory";
-import { differenceInYears } from "date-fns";
 import redisClient from "@/lib/redis";
-import { addUserToGeneralChat } from "../services/comms";
+import { addUserToGeneralChats } from "../services/comms";
 import passwordHash from "@/lib/password-hash";
 
 const router = express.Router();
@@ -126,7 +123,7 @@ router.post('/register/admin', authenticate, authorize(UserRole.ADMIN), async (r
         
         await createPasswordEmail(validatedData.email, validatedData.name);
 
-        await addUserToGeneralChat(validatedData.email);
+        await addUserToGeneralChats(validatedData.email);
 
         return res.status(201).json({message: "Admin created successfully"});
 
@@ -175,7 +172,7 @@ router.post('/register/instructor', authenticate, authorize(UserRole.ADMIN), asy
             });
         })
         // await createPassword(validatedData.email, validatedData.name);
-        await addUserToGeneralChat(validatedData.email);
+        await addUserToGeneralChats(validatedData.email);
         
         return res.status(201).json({message: "Instructor created successfully"});
 
@@ -225,7 +222,7 @@ router.post('/register/health-professional', authenticate, authorize(UserRole.AD
         })
 
         // await createPassword(validatedData.email, validatedData.name);
-        await addUserToGeneralChat(validatedData.email);
+        await addUserToGeneralChats(validatedData.email);
 
         return res.status(201).json({message: "Health Professional created successfully"});
         
@@ -276,7 +273,7 @@ router.post('/register/parent', authenticate, authorize(UserRole.ADMIN), async (
         
         // await createPassword(validatedData.email, validatedData.name);
 
-        await addUserToGeneralChat(validatedData.email);
+        await addUserToGeneralChats(validatedData.email);
         return res.status(201).json({message: "Parent created successfully"});
 
     } catch (error) {
