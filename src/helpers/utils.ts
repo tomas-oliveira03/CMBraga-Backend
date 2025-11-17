@@ -46,7 +46,6 @@ export enum CronExpression {
 	EVERY_DAY_AT_10PM = '0 22 * * *',
 	EVERY_DAY_AT_11PM = '0 23 * * *',
 	EVERY_DAY_AT_MIDNIGHT = '0 0 * * *',
-	// every day at 00:30
 	EVERY_DAY_AT_00_30 = '30 0 * * *',
 	EVERY_WEEK = '0 0 * * 0',
 	EVERY_WEEKDAY = '0 0 * * 1-5',
@@ -88,5 +87,4 @@ export enum CronExpression {
 	MONDAY_TO_FRIDAY_AT_10PM = '0 0 22 * * 1-5',
 	MONDAY_TO_FRIDAY_AT_11PM = '0 0 23 * * 1-5',
 	MONDAY_AT_9AM = '0 9 * * 1',
-	MONTHLY_AT_235959 = '59 59 23 L * *',
 }

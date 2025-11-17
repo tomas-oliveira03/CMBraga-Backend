@@ -16,8 +16,16 @@ class LeaderboardCron {
             logger.cron('LeaderboardCron: Job already running. Skipping duplicate schedule.');
             return;
         }
-        this.job = cron.schedule(CronExpression.MONTHLY_AT_235959, async () => {
+        this.job = cron.schedule(CronExpression.EVERY_DAY_AT_MIDNIGHT, async () => {
             try {
+                const today = new Date();
+                const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+
+                // Only run if today is the last day of the month
+                if (today.getDate() !== lastDayOfMonth) {
+                    return;
+                }
+
                 logger.cron('LeaderboardCron: Starting leaderboard calculation job execution');
                 const startOfMonth = new Date();
                 startOfMonth.setDate(1);
