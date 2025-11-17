@@ -8,7 +8,7 @@ import { Badge } from '@/db/entities/Badge';
 import { ClientBadge } from '@/db/entities/ClientBadge';
 import { AppDataSource } from '@/db';
 
-// Pick this month point leader in the last day of the month at 23:59:59, parent and children
+// Pick this month point leader in the last day of the month at 23:00:00, parent and children
 class LeaderboardCron {
     private static job: ScheduledTask | null = null;
     public static start(): void {
@@ -16,7 +16,7 @@ class LeaderboardCron {
             logger.cron('LeaderboardCron: Job already running. Skipping duplicate schedule.');
             return;
         }
-        this.job = cron.schedule(CronExpression.EVERY_DAY_AT_MIDNIGHT, async () => {
+        this.job = cron.schedule(CronExpression.EVERY_DAY_AT_11PM, async () => {
             try {
                 const today = new Date();
                 const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
