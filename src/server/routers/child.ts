@@ -131,9 +131,11 @@ router.put('/:id', authenticate, authorize(UserRole.PARENT), upload.single('file
             if (!station) {
                 return res.status(404).json({ message: "Station does not exist or it isn't labeled as school" });
             }
+
+
         }
 
-        const { parentId, removeParentId, dropOffStationId, ...childDataFields } = validatedData;
+        const { parentId, removeParentId, ...childDataFields } = validatedData;
         const childData = {
             ...childDataFields,
             profilePictureURL: child.profilePictureURL
