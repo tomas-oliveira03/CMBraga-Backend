@@ -16,7 +16,7 @@ import { CreateHealthProfessionalSchema } from "../schemas/healthProfessional";
 import { HealthProfessional } from "@/db/entities/HealthProfessional";
 import { CreateParentSchema } from "../schemas/parent";
 import { Parent } from "@/db/entities/Parent";
-import { resetPassword, verifyToken } from "../services/email";
+import { createPasswordEmail, resetPassword, verifyToken } from "../services/email";
 import { Child } from "@/db/entities/Child";
 import { ParentChild } from "@/db/entities/ParentChild";
 import { Station } from "@/db/entities/Station";
@@ -106,18 +106,13 @@ router.post('/register/admin', authenticate, authorize(UserRole.ADMIN), async (r
             return res.status(409).json({message: "Email already exists"});
         }
 
-        const dateNow = new Date()
         const profilePictureURL = selectRandomDefaultProfilePicture()
-        const hashedPassword = await passwordHash.hash("Person23!");
         
         await AppDataSource.transaction(async tx => {
             
             const admin = await tx.getRepository(Admin).insert({
                 ...validatedData,
-                updatedAt: dateNow,
-                activatedAt: dateNow,
                 profilePictureURL: profilePictureURL,
-                password: hashedPassword,
             });
             const adminId = admin.identifiers[0]?.id
 
@@ -129,7 +124,7 @@ router.post('/register/admin', authenticate, authorize(UserRole.ADMIN), async (r
             });
         })
         
-        // await createPassword(validatedData.email, validatedData.name);
+        await createPasswordEmail(validatedData.email, validatedData.name);
 
         await addUserToGeneralChat(validatedData.email);
 
