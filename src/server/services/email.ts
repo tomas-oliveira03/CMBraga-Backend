@@ -13,22 +13,23 @@ export function verifyToken(token: string): any {
 }
 
 
-export async function sendEmail({ to, subject, html }: { to: string, subject: string, html: string }) {
-  const transporter = nodemailer.createTransport({
-	host: envs.SMTP_SERVER,
-	port: Number(envs.SMTP_PORT),
-	secure: false,
-	auth: {
-	  user: envs.GMAIL_USERNAME,
-	  pass: envs.GMAIL_PASSWORD_SMTP,
-	},
-  } as any);
+export async function sendEmail({ to, subject, html }: { to: string, subject: string, html: string }) {  
+    const transporter = nodemailer.createTransport({
+        host: envs.SMTP_SERVER,
+        port: envs.SMTP_PORT,
+        secure: false,
+        auth: {
+            user: envs.EMAIL_USERNAME,
+            pass: envs.EMAIL_PASSWORD,
+        },
+    });
 
-  await transporter.sendMail({
-    to,
-    subject,
-    html,
-  });
+    await transporter.sendMail({
+        from: envs.EMAIL_SENDER,
+        to,
+        subject,
+        html,
+    });
 }
 
 
