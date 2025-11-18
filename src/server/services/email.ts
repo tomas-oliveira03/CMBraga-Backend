@@ -22,6 +22,8 @@ export async function sendEmail({ to, subject, html }: { to: string, subject: st
             user: envs.EMAIL_USERNAME,
             pass: envs.EMAIL_PASSWORD,
         },
+        debug: true,
+        logger: true,
     });
 
     await transporter.sendMail({
