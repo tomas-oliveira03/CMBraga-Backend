@@ -400,6 +400,39 @@ async function dbHydration() {
     await userChatRepo.insert(userChatEntries);
     console.log(`✅ Created general chat with ${allUserEmails.length} users`);
 
+
+    // Create pedibus chat and add all users
+    console.log("Creating pedibus chat...");
+    const pedibusChat = await chatRepo.save({
+      chatName: "Chat Pedibus",
+      chatType: TypeOfChat.GENERAL_CHAT,
+      destinatairePhoto: "default-photo-url"
+    });
+
+    const userPedibusChatEntries = allUserEmails.map(email => ({
+      userId: email,
+      chatId: pedibusChat.id
+    }));
+
+    await userChatRepo.insert(userPedibusChatEntries);
+    console.log(`✅ Created pedibus chat with ${allUserEmails.length} users`);
+
+    // Create cicloexpresso chat and add all users
+    console.log("Creating cicloexpresso chat...");
+    const cicloexpressoChat = await chatRepo.save({
+      chatName: "Chat Cicloexpresso",
+      chatType: TypeOfChat.GENERAL_CHAT,
+      destinatairePhoto: "default-photo-url"
+    });
+
+    
+    const userCicloexpressoChatEntries = allUserEmails.map(email => ({
+      userId: email,
+      chatId: cicloexpressoChat.id
+    }));
+
+    await userChatRepo.insert(userCicloexpressoChatEntries);
+    console.log(`✅ Created cicloexpresso chat with ${allUserEmails.length} users`);
     // Create sample messages in general chat
     const sampleMessages = [
       { sender: allUserEmails[0], content: "Bem-vindos ao chat geral da plataforma!" },
