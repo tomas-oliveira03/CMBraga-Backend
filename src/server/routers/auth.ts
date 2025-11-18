@@ -15,7 +15,7 @@ import { CreateHealthProfessionalSchema } from "../schemas/healthProfessional";
 import { HealthProfessional } from "@/db/entities/HealthProfessional";
 import { CreateParentSchema } from "../schemas/parent";
 import { Parent } from "@/db/entities/Parent";
-import { createPasswordEmail } from "../services/email";
+import { createPasswordEmail, generateToken } from "../services/email";
 import { Child } from "@/db/entities/Child";
 import { ParentChild } from "@/db/entities/ParentChild";
 import { Station } from "@/db/entities/Station";
@@ -121,7 +121,8 @@ router.post('/register/admin', authenticate, authorize(UserRole.ADMIN), async (r
             });
         })
         
-        await createPasswordEmail(validatedData.email, validatedData.name);
+        const token = generateToken( validatedData.email );
+        // await createPasswordEmail(validatedData.email, validatedData.name);
 
         await addUserToGeneralChats(validatedData.email);
 
