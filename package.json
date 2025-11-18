@@ -10,7 +10,6 @@
     "dev": "node -r @swc-node/register src/server.ts",
     "dev:server": "NODE_NO_WARNINGS=1 nodemon -w src --exec ts-node -r tsconfig-paths/register src/server.ts",
     "prod:server": "cross-env DOCKER_BUILD=true node dist/server.js",
-    "lint": "eslint src --ext .ts",
     "entity:create": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli entity:create ./src/db/entities/$npm_config_name",
     "mig:create": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli migration:create ./src/db/migrations/$npm_config_name",
     "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli -d ./src/db/data-source.ts",
@@ -22,7 +21,7 @@
     "mig:show": "npm run typeorm -- migration:show",
     "ts": "tsx -r tsconfig-paths/register src/services/inspect/inspect.ts",
     "hydration": "npx ts-node -r tsconfig-paths/register src/scripts/hydration.ts",
-    "prod:hydration": "npx ts-node -r tsconfig-paths/register dist/scripts/prodHydration.ts",
+    "prod:hydration": "node dist/scripts/hydration.js",
     "test:ws": "tsx src/tests/websocket-tester.ts",
     "test:ws:mock": "tsx src/tests/websocket-mock-events.ts"
   },

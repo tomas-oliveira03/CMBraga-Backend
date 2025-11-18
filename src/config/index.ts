@@ -13,6 +13,7 @@ class Envs {
     private missingKeys: string[] = [];
 
     public readonly DOCKER_BUILD: boolean = this.getBool("DOCKER_BUILD", false);
+    
     public readonly HOST: string = this.getString("HOST", "localhost");
     public readonly PORT: number = this.getInt("PORT", 3001);
     
@@ -27,7 +28,6 @@ class Envs {
         "DATABASE_URL",
         `postgres://${this.DB_USER}:${this.DB_PASSWORD}@${this.DB_HOST}:${this.DB_PORT}/${this.DB_NAME}`,
     );
-    
     
     // Redis configuration
     private readonly REDIS_HOST: string = this.getString("REDIS_HOST", "localhost");
@@ -45,21 +45,14 @@ class Envs {
         "FRONTEND_URL",
         "http://localhost:5173",
     );
-    public readonly NODE_ENV: string = this.getString(
-        "NODE_ENV",
-        EnvName.LOCAL,
-    );
+
+    public readonly NODE_ENV: string = this.getString("NODE_ENV", EnvName.LOCAL);
     public readonly RENDER_DEPLOY: boolean = this.getBool("RENDER_DEPLOY", false);
 
     public readonly LOGDNA_KEY: string = this.getString("LOGDNA_KEY", "");
-    public readonly JWT_SECRET: string = this.getString(
-        "JWT_SECRET", 
-        "your_secret"
-    );
-    public readonly LOGGER_SHOW_DATETIME: boolean = this.getBool(
-        "LOGGER_SHOW_DATETIME", 
-        false
-    );
+    public readonly JWT_SECRET: string = this.getString("JWT_SECRET", "your_secret");
+
+    public readonly LOGGER_SHOW_DATETIME: boolean = this.getBool("LOGGER_SHOW_DATETIME", false);
     
     public readonly OPEN_WEATHER_API_KEY: string = this.getString("OPEN_WEATHER_API_KEY", "your_api_key");
     
@@ -70,6 +63,7 @@ class Envs {
     public readonly SMTP_SERVER: string = this.getString("SMTP_SERVER", "your_secret");
     public readonly SMTP_PORT: number = this.getInt("SMTP_PORT", 587);
 
+    // Cloud Storage Configuration
     public readonly CLOUD_NAME: string = this.getString("CLOUD_NAME", "your_secret");
     public readonly CLOUD_API_KEY: string = this.getString("CLOUD_API_KEY", "your_secret");
     public readonly CLOUD_API_SECRET: string = this.getString("CLOUD_API_SECRET", "your_secret");
