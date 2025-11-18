@@ -52,7 +52,7 @@ export async function createPasswordEmail(email: string, name: string){
 }
 
 
-export async function resetPassword(email: string, name: string){
+export async function resetPasswordEmail(email: string, name: string){
     const token = generateToken( email );
     
     const link = `${envs.BASE_URL}/api/user/set-password?token=${token}`;

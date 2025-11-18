@@ -15,7 +15,7 @@ import { CreateHealthProfessionalSchema } from "../schemas/healthProfessional";
 import { HealthProfessional } from "@/db/entities/HealthProfessional";
 import { CreateParentSchema } from "../schemas/parent";
 import { Parent } from "@/db/entities/Parent";
-import { createPasswordEmail, resetPassword, verifyToken } from "../services/email";
+import { createPasswordEmail } from "../services/email";
 import { Child } from "@/db/entities/Child";
 import { ParentChild } from "@/db/entities/ParentChild";
 import { Station } from "@/db/entities/Station";

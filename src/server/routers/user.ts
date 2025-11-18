@@ -11,7 +11,7 @@ import { HealthProfessional } from "@/db/entities/HealthProfessional";
 import { Instructor } from "@/db/entities/Instructor";
 import { Parent } from "@/db/entities/Parent";
 import { Admin } from "@/db/entities/Admin";
-import { resetPassword, verifyToken } from "../services/email";
+import { resetPasswordEmail, verifyToken } from "../services/email";
 
 const router = express.Router();
 
@@ -324,7 +324,7 @@ router.post('/recover-password', async (req: Request, res: Response) => {
             return res.status(404).json({ message: "User not found" });
         }
 
-        await resetPassword(email, user.name);
+        await resetPasswordEmail(email, user.name);
 
         return res.status(200).json({ message: "Password reset email sent" });
     } catch (error) {

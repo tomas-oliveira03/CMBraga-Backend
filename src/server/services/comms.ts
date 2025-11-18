@@ -21,7 +21,6 @@ export async function checkIfEmailsExist(emails: string[]): Promise<boolean> {
             .getMany();
         return users.length === emails.length;
     } catch (error) {
-        console.error("Error checking if emails exist:", error);
         throw new Error("Failed to check if emails exist");
     }
 }
@@ -47,7 +46,6 @@ export async function checkIfChatAlreadyExists(usersIDs: string[]): Promise<Chat
 
         return null;
     } catch (error) {
-        console.error("Error checking if chat already exists:", error);
         throw new Error("Failed to check if chat exists");
     }
 }
@@ -63,7 +61,6 @@ export async function checkIfUserInChat(email: string, chatId: string): Promise<
             });
         return userChat !== null;
     } catch (error) {
-        console.error("Error checking if user is in chat:", error);
         throw new Error("Failed to check if user is in chat");
     }
 }
@@ -80,7 +77,6 @@ export async function checkIfAnyUserInChat(email: string[], chatId: string): Pro
             });
         return userChat !== null;
     } catch (error) {
-        console.error("Error checking if users are in chat:", error);
         throw new Error("Failed to check if users are in chat");
     }
 }
@@ -91,7 +87,6 @@ export async function checkIfUserExists(userId: string): Promise<boolean> {
             .findOne({ where: { id: userId } });
         return user !== null;
     } catch (error) {
-        console.error("Error checking if user exists:", error);
         throw new Error("Failed to check if user exists");
     }
 }
@@ -102,7 +97,6 @@ export async function checkIfChatExists(chatId: string): Promise<boolean> {
             .findOne({ where: { id: chatId } });
         return chat !== null;
     } catch (error) {
-        console.error("Error checking if chat exists:", error);
         throw new Error("Failed to check if chat exists");
     }
 }
@@ -114,7 +108,6 @@ export async function getChat(chatId: string): Promise<Chat | null> {
             .findOne({ where: { id: chatId } });
         return chat || null;
     } catch (error) {
-        console.error("Error checking if chat exists:", error);
         throw new Error("Failed to check if chat exists");
     }
 }
@@ -174,7 +167,6 @@ export async function getMessagesFromChat(chatId: string, page: number): Promise
 
         return { messages: mappedMessages };
     } catch (error) {
-        console.error("Error retrieving messages from chat:", error);
         throw new Error("Failed to retrieve messages from chat");
     }
 }
@@ -190,7 +182,6 @@ export async function searchSimilarUsers(query: string, pageNumber: number): Pro
             .getMany();
         return users;
     } catch (error) {
-        console.error("Error searching for users:", error);
         throw new Error("Failed to search for users");
     }
 }
@@ -207,7 +198,6 @@ export async function searchSimilarUsersWithoutTheChatMember(query: string, page
             .getMany();
         return users;
     } catch (error) {
-        console.error("Error searching for users:", error);
         throw new Error("Failed to search for users");
     }
 }
@@ -222,7 +212,6 @@ export async function getAlphabeticOrderedUsers(jump: number): Promise<User[]> {
             .getMany();
         return users;
     } catch (error) {
-        console.error("Error retrieving users:", error);
         throw new Error("Failed to retrieve users");
     }
 }
@@ -238,7 +227,6 @@ export async function getAlphabeticOrderedUsersWithoutTheChatMembers(jump: numbe
             .getMany();
         return users;
     } catch (error) {
-        console.error("Error retrieving users:", error);
         throw new Error("Failed to retrieve users");
     }
 }
@@ -272,7 +260,6 @@ export async function getGeneralChat(): Promise<Chat[]> {
     return generalChats;
 
   } catch (error) {
-    console.error("Error getting general chat", error);
     throw new Error("Error getting general chat");
   }
 }
@@ -300,7 +287,6 @@ export async function addUserToGeneralChats(userId: string): Promise<void> {
             }
         }
     } catch (error) {
-        console.error("Error adding user to general chat:", error);
         throw new Error("Failed to add user to general chat");
     }
 }

@@ -40,7 +40,6 @@ router.get("/top/:type", async (req: Request, res: Response) => {
 
         return res.json({ type, timeframe, leaderboard: results });
     } catch (error) {
-        console.error("Error fetching leaderboard:", error);
         return res.status(500).json({ error: "Internal server error" });
     }
 });

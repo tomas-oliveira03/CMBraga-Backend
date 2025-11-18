@@ -15,7 +15,6 @@ export const CreateAdminSchema = AdminSchema.omit({
     createdAt: true,
     activatedAt: true,
     updatedAt: true,
-    password: true
 });
 
 export const UpdateAdminSchema = AdminSchema.omit({
