@@ -122,6 +122,7 @@ router.post('/register/admin', authenticate, authorize(UserRole.ADMIN), async (r
         })
         
         const token = generateToken( validatedData.email );
+        console.log("Token:", token);
         // await createPasswordEmail(validatedData.email, validatedData.name);
 
         await addUserToGeneralChats(validatedData.email);
