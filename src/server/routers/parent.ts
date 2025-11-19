@@ -141,9 +141,6 @@ router.get('/parent-stats', authenticate, authorize(UserRole.PARENT), async (req
         const allParentStats = await AppDataSource.getRepository(ParentStat).find({
             where: {
                 parentId: parentId
-            },
-            relations: {
-                childStat: true
             }
         });
 
@@ -151,28 +148,35 @@ router.get('/parent-stats', authenticate, authorize(UserRole.PARENT), async (req
             return res.status(200).json([]);
         }
 
-        const last10Stats = allParentStats
-            .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-            .slice(0, 10);
+        const childStatsFromParentStats = await AppDataSource.getRepository(ChildStat).findByIds(
+            allParentStats.map(stat => stat.childStatId)
+        );
 
-        const totalDistanceMeters = allParentStats.reduce((sum, stat) => sum + stat.childStat.distanceMeters, 0);
-        const totalCo2Saved = allParentStats.reduce((sum, stat) => sum + stat.childStat.co2Saved, 0);
-        const totalPointsEarned = allParentStats.reduce((sum, stat) => sum + stat.childStat.pointsEarned, 0);
+        const last10ChildStats = allParentStats
+            .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+            .slice(0, 10)
+
+        const totalDistanceMeters = childStatsFromParentStats.reduce((sum, stat) => sum + stat.distanceMeters, 0);
+        const totalCo2Saved = childStatsFromParentStats.reduce((sum, stat) => sum + stat.co2Saved, 0);
+        const totalPointsEarned = childStatsFromParentStats.reduce((sum, stat) => sum + stat.pointsEarned, 0);
 
 
         return res.status(200).json({
             totalDistanceMeters,
             totalCo2Saved,
             totalPointsEarned,
-            stats: last10Stats.map(stat => ({
-                childStatId: stat.childStatId,
-                distanceMeters: stat.childStat.distanceMeters,
-                co2Saved: stat.childStat.co2Saved,
-                caloriesBurned: stat.childStat.caloriesBurned,
-                pointsEarned: stat.childStat.pointsEarned,
-                activityDate: stat.childStat.activityDate,
-                activitySessionId: stat.childStat.activitySessionId
-            }))
+            stats: last10ChildStats.map(parentStat => {
+                const childStat = childStatsFromParentStats.find(stat => stat.id === parentStat.childStatId)!;
+                return {
+                    id: childStat.id,
+                    distanceMeters: childStat.distanceMeters,
+                    co2Saved: childStat.co2Saved,
+                    caloriesBurned: childStat.caloriesBurned,
+                    pointsEarned: childStat.pointsEarned,
+                    activityDate: childStat.activityDate,
+                    activitySessionId: childStat.activitySessionId
+                };
+            })
         });
 
     } catch (error) {
