@@ -11,6 +11,9 @@ import { User } from "@/db/entities/User";
 import { UserRole } from "@/helpers/types";
 import { authenticate, authorize } from "../middleware/auth";
 import { Child } from "@/db/entities/Child";
+import { ParentStat } from "@/db/entities/ParentStat";
+import { ChildStat } from "@/db/entities/ChildStat";
+import { ParentChild } from "@/db/entities/ParentChild";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -148,6 +151,102 @@ router.put('/:id', authenticate, authorize(UserRole.PARENT), upload.single('file
             });
         }
         
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+});
+
+router.get('/parent-stats', authenticate, authorize(UserRole.PARENT), async (req: Request, res: Response) => {
+    try {
+        const parentId = req.user!.userId;
+        
+        const allParentStats = await AppDataSource.getRepository(ParentStat).find({
+            where: {
+                parentId: parentId
+            },
+            relations: {
+                childStat: true
+            }
+        });
+
+        if (allParentStats.length === 0) {
+            return res.status(200).json([]);
+        }
+
+        const last10Stats = allParentStats
+            .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+            .slice(0, 10);
+
+        const totalDistanceMeters = allParentStats.reduce((sum, stat) => sum + stat.childStat.distanceMeters, 0);
+        const totalCo2Saved = allParentStats.reduce((sum, stat) => sum + stat.childStat.co2Saved, 0);
+        const totalPointsEarned = allParentStats.reduce((sum, stat) => sum + stat.childStat.pointsEarned, 0);
+
+
+        return res.status(200).json({
+            totalDistanceMeters,
+            totalCo2Saved,
+            totalPointsEarned,
+            stats: last10Stats.map(stat => ({
+                childStatId: stat.childStatId,
+                distanceMeters: stat.childStat.distanceMeters,
+                co2Saved: stat.childStat.co2Saved,
+                caloriesBurned: stat.childStat.caloriesBurned,
+                pointsEarned: stat.childStat.pointsEarned,
+                activityDate: stat.childStat.activityDate,
+                activitySessionId: stat.childStat.activitySessionId
+            }))
+        });
+
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+})
+
+
+router.get('/child-stats/:id', authenticate, authorize(UserRole.PARENT), async (req: Request, res: Response) => {
+    try {
+        const childId = req.params.id;
+
+        const isFatherOfChild = await AppDataSource.getRepository(ParentChild).findOne({
+            where: {
+                parentId: req.user!.userId,
+                childId: childId
+            }
+        });
+
+        if (!isFatherOfChild) {
+            return res.status(403).json({ message: "You do not have access to this child's stats" });
+        }
+
+        const allChildStats = await AppDataSource.getRepository(ChildStat).find({
+            where: {
+                childId: childId
+            }
+        });
+
+        const last10Stats = allChildStats
+            .sort((a, b) => b.activityDate.getTime() - a.activityDate.getTime())
+            .slice(0, 10);
+
+        const totalDistanceMeters = allChildStats.reduce((sum, stat) => sum + stat.distanceMeters, 0);
+        const totalCo2Saved = allChildStats.reduce((sum, stat) => sum + stat.co2Saved, 0);
+        const totalPointsEarned = allChildStats.reduce((sum, stat) => sum + stat.pointsEarned, 0);
+
+        return res.status(200).json({
+            totalDistanceMeters,
+            totalCo2Saved,
+            totalPointsEarned,
+            stats: last10Stats.map(stat => ({
+                id: stat.id,
+                distanceMeters: stat.distanceMeters,
+                co2Saved: stat.co2Saved,
+                caloriesBurned: stat.caloriesBurned,
+                pointsEarned: stat.pointsEarned,
+                activityDate: stat.activityDate,
+                activitySessionId: stat.activitySessionId
+            }))
+        });
+        
+    } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
 });

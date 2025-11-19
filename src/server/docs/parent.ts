@@ -309,3 +309,185 @@
  *                   type: string
  *                   example: "Internal server error"
  */
+
+/**
+ * @swagger
+ * /parent/parent-stats:
+ *   get:
+ *     summary: Get aggregated parent stats
+ *     description: Returns aggregated statistics (totals) and the last 10 child stats for the authenticated parent
+ *     tags:
+ *       - Parent
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Aggregated parent statistics and latest child stats
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 totalDistanceMeters:
+ *                   type: number
+ *                   example: 12345
+ *                 totalCo2Saved:
+ *                   type: number
+ *                   example: 67.89
+ *                 totalPointsEarned:
+ *                   type: number
+ *                   example: 250
+ *                 stats:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       childStatId:
+ *                         type: string
+ *                         example: "f1e2d3c4-b5a6-7890-cdef-0123456789ab"
+ *                       distanceMeters:
+ *                         type: number
+ *                         example: 1200
+ *                       co2Saved:
+ *                         type: number
+ *                         example: 1.23
+ *                       caloriesBurned:
+ *                         type: number
+ *                         example: 45
+ *                       pointsEarned:
+ *                         type: number
+ *                         example: 10
+ *                       activityDate:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2024-01-20T08:30:00.000Z"
+ *                       activitySessionId:
+ *                         type: string
+ *                         nullable: true
+ *                         example: "session-1234"
+ *       401:
+ *         description: Unauthorized - Invalid or missing authentication token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Unauthorized"
+ *       403:
+ *         description: Forbidden - User does not have parent role
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Forbidden"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
+
+/**
+ * @swagger
+ * /parent/child-stats/{id}:
+ *   get:
+ *     summary: Get stats for a single child (parent perspective)
+ *     description: Returns aggregated statistics (totals) and the last 10 activity stats for a specific child. Parent must be associated with the child.
+ *     tags:
+ *       - Parent
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "c3d4e5f6-g7h8-9012-cdef-g23456789012"
+ *         description: Child ID (UUID)
+ *     responses:
+ *       200:
+ *         description: Child statistics (totals and last 10 sessions)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 totalDistanceMeters:
+ *                   type: number
+ *                   example: 3456
+ *                 totalCo2Saved:
+ *                   type: number
+ *                   example: 3.45
+ *                 totalPointsEarned:
+ *                   type: number
+ *                   example: 75
+ *                 stats:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *                       distanceMeters:
+ *                         type: number
+ *                         example: 300
+ *                       co2Saved:
+ *                         type: number
+ *                         example: 0.34
+ *                       caloriesBurned:
+ *                         type: number
+ *                         example: 12
+ *                       pointsEarned:
+ *                         type: number
+ *                         example: 5
+ *                       activityDate:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2024-01-19T15:20:00.000Z"
+ *                       activitySessionId:
+ *                         type: string
+ *                         nullable: true
+ *                         example: "session-5678"
+ *       401:
+ *         description: Unauthorized - Invalid or missing authentication token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Unauthorized"
+ *       403:
+ *         description: Forbidden - Parent is not associated with the child
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "You do not have access to this child's stats"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
