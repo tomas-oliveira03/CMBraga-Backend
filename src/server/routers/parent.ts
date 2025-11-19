@@ -70,27 +70,6 @@ router.get('/child', authenticate, authorize(UserRole.PARENT), async (req: Reque
 });
 
 
-router.get('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.PARENT), async (req: Request, res: Response) => {
-    try {
-        const parentId = req.params.id;
-
-        const parent = await AppDataSource.getRepository(Parent).findOne({
-            where: {
-                id: parentId
-            }
-        });
-
-        if (!parent) {
-            return res.status(404).json({ message: "Parent not found" });
-        }
-
-        return res.status(200).json(parent);
-    } catch (error) {
-        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
-    }
-});
-
-
 router.put('/:id', authenticate, authorize(UserRole.PARENT), upload.single('file'), async (req: Request, res: Response) => {
     try {
         const parentId = req.user!.userId
@@ -251,5 +230,24 @@ router.get('/child-stats/:id', authenticate, authorize(UserRole.PARENT), async (
     }
 });
 
+router.get('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.PARENT), async (req: Request, res: Response) => {
+    try {
+        const parentId = req.params.id;
+
+        const parent = await AppDataSource.getRepository(Parent).findOne({
+            where: {
+                id: parentId
+            }
+        });
+
+        if (!parent) {
+            return res.status(404).json({ message: "Parent not found" });
+        }
+
+        return res.status(200).json(parent);
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+});
 
 export default router;
