@@ -24,6 +24,7 @@ import routeRouter from "./route";
 import feedbackRouter from "./feedback";
 import leaderboardRouter from "./leaderboard";
 import notificationRouter from "./notification";
+import surveyRouter from "./survey";
 
 const router = express.Router();
 
@@ -53,5 +54,6 @@ router.use("/route", routeRouter);
 router.use("/feedback", feedbackRouter);
 router.use("/leaderboard", leaderboardRouter);
 router.use("/notification", notificationRouter);
+router.use("/survey", surveyRouter);
 
 export default router;

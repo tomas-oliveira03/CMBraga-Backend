@@ -157,3 +157,10 @@ export enum UserNotificationType {
     INSTRUCTOR_ASSIGNED_TO_ACTIVITY = 'instructor_assigned_to_activity',
     NEW_ACTIVITY_ISSUE = 'new_activity_issue'
 }
+
+
+// Route
+export enum SurveyType {
+    CHILD = 'child',
+    PARENT = 'parent'
+}

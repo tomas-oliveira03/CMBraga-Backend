@@ -8,6 +8,7 @@ import { Station } from "./Station";
 import { Feedback } from "./Feedback";
 import { ChildStat } from "./ChildStat";
 import { ChildHistory } from "./ChildHistory";
+import { Survey } from "./Survey";
 
 @Entity()
 @Check(`"gender" IN ('male', 'female')`)
@@ -72,6 +73,9 @@ export class Child {
 
 	@OneToMany(() => ChildHistory, (ch) => ch.child)
 	childHistory!: ChildHistory[];
+
+	@OneToMany(() => Survey, (cs) => cs.child)
+	childSurveys!: Survey[];
 
 	@ManyToOne(() => Station)
 	dropOffStation!: Station;

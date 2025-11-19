@@ -5,6 +5,7 @@ import { User } from "./User";
 import { Feedback } from "./Feedback";
 import { ParentStation } from "./ParentStation";
 import { ParentStat } from "./ParentStat";
+import { Survey } from "./Survey";
 
 @Entity()
 export class Parent {
@@ -53,6 +54,9 @@ export class Parent {
 
     @OneToMany(() => Feedback, (feedback) => feedback.parent)
     feedbacks!: Feedback[];
+
+    @OneToMany(() => Survey, (cs) => cs.parent)
+    parentSurveys!: Survey[];
 
     @OneToOne(() => User)
     user!: User;
