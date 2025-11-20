@@ -23,7 +23,7 @@ import { authenticate, authorize } from "../middleware/auth";
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-router.get('/', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
+router.get('/', authenticate, authorize(UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL), async (req: Request, res: Response) => {
     try {
         const allChildren = await AppDataSource.getRepository(Child).find({
             relations: {
