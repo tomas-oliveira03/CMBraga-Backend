@@ -6,9 +6,10 @@ import { Feedback } from '@/db/entities/Feedback';
 import { Between } from 'typeorm';
 import { sendFeedbackReminder } from '@/server/services/email';
 import { envs } from '@/config';
-import { ChildStationType } from '@/helpers/types';
+import { ChildStationType, UserNotificationType } from '@/helpers/types';
 import { ChildActivitySession } from '@/db/entities/ChildActivitySession';
 import { CronExpression } from '@/helpers/utils';
+import { createNotificationForUser } from '@/server/services/notification';
 
 class FeedbackReminderCron {
     private static job: ScheduledTask | null = null;
@@ -37,16 +38,18 @@ class FeedbackReminderCron {
                         }
                     },
                     relations: {
-                        childStations: true
+                        childStations: {
+                            child: true,
+                        }
                     }
                 });
 
-                let emailsSent = 0;
-                
+                let notificationsSent = 0;
 
+                console.log(`Found ${finishedActivities.length} finished activities today.`);
                 for (const activity of finishedActivities) {
                     for (const childActivity of activity.childStations) {
-                     
+                        console.log(`Processing child ${childActivity.childId} for activity ${activity.id}`);
                         const existingFeedback = await AppDataSource.getRepository(Feedback).findOne({
                             where: {
                                 activitySessionId: activity.id,
@@ -69,19 +72,29 @@ class FeedbackReminderCron {
                                 logger.cron(`FeedbackReminderCron: No booking found for child ${childActivity.childId} in activity ${activity.id}. Skipping email.`);
                                 continue;
                             }
+                            
                             const parent = childActivitySession.parent;
-
-                            const feedbackLink = `${envs.BASE_URL}/feedback?activityId=${activity.id}&childId=${childActivity.childId}&parentId=${parent.id}`;
-
-                            await sendFeedbackReminder(parent.email, parent.name, childActivity.child.name, activity.type, feedbackLink);
-                            emailsSent++;
+                            await createNotificationForUser({
+                                type: UserNotificationType.FEEDBACK_REMINDER,
+                                parentId: parent.email,
+                                activity: {
+                                    id: activity.id,
+                                    type: activity.type
+                                },
+                                child: {
+                                    id: childActivity.child.id,
+                                    name: childActivity.child.name
+                                },
+                            })
+                            notificationsSent++;
                             logger.cron(`FeedbackReminderCron: Sent feedback reminder to ${parent.email} for child ${childActivity.child.name}`);
                         }
                     }
                 }
 
-                logger.cron(`FeedbackReminderCron: Completed - ${emailsSent} feedback reminder emails sent`);
+                logger.cron(`FeedbackReminderCron: Completed - ${notificationsSent} feedback reminder notifications sent`);
             } catch (err) {
+                console.log(err)
                 logger.cron('FeedbackReminderCron: Error executing feedback reminder job', { error: err });
             }
         }, {

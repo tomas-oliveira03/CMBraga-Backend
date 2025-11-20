@@ -4,6 +4,7 @@ import { envs } from '@/config';
 import HealthCheck from './healthCheck';
 import FeedbackReminderCron from './feedbackReminder';
 import LeaderboardCron from './leaderboard';
+import SurveyReminderCron from './surveyReminder';
 
 export function initCronJobs(): void {
     logger.cron('Initializing cron jobs...');
@@ -12,6 +13,7 @@ export function initCronJobs(): void {
     ActivityCheckCron.start();
     FeedbackReminderCron.start();
     LeaderboardCron.start();
+    SurveyReminderCron.start();
 
     if(envs.RENDER_DEPLOY) {
         HealthCheck.start()

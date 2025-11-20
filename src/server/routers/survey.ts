@@ -5,7 +5,7 @@ import { authenticate, authorize } from "../middleware/auth";
 import { kidsQuestionaryIntro, kidsQuestions, parentsQuestionaryIntro, parentsQuestions, numberOfQuestions, QuestionnaireSurveyAnswers } from "@/helpers/survey-questions";
 import { Survey } from "@/db/entities/Survey";
 import { Child } from "@/db/entities/Child";
-import { MoreThan } from "typeorm";
+import { In, MoreThan } from "typeorm";
 
 const router = express.Router();
 
@@ -147,7 +147,7 @@ router.post('/', authenticate, authorize(UserRole.PARENT), async (req: Request, 
         const surveyExists = await AppDataSource.getRepository(Survey).findOne({
             where: {
                 type: surveyType,
-                parentId: req.user!.userId,
+                parentId: In(childExists.parentChildren.map(pc => pc.parentId)),
                 childId: childId,
                 submittedAt: MoreThan(new Date(Date.now() - WEEK_IN_MS))
             }

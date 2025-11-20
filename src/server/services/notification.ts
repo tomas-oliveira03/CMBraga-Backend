@@ -1,5 +1,5 @@
 import { AppDataSource } from "@/db";
-import { ActivityType, UserNotificationType } from "@/helpers/types";
+import { ActivityType, SurveyType, UserNotificationType } from "@/helpers/types";
 import { logger } from "@/lib/logger";
 import { Notification } from "@/db/entities/Notification";
 import { ParentChild } from "@/db/entities/ParentChild";
@@ -68,6 +68,30 @@ type NotificationInitialPayload =
             scheduledAt: Date;
         }
     }
+    |
+    {
+        type: UserNotificationType.SURVEY_REMINDER;
+        parentId: string;
+        surveyType: SurveyType;
+        child: {
+            id: string;
+            name: string;
+        }
+    }
+    |
+    {
+        type: UserNotificationType.FEEDBACK_REMINDER;
+        parentId: string;
+        activity: {
+            id: string;
+            type: ActivityType;
+        };
+        child: {
+            id: string;
+            name: string;
+        }
+    }
+    
 
 
 function buildNotificationContent(payload: NotificationInitialPayload): { title: string; description: string, uri: string } {
@@ -102,6 +126,20 @@ function buildNotificationContent(payload: NotificationInitialPayload): { title:
                 description: `Foi reportado um novo problema na atividade ${payload.activitySession.type}, ${payload.activitySession.routeName} agendada para ${payload.activitySession.scheduledAt.toLocaleString()}.`,
                 uri: `/issue/${payload.issueId}`
             };
+        case UserNotificationType.SURVEY_REMINDER:
+            return {
+                title: `Lembrete de questionário`,
+                description: payload.surveyType === SurveyType.PARENT
+                    ? `Lembrete para o pai/mãe preencher o questionário para a criança ${payload.child.name}.`
+                    : `Lembrete para a criança ${payload.child.name} preencher o questionário.`,
+                uri: `/survey`
+            };
+        case UserNotificationType.FEEDBACK_REMINDER:
+            return {
+                title: `Lembrete de feedback`,
+                description: `Lembrete para o pai/mãe fornecer feedback sobre a atividade ${payload.activity.type} para a criança ${payload.child.name}.`,
+                uri: `/feedback`
+            };
         default:
             throw new Error('Unknown notification type');
     }
@@ -118,14 +156,14 @@ async function usersToNotifyForNotificationType(payload: NotificationInitialPayl
             const parents = await AppDataSource.getRepository(User).find({
             where: {
                 parent: {
-                parentChildren: {
-                    childId: payload.child.id
-                }
+                    parentChildren: {
+                        childId: payload.child.id
+                    }
                 }
             },
             relations: {
                 parent: {
-                parentChildren: true
+                    parentChildren: true
                 }
             }
             });
@@ -134,6 +172,11 @@ async function usersToNotifyForNotificationType(payload: NotificationInitialPayl
         
         case UserNotificationType.INSTRUCTOR_ASSIGNED_TO_ACTIVITY:
             usersToNotify = [payload.instructor.email];
+            break;
+
+        case UserNotificationType.SURVEY_REMINDER:
+        case UserNotificationType.FEEDBACK_REMINDER:
+            usersToNotify = [payload.parentId];
             break;
 
         case UserNotificationType.NEW_ACTIVITY_ISSUE:
@@ -181,7 +224,6 @@ export async function createNotificationForUser(payload: NotificationInitialPayl
     try {
         const { title, description, uri } = buildNotificationContent(payload);
         const usersToNotify = await usersToNotifyForNotificationType(payload);
-        
         const payloadBulkData = usersToNotify.map(userId => {
             return {
                 userId: userId,

@@ -155,7 +155,9 @@ export enum UserNotificationType {
     CHILD_CHECKED_OUT = 'child_checked_out',
     CHILD_MEDICAL_REPORT = 'child_medical_report',
     INSTRUCTOR_ASSIGNED_TO_ACTIVITY = 'instructor_assigned_to_activity',
-    NEW_ACTIVITY_ISSUE = 'new_activity_issue'
+    NEW_ACTIVITY_ISSUE = 'new_activity_issue',
+    SURVEY_REMINDER = 'survey_reminder',
+    FEEDBACK_REMINDER = 'feedback_reminder'
 }
 
 
