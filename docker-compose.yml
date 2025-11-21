@@ -9,7 +9,7 @@ services:
     depends_on:
       - cmbraga-service-db
       - cmbraga-service-redis
-    # restart: always
+    restart: always
 
   cmbraga-service-db:
     container_name: cmbraga-service-db
