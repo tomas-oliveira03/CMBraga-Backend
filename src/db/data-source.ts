@@ -10,16 +10,10 @@ const migrationsPaths = envs.DOCKER_BUILD
     ? "dist/db/migrations/*.js"
     : "src/db/migrations/*.ts";
 
-
-const sslConfig = envs.RENDER_DEPLOY
-  ? { rejectUnauthorized: false }
-  : false;
-
-
 const baseSettings: DataSourceOptions = {
     type: "postgres",
     url: envs.DATABASE_URL,
-    ssl: sslConfig,
+    ssl: false,
     logging: false,
     entities: [entitiesPaths],
     migrations: [migrationsPaths],
