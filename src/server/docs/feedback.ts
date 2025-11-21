@@ -256,7 +256,6 @@
  *               - overallRating
  *               - activitySessionId
  *               - childId
- *               - parentId
  *             properties:
  *               evaluation1:
  *                 type: integer
@@ -309,11 +308,6 @@
  *                 format: uuid
  *                 example: "c1h2i3l4-d5e6-7890-1234-567890abcdef"
  *                 description: "ID da criança"
- *               parentId:
- *                 type: string
- *                 format: uuid
- *                 example: "p1a2r3e4-n5t6-7890-1234-567890abcdef"
- *                 description: "ID do pai/mãe"
  *           example:
  *             evaluation1: 5
  *             evaluation2: 4
@@ -324,7 +318,6 @@
  *             overallRating: 4
  *             activitySessionId: "a1c2t3i4-v5i6-7890-1234-567890abcdef"
  *             childId: "c1h2i3l4-d5e6-7890-1234-567890abcdef"
- *             parentId: "p1a2r3e4-n5t6-7890-1234-567890abcdef"
  *     responses:
  *       201:
  *         description: Feedback created successfully

@@ -156,19 +156,14 @@ router.post('/', authenticate, authorize(UserRole.PARENT), async (req: Request, 
         }
 
         const parent = await AppDataSource.getRepository(Parent).findOne({
-            where: { id: parentId }
+            where: { id: parentId },
+            relations: { parentChildren: true }
         });
         if (!parent) {
             return res.status(404).json({ message: "Parent not found" });
         }
 
-        const parentChild = await AppDataSource.getRepository(ParentChild).findOne({
-            where: {
-                parentId: parentId,
-                childId: validatedData.childId
-            }
-        });
-        if (!parentChild) {
+        if (!parent.parentChildren.some(pc => pc.childId === validatedData.childId)) {
             return res.status(403).json({ message: "Parent is not responsible for this child" });
         }
 
