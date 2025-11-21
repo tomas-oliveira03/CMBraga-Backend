@@ -348,3 +348,52 @@
  *       500:
  *         description: Internal server error
  */
+
+
+/**
+ * @swagger
+ * /feedback/child/to-do/{childId}:
+ *   get:
+ *     summary: Get pending feedbacks for a specific child
+ *     description: Returns all activity sessions that a child participated in but haven't received feedback yet
+ *     tags:
+ *       - Feedback
+ *     parameters:
+ *       - in: path
+ *         name: childId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "c1h2i3l4-d5e6-7890-1234-567890abcdef"
+ *         description: Child ID (UUID)
+ *     responses:
+ *       200:
+ *         description: List of pending activity sessions for feedback
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   activitySessionId:
+ *                     type: string
+ *                     format: uuid
+ *                     example: "a1c2t3i4-v5i6-7890-1234-567890abcdef"
+ *                     description: "ID of the activity session"
+ *                   routeName:
+ *                     type: string
+ *                     example: "Percurso do Parque"
+ *                     description: "Name of the route/activity"
+ *                   scheduledAt:
+ *                     type: string
+ *                     format: date-time
+ *                     example: "2024-04-02T10:00:00.000Z"
+ *                     description: "When the activity session was scheduled"
+ *       403:
+ *         description: Parent is not responsible for this child
+ *       404:
+ *         description: Child not found
+ *       500:
+ *         description: Internal server error
+ */
