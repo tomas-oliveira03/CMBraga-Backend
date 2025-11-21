@@ -44,19 +44,23 @@ router.get('/:id', authenticate, authorize(UserRole.ADMIN), async (req: Request,
 
 
 // Get all feedbacks for a given child
-router.get('/child/:childId', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
+router.get('/child/:childId', authenticate, authorize(UserRole.ADMIN, UserRole.PARENT), async (req: Request, res: Response) => {
     try {
         const childId = req.params.childId;
 
         const child = await AppDataSource.getRepository(Child).findOne({
             where: { id: childId },
             relations: {
-                feedbacks: true
+                feedbacks: true,
+                parentChildren: true
             }
         });
 
         if (!child) {
             return res.status(404).json({ message: "Child not found" });
+        }
+        if (req.user!.role === UserRole.PARENT && !child.parentChildren.some(pc => pc.parentId === req.user!.userId)) {
+            return res.status(403).json({ message: "Parent is not responsible for this child" });
         }
 
         return res.status(200).json(child.feedbacks);
