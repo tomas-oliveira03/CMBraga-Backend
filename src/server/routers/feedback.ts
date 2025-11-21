@@ -14,7 +14,7 @@ import { authenticate, authorize } from "../middleware/auth";
 
 const router = express.Router();
 
-router.get('/', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
+router.get('/', authenticate, authorize(UserRole.ADMIN, UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
     try {
         const feedbacks = await AppDataSource.getRepository(Feedback).find();
         return res.status(200).json(feedbacks);
@@ -24,7 +24,7 @@ router.get('/', authenticate, authorize(UserRole.ADMIN), async (req: Request, re
 });
 
 
-router.get('/:id', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
+router.get('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
     try {
         const feedbackId = req.params.id;
 
