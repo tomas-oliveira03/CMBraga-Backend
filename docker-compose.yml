@@ -4,7 +4,8 @@ services:
     build: .
     env_file: .env
     ports:
-      - '3001:3001'
+      - "127.0.0.1:3001:3001"
+
     depends_on:
       - cmbraga-service-db
       - cmbraga-service-redis
@@ -19,34 +20,14 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes: ['cmbraga-service-db-data:/var/lib/postgresql/data']
-    ports:
-      - '5201:5432' # DO NOT EXPOSE IN PRODUCTION
     restart: always
 
   cmbraga-service-redis:
     container_name: cmbraga-service-redis
     env_file: .env
     image: redis:6.2.6-alpine
-    ports:
-      - '6420:6379' # DO NOT EXPOSE IN PRODUCTION
     restart: always
 
 
-  caddy:
-    image: caddy:2
-    container_name: caddy
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - cmbraga-service-app
-
 volumes:
   cmbraga-service-db-data:
-  caddy_data:
-  caddy_config:
