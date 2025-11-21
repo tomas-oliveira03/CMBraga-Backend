@@ -193,7 +193,18 @@ router.post('/', authenticate, authorize(UserRole.PARENT), async (req: Request, 
             return res.status(400).json({ message: "Feedback already exists for this activity session" });
         }
 
-        await AppDataSource.getRepository(Feedback).insert(validatedData);
+        await AppDataSource.getRepository(Feedback).insert({
+            evaluation1: validatedData.evaluation1,
+            evaluation2: validatedData.evaluation2,
+            evaluation3: validatedData.evaluation3,
+            evaluation4: validatedData.evaluation4,
+            evaluation5: validatedData.evaluation5,
+            textFeedback: validatedData.textFeedback,
+            overallRating: validatedData.overallRating,
+            activitySessionId: validatedData.activitySessionId,
+            childId: validatedData.childId,
+            parentId: parentId
+        });
 
         return res.status(200).json({ message: "Feedback created successfully"});
 
