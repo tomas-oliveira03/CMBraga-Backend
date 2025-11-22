@@ -1,0 +1,136 @@
+{
+  "name": "PB14 D. Pedro V 25/26",
+  "color": "Verde",
+  "route": [
+    {
+      "lat": 41.554297,
+      "lon": -8.434676
+    },
+    {
+      "lat": 41.554036,
+      "lon": -8.433658
+    },
+    {
+      "lat": 41.554229,
+      "lon": -8.433444
+    },
+    {
+      "lat": 41.553803,
+      "lon": -8.432145
+    },
+    {
+      "lat": 41.553996,
+      "lon": -8.431888
+    },
+    {
+      "lat": 41.55394,
+      "lon": -8.431416
+    },
+    {
+      "lat": 41.55406,
+      "lon": -8.431298
+    },
+    {
+      "lat": 41.554052,
+      "lon": -8.430472
+    },
+    {
+      "lat": 41.553259,
+      "lon": -8.429973
+    },
+    {
+      "lat": 41.553486,
+      "lon": -8.429184
+    },
+    {
+      "lat": 41.552687,
+      "lon": -8.428734
+    },
+    {
+      "lat": 41.552623,
+      "lon": -8.428197
+    },
+    {
+      "lat": 41.552434,
+      "lon": -8.427891
+    },
+    {
+      "lat": 41.552884,
+      "lon": -8.42588
+    },
+    {
+      "lat": 41.551997,
+      "lon": -8.42544
+    },
+    {
+      "lat": 41.5517,
+      "lon": -8.423992
+    },
+    {
+      "lat": 41.551892,
+      "lon": -8.423659
+    },
+    {
+      "lat": 41.551202,
+      "lon": -8.422693
+    },
+    {
+      "lat": 41.551467,
+      "lon": -8.419528
+    }
+  ],
+  "stops": [
+    {
+      "name": "A - R. Valério Pinto de Sá",
+      "lat": 41.554297,
+      "lon": -8.434676,
+      "distanceFromStart": 0,
+      "distanceFromPrevious": 0,
+      "timeFromStartMinutes": 0,
+      "type": "regular"
+    },
+    {
+      "name": "B - R. de Ferraz",
+      "lat": 41.553486,
+      "lon": -8.429184,
+      "distanceFromStart": 0.559,
+      "distanceFromPrevious": 0.559,
+      "timeFromStartMinutes": 10,
+      "type": "regular"
+    },
+    {
+      "name": "C - Praça Conde Agrolongo",
+      "lat": 41.552884,
+      "lon": -8.42588,
+      "distanceFromStart": 0.908,
+      "distanceFromPrevious": 0.349,
+      "timeFromStartMinutes": 18,
+      "type": "regular"
+    },
+    {
+      "name": "D - R. dos Chãos",
+      "lat": 41.551838,
+      "lon": -8.423587,
+      "distanceFromStart": 1.174,
+      "distanceFromPrevious": 0.265,
+      "timeFromStartMinutes": 23,
+      "type": "regular"
+    },
+    {
+      "name": "Colégio D. Pedro V",
+      "lat": 41.551389,
+      "lon": -8.419314,
+      "distanceFromStart": 1.55,
+      "distanceFromPrevious": 0.376,
+      "timeFromStartMinutes": 30,
+      "type": "school"
+    }
+  ],
+  "totalDistance": 1.55,
+  "bounds": {
+    "north": 41.554297,
+    "south": 41.551202,
+    "east": -8.419528,
+    "west": -8.434676
+  }
+}
