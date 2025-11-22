@@ -977,3 +977,133 @@
  *                   type: string
  *                   example: "Child not found"
  */
+
+
+/**
+ * @swagger
+ * /child/history/{id}:
+ *   get:
+ *     summary: Get child's health history
+ *     description: Returns the health history records for a specific child, including height, weight, cortisol level measurements over time. Admins and health professionals can access any child's history, parents can only access their associated children's history.
+ *     tags:
+ *       - Child
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *         description: Child ID (UUID)
+ *     responses:
+ *       200:
+ *         description: Child health history records
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     example: "h1s2t3o4-r5y6-7890-abcd-ef1234567890"
+ *                     description: "History record ID"
+ *                   heightCentimeters:
+ *                     type: number
+ *                     example: 140.5
+ *                     description: "Child's height in centimeters at time of record"
+ *                   weightKilograms:
+ *                     type: number
+ *                     example: 35.2
+ *                     description: "Child's weight in kilograms at time of record"
+ *                   cortisolLevel:
+ *                     type: integer
+ *                     example: 15
+ *                     description: "Child's cortisol level measurement at time of record"
+ *                   age:
+ *                     type: integer
+ *                     example: 9
+ *                     description: "Child's age in years when this record was created"
+ *                   createdAt:
+ *                     type: string
+ *                     format: date-time
+ *                     example: "2024-01-15T10:30:00.000Z"
+ *                     description: "When this health record was created"
+ *             examples:
+ *               multiple_records:
+ *                 summary: Child with multiple health history records
+ *                 value:
+ *                   - id: "h1s2t3o4-r5y6-7890-abcd-ef1234567890"
+ *                     heightCentimeters: 135.0
+ *                     weightKilograms: 32.5
+ *                     cortisolLevel: 12
+ *                     age: 8
+ *                     createdAt: "2023-09-15T09:00:00.000Z"
+ *                   - id: "h2s3t4o5-r6y7-8901-bcde-ef2345678901"
+ *                     heightCentimeters: 140.5
+ *                     weightKilograms: 35.2
+ *                     cortisolLevel: 15
+ *                     age: 9
+ *                     createdAt: "2024-01-15T10:30:00.000Z"
+ *                   - id: "h3s4t5o6-r7y8-9012-cdef-ef3456789012"
+ *                     heightCentimeters: 144.0
+ *                     weightKilograms: 37.8
+ *                     cortisolLevel: 14
+ *                     age: 9
+ *                     createdAt: "2024-03-20T14:15:00.000Z"
+ *               no_history:
+ *                 summary: Child with no health history records
+ *                 value: []
+ *               single_record:
+ *                 summary: Child with single health history record
+ *                 value:
+ *                   - id: "h1s2t3o4-r5y6-7890-abcd-ef1234567890"
+ *                     heightCentimeters: 140.5
+ *                     weightKilograms: 35.2
+ *                     cortisolLevel: 15
+ *                     age: 9
+ *                     createdAt: "2024-01-15T10:30:00.000Z"
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Authentication required"
+ *       403:
+ *         description: Forbidden - You do not have access to this child's information
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Forbidden: You do not have access to this child's information."
+ *       404:
+ *         description: Child not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Child not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */

@@ -59,7 +59,7 @@ router.get('/', authenticate, authorize(UserRole.ADMIN, UserRole.HEALTH_PROFESSI
 });
 
 
-router.get('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.PARENT), async (req: Request, res: Response) => {
+router.get('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.PARENT, UserRole.HEALTH_PROFESSIONAL), async (req: Request, res: Response) => {
     try {
         const childId = req.params.id;
 
@@ -99,6 +99,44 @@ router.get('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.PARENT), asy
             createdAt: child.createdAt,
             updatedAt: child.updatedAt
         });
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+});
+
+
+router.get('/history/:id', authenticate, authorize(UserRole.ADMIN, UserRole.PARENT, UserRole.HEALTH_PROFESSIONAL), async (req: Request, res: Response) => {
+    try {
+        const childId = req.params.id;
+
+        const child = await AppDataSource.getRepository(Child).findOne({
+            where: {
+                id: childId
+            },
+            relations: {
+                dropOffStation: true,
+                parentChildren: true,
+                childHistory: true
+            }
+        });
+
+        if (!child) {
+            return res.status(404).json({ message: "Child not found" })
+        }
+        if (req.user!.role === UserRole.PARENT && !child.parentChildren.some(pc => pc.parentId === req.user!.userId)) {
+            return res.status(403).json({ message: "Forbidden: You do not have access to this child's information." });
+        }
+
+        const finalPayload = child.childHistory.map(history => ({
+            id: history.id,
+            heightCentimeters: history.heightCentimeters,
+            weightKilograms: history.weightKilograms,
+            cortisolLevel: history.cortisolLevel,
+            age: history.age,
+            createdAt: history.createdAt
+        }));
+
+        return res.status(200).json(finalPayload);
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
