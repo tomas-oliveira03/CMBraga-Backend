@@ -319,6 +319,13 @@ export async function hydrateCloud() {
 
 async function runHydration() {
     try {
+
+        const checkIfDataFolderExists = fs.existsSync(path.join(__dirname, 'data'));
+        if (!checkIfDataFolderExists) {
+            console.error("Data folder not found. Please ensure the 'data' folder exists in the current directory.");
+            process.exit(1);
+        }
+
         await AppDataSource.initialize();
 
         console.log("Starting hydration process...");

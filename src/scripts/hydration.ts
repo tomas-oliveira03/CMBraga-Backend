@@ -903,6 +903,13 @@ async function dbHydration(dataSource: DataSource) {
 }
 
 async function seed() {
+
+    const checkIfDataFolderExists = fs.existsSync(path.join(__dirname, 'data'));
+    if (!checkIfDataFolderExists) {
+      console.error("Data folder not found. Please ensure the 'data' folder exists in the current directory.");
+      process.exit(1);
+    }
+
     const dataSource = await AppDataSource.initialize();
   
     const cloudHydrated = await cloudAlreadyHydrated();
