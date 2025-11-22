@@ -12,6 +12,7 @@ import { AuthService } from "./lib/auth";
 import url from "url";
 import { initCronJobs, stopCronJobs } from "./cron";
 import cors from "cors";
+import { hydrateDefaultProfilePicturesFromDB } from "./helpers/storage";
 
 const app = express();
 const server = createServer(app);
@@ -99,6 +100,7 @@ const startServer = async () => {
 
         initCronJobs()
         webSocketManager.setAllChatRooms()
+        hydrateDefaultProfilePicturesFromDB()
         
         // Route timing middleware
         app.use((req, res, next) => {

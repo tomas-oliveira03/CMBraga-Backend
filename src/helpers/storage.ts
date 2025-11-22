@@ -1,23 +1,12 @@
+import { AppDataSource } from "@/db";
+import { CloudDefaultImages } from "@/db/entities/CloudDefaultImages";
+import { DefaultImageType } from "./types";
+
 export const MAX_KML_SIZE = 1 * 1024 * 1024 // 1MB
 
-export const USER_DEFAULT_PROFILE_PICTURES = [
-    "https://res.cloudinary.com/dwffdkytm/image/upload/v1762439325/CMBraga/users/default-profile-picture-1.jpg",
-    "https://res.cloudinary.com/dwffdkytm/image/upload/v1762439325/CMBraga/users/default-profile-picture-2.jpg",
-    "https://res.cloudinary.com/dwffdkytm/image/upload/v1762439325/CMBraga/users/default-profile-picture-3.jpg",
-    "https://res.cloudinary.com/dwffdkytm/image/upload/v1762439325/CMBraga/users/default-profile-picture-4.jpg",
-    "https://res.cloudinary.com/dwffdkytm/image/upload/v1762439325/CMBraga/users/default-profile-picture-5.jpg",
-    "https://res.cloudinary.com/dwffdkytm/image/upload/v1762439325/CMBraga/users/default-profile-picture-6.jpg",
-    "https://res.cloudinary.com/dwffdkytm/image/upload/v1762439325/CMBraga/users/default-profile-picture-7.jpg",
-    "https://res.cloudinary.com/dwffdkytm/image/upload/v1762439325/CMBraga/users/default-profile-picture-8.jpg",
-    "https://res.cloudinary.com/dwffdkytm/image/upload/v1762439325/CMBraga/users/default-profile-picture-9.jpg",
-    "https://res.cloudinary.com/dwffdkytm/image/upload/v1762439325/CMBraga/users/default-profile-picture-10.jpg",
-    "https://res.cloudinary.com/dwffdkytm/image/upload/v1762439325/CMBraga/users/default-profile-picture-11.jpg",
-    "https://res.cloudinary.com/dwffdkytm/image/upload/v1762439325/CMBraga/users/default-profile-picture-12.jpg",
-    "https://res.cloudinary.com/dwffdkytm/image/upload/v1762439325/CMBraga/users/default-profile-picture-13.jpg",
-    "https://res.cloudinary.com/dwffdkytm/image/upload/v1762439325/CMBraga/users/default-profile-picture-14.jpg"
-]
+export let USER_DEFAULT_PROFILE_PICTURES: string[] = []
 
-export const GROUP_DEFAULT_PROFILE_PICTURE = "https://res.cloudinary.com/dwffdkytm/image/upload/v1762439258/CMBraga/groups/default-group-picture-1.jpg"
+export let GROUP_DEFAULT_PROFILE_PICTURE: string = ""
 
 const allowedImageTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
 
@@ -42,4 +31,21 @@ export function isValidImageFile(file: Express.Multer.File): boolean {
 
 export function areValidImageFiles(files: Express.Multer.File[]): boolean {
   return files.every(file => allowedImageTypes.includes(file.mimetype));
+}
+
+export async function hydrateDefaultProfilePicturesFromDB() {
+    try {
+        const cloudImages = await AppDataSource.getRepository(CloudDefaultImages).find();
+
+        USER_DEFAULT_PROFILE_PICTURES = cloudImages
+          .filter(img => img.imageType === DefaultImageType.USERS)
+          .map(img => img.imageUrl);
+            
+        GROUP_DEFAULT_PROFILE_PICTURE = cloudImages
+          .filter(img => img.imageType === DefaultImageType.GROUPS)
+          .map(img => img.imageUrl)[0] || "";
+    }
+    catch (error) {
+        console.error("Error hydrating default profile pictures from DB:", error);
+    }
 }

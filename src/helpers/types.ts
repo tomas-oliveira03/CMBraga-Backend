@@ -166,3 +166,11 @@ export enum SurveyType {
     CHILD = 'child',
     PARENT = 'parent'
 }
+
+
+// Default Cloud Images
+export enum DefaultImageType {
+    USERS='users',
+    GROUPS='groups',
+    BADGES='badges'
+}

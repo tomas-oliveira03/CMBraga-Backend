@@ -6,7 +6,7 @@ class LoggerClient {
     private logger?: Logger;
 
     constructor() {
-        const appName = "cmbraga-trading-server";
+        const appName = "cmbraga-server";
 
         if (envs.LOGDNA_KEY) {
             this.logger = createLogger(envs.LOGDNA_KEY, {
