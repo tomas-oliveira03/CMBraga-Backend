@@ -272,3 +272,90 @@
  *                 message:
  *                   type: string
  */
+
+/**
+ * @swagger
+ * /survey/child/{id}:
+ *   get:
+ *     summary: Get all surveys for a specific child
+ *     description: Retrieves all surveys associated with a specific child
+ *     tags:
+ *       - Survey
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Child ID
+ *     responses:
+ *       200:
+ *         description: Surveys retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     example: "550e8400-e29b-41d4-a716-446655440000"
+ *                   type:
+ *                     type: string
+ *                     enum: [child, parent]
+ *                     example: "child"
+ *                   child:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         example: "550e8400-e29b-41d4-a716-446655440001"
+ *                       name:
+ *                         type: string
+ *                         example: "John Doe"
+ *                   parent:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         example: "550e8400-e29b-41d4-a716-446655440002"
+ *                       name:
+ *                         type: string
+ *                         example: "Jane Doe"
+ *                   submittedAt:
+ *                     type: string
+ *                     format: date-time
+ *                     example: "2024-01-15T10:30:00.000Z"
+ *       403:
+ *         description: Forbidden - You do not have permission to view this survey
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "You do not have permission to view this survey"
+ *       404:
+ *         description: Child not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Child not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ */

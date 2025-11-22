@@ -89,6 +89,52 @@ router.get('/:id', authenticate, authorize(UserRole.PARENT, UserRole.ADMIN, User
 });
 
 
+router.get('/child/:id', authenticate, authorize(UserRole.PARENT, UserRole.ADMIN, UserRole.HEALTH_PROFESSIONAL), async (req: Request, res: Response) => {
+    try {
+        const childId = req.params.id;
+
+        const child = await AppDataSource.getRepository(Child).findOne({
+            where: {
+                id: childId
+            },
+            relations: {
+                parentChildren: true,
+                childSurveys: {
+                    parent: true
+                }
+            }
+        });
+
+        if (!child) {
+            return res.status(404).json({ message: 'Child not found' });
+        }
+
+        if (req.user!.role === UserRole.PARENT && (!child.parentChildren.find(pc => pc.parentId === req.user!.userId))) {
+            return res.status(403).json({ message: 'You do not have permission to view this survey' });
+        }
+
+        const payloadSurveys = child.childSurveys.map(survey => ({
+            id: survey.id,
+            type: survey.type,
+            child: {
+                id: child.id,
+                name: child.name
+            },
+            parent: {
+                id: survey.parent.id,
+                name: survey.parent.name
+            },
+            submittedAt: survey.submittedAt,
+        }));
+
+        
+        return res.status(200).json(payloadSurveys);
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+});
+
+
 router.post('/', authenticate, authorize(UserRole.PARENT), async (req: Request, res: Response) => {
     try {
         const { type: surveyType, data, childId } = req.body;

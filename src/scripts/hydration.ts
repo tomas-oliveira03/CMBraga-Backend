@@ -19,7 +19,7 @@ import { User } from "@/db/entities/User";
 import { Feedback } from "@/db/entities/Feedback";
 import { ParentActivitySession } from "@/db/entities/ParentActivitySession";
 import { Badge } from "@/db/entities/Badge";
-import { BadgeCriteria, UserNotificationType } from "@/helpers/types";
+import { BadgeCriteria, SurveyType, UserNotificationType } from "@/helpers/types";
 import informationHash from "@/lib/information-hash";
 import { Route } from "@/db/entities/Route";
 import { RouteStation } from "@/db/entities/RouteStation";
@@ -37,6 +37,7 @@ import { TypeOfChat } from "@/helpers/types";
 import passwordHash from "@/lib/password-hash";
 import { cloudAlreadyHydrated, hydrateCloud, importBadges } from "./prodHydration";
 import { DataSource } from "typeorm";
+import { Survey } from "@/db/entities/Survey";
 
 
 
@@ -90,6 +91,7 @@ async function dbHydration(dataSource: DataSource) {
     const chatRepo = dataSource.getRepository(Chat);
     const userChatRepo = dataSource.getRepository(UserChat);
     const messageRepo = dataSource.getRepository(Message);
+    const surveyRepo = dataSource.getRepository(Survey);
 
     console.log("Cleaning tables (dependents first)...");
     // Clear repositories in order, but ignore errors if the table doesn't exist yet
@@ -816,6 +818,59 @@ async function dbHydration(dataSource: DataSource) {
         recommendations: "Evitar exposição a pólen"
       }));
     }
+
+    // Create sample surveys
+    console.log("Creating sample surveys...");
+    
+    // Generate realistic survey answers (1-5 scale for all 27 questions)
+    const generateSurveyAnswers = () => {
+      const answers: Record<number, number>[] = [];
+      for (let i = 1; i <= 27; i++) {
+        // Generate realistic answers with some variation
+        const score = Math.floor(Math.random() * 5) + 1; // 1-5 scale
+        answers.push({ [i]: score });
+      }
+      return answers;
+    };
+
+    const sampleSurveys = [];
+    
+    // Survey 1: Parent survey for first child (child aged around 8-9)
+    if (criancas.length > 0 && pais.length > 0) {
+      sampleSurveys.push(surveyRepo.create({
+        type: "parent" as any,
+        parentId: pais[0]!.id,
+        childId: criancas[0]!.id,
+        answers: generateSurveyAnswers(),
+        submittedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) // 3 days ago
+      }));
+    }
+
+    // Survey 2: Child survey for first child (self-reported)
+    if (criancas.length > 0 && pais.length > 0) {
+      sampleSurveys.push(surveyRepo.create({
+        type: SurveyType.CHILD,
+        parentId: pais[0]!.id,
+        childId: criancas[0]!.id,
+        answers: generateSurveyAnswers(),
+        submittedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) // 2 days ago
+      }));
+    }
+
+    // Survey 3: Parent survey for second child
+    if (criancas.length > 1 && pais.length > 1) {
+      sampleSurveys.push(surveyRepo.create({
+        type: SurveyType.PARENT,
+        parentId: pais[1]!.id,
+        childId: criancas[1]!.id,
+        answers: generateSurveyAnswers(),
+        submittedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) // 5 days ago
+      }));
+    }
+
+
+    await surveyRepo.save(sampleSurveys);
+    console.log(`✅ Created ${sampleSurveys.length} sample surveys`);
 
     // Create badges from JSON
     await importBadges();
