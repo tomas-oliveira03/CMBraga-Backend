@@ -15,6 +15,7 @@ COPY Makefile ./
 RUN npm run build
 
 COPY src/scripts/routes/ dist/scripts/routes/
+COPY src/scripts/data/ dist/scripts/data/
 
 EXPOSE 3001
 
