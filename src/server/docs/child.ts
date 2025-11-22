@@ -40,6 +40,11 @@
  *                     type: number
  *                     nullable: true
  *                     example: 35
+ *                   cortisolLevel:
+ *                     type: integer
+ *                     nullable: true
+ *                     example: 15
+ *                     description: "Child's cortisol level measurement"
  *                   school:
  *                     type: string
  *                     example: "Escola Básica de Braga"
@@ -175,6 +180,11 @@
  *                   type: number
  *                   nullable: true
  *                   example: 32
+ *                 cortisolLevel:
+ *                   type: integer
+ *                   nullable: true
+ *                   example: 12
+ *                   description: "Child's cortisol level measurement"
  *                 school:
  *                   type: string
  *                   example: "Escola Básica de Braga"
@@ -325,6 +335,10 @@
  *                 type: number
  *                 example: 32
  *                 description: "Child's weight in kilograms (records history if provided)"
+ *               cortisolLevel:
+ *                 type: integer
+ *                 example: 18
+ *                 description: "Child's cortisol level measurement"
  *               dropOffStationId:
  *                 type: string
  *                 example: "station-uuid-2"
@@ -374,6 +388,9 @@
  *               weightKilograms:
  *                 type: number
  *                 example: 32
+ *               cortisolLevel:
+ *                 type: integer
+ *                 example: 18
  *               dropOffStationId:
  *                 type: string
  *                 example: "station-uuid-2"

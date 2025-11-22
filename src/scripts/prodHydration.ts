@@ -300,7 +300,7 @@ export async function hydrateCloud() {
             const fileNameWithoutExt = path.parse(imageFile).name;
 
             // Upload image to cloud
-            const imageUrl = await uploadImageBuffer(buffer, fileNameWithoutExt, folderName+"2", true);
+            const imageUrl = await uploadImageBuffer(buffer, fileNameWithoutExt, folderName, true);
             
             allImagesData.push({ fileName: fileNameWithoutExt, imageType: folderName as DefaultImageType, imageUrl: imageUrl });
         }

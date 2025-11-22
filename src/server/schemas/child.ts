@@ -29,6 +29,7 @@ export const ChildSchema = z.object({
   gender: z.nativeEnum(ChildGender),
   heightCentimeters: z.number().int(),
   weightKilograms: z.number().int(),
+  cortisolLevel: z.number().int(),
   school: z.string(),
   schoolGrade: z.number(),
   dropOffStationId: z.string(),
@@ -44,7 +45,8 @@ export const CreateChildSchema = ChildSchema.omit({
   updatedAt: true,
   healthProblems: true,
   heightCentimeters: true,
-  weightKilograms: true
+  weightKilograms: true,
+  cortisolLevel: true
 });
 
 export const UpdateChildSchema = z.object({
@@ -57,6 +59,7 @@ export const UpdateChildSchema = z.object({
     dropOffStationId: z.string().uuid().optional(),
     heightCentimeters: z.coerce.number().positive().optional(),
     weightKilograms: z.coerce.number().positive().optional(),
+    cortisolLevel: z.coerce.number().positive().optional(),
     parentId: z.string().uuid().optional().or(z.literal("")),
     removeParentId: z.string().uuid().optional().or(z.literal(""))
 }).partial();

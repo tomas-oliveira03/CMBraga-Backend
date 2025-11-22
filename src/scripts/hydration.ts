@@ -429,6 +429,7 @@ async function dbHydration(dataSource: DataSource) {
         dropOffStationId: schoolStation!.id,
         dateOfBirth: new Date(`201${5 + (i % 4)}-0${(i % 9) + 1}-${10 + (i % 15)}`),
         heightCentimeters: 110 + (i * 2),
+        cortisolLevel: 5 + i,
         weightKilograms: 20 + i,
         profilePictureURL: selectRandomDefaultProfilePicture()
       });

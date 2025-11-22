@@ -31,6 +31,9 @@ export class Child {
 	@Column({ type: 'int', nullable: true, default: null })
 	weightKilograms!: number | null; 
 
+	@Column({ type: 'int', nullable: true, default: null })
+	cortisolLevel!: number | null;
+
 	@Column({ type: 'varchar' })
 	school!: string;
 

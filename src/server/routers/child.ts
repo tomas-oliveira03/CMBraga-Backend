@@ -38,6 +38,7 @@ router.get('/', authenticate, authorize(UserRole.ADMIN, UserRole.HEALTH_PROFESSI
             gender: child.gender,
             heightCentimeters: child.heightCentimeters,
             weightKilograms: child.weightKilograms,
+            cortisolLevel: child.cortisolLevel,
             school: child.school,
             schoolGrade: child.schoolGrade,
             dropOffStation: {
@@ -86,6 +87,7 @@ router.get('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.PARENT), asy
             gender: child.gender,
             heightCentimeters: child.heightCentimeters,
             weightKilograms: child.weightKilograms,
+            cortisolLevel: child.cortisolLevel,
             school: child.school,
             schoolGrade: child.schoolGrade,
             dropOffStation: {
@@ -229,11 +231,12 @@ router.put('/:id', authenticate, authorize(UserRole.PARENT), upload.single('file
 
             const age = differenceInYears(updatedAt, child.dateOfBirth);
 
-            if (childData.heightCentimeters || childData.weightKilograms) {
+            if (childData.heightCentimeters || childData.weightKilograms || childData.cortisolLevel) {
                 await tx.getRepository(ChildHistory).insert({
                     childId: childId,
                     heightCentimeters: childData.heightCentimeters || child.heightCentimeters,
                     weightKilograms: childData.weightKilograms || child.weightKilograms,
+                    cortisolLevel: childData.cortisolLevel || child.cortisolLevel,
                     age: age
                 })
             }
