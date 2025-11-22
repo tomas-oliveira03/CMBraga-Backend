@@ -26,7 +26,7 @@ import { RouteStation } from "@/db/entities/RouteStation";
 import { ChildHistory } from "@/db/entities/ChildHistory";
 import fs from "fs";
 import path from "path";
-import { selectRandomDefaultProfilePicture, USER_DEFAULT_PROFILE_PICTURES } from "@/helpers/storage";
+import { hydrateDefaultProfilePicturesFromDB, selectRandomDefaultProfilePicture, USER_DEFAULT_PROFILE_PICTURES } from "@/helpers/storage";
 import { checkImagesExist, uploadImageBuffer } from "@/server/services/cloud";
 import { RouteConnection } from "@/db/entities/RouteConnection";
 import redisClient from "@/lib/redis";
@@ -35,54 +35,13 @@ import { UserChat } from "@/db/entities/UserChat";
 import { Message } from "@/db/entities/Message";
 import { TypeOfChat } from "@/helpers/types";
 import passwordHash from "@/lib/password-hash";
+import { cloudAlreadyHydrated, hydrateCloud, importBadges } from "./prodHydration";
+import { DataSource } from "typeorm";
 
 
-async function cloudHydration(){
-  console.log("Checking cloud images...");
-  
-  const imageExistenceResults = await checkImagesExist(USER_DEFAULT_PROFILE_PICTURES);
-  
-  const missingImages = USER_DEFAULT_PROFILE_PICTURES.filter(url => !imageExistenceResults[url]);
-  
-  if (missingImages.length === 0) {
-    console.log("✅ All default profile pictures exist in cloud");
-    return;
-  }
-  
-  console.log(`⚠️ Found ${missingImages.length} missing images in cloud, uploading...`);
-  
-  for (const missingUrl of missingImages) {
-    try {
-      const filename = missingUrl.split('/').pop();
-      if (!filename) {
-        console.error(`❌ Could not extract filename from URL: ${missingUrl}`);
-        continue;
-      }
-      
-      const imagePath = path.join(__dirname, "cloud_images", filename);
-      
-      if (!fs.existsSync(imagePath)) {
-        console.error(`❌ Local image file not found: ${imagePath}`);
-        continue;
-      }
-      
-      const imageBuffer = fs.readFileSync(imagePath);
-      const filenameWithoutExt = filename.split('.')[0] || filename; 
-      
-      await uploadImageBuffer(imageBuffer, filenameWithoutExt, "users", true);
-      console.log(`✅ Uploaded ${filename} to cloud`);
-      
-    } catch (error) {
-      console.error(`❌ Failed to upload ${missingUrl}:`, error);
-    }
-  }
-  
-  console.log("Cloud hydration completed");
-}
 
-async function dbHydration() {
+async function dbHydration(dataSource: DataSource) {
   console.log("Initializing data source...");
-  const dataSource = await AppDataSource.initialize();
   
   // Clear Redis cache
   console.log("Flushing Redis cache...");
@@ -858,35 +817,7 @@ async function dbHydration() {
     }
 
     // Create badges from JSON
-    let createdBadgesCount = 0;
-    if (Array.isArray(seedData.medals) && seedData.medals.length) {
-      const uniqueMap = new Map<string, any>();
-      for (const m of seedData.medals) {
-        const nameKey = String(m?.name || "").trim().toLowerCase();
-        if (!nameKey) continue;
-        if (!uniqueMap.has(nameKey)) uniqueMap.set(nameKey, m);
-      }
-      const uniqueMedals = Array.from(uniqueMap.values());
-
-      const badgesToSave: Badge[] = [];
-      for (const m of uniqueMedals) {
-        const existing = await badgeRepo.findOne({ where: { name: m.name } });
-        if (existing) continue;
-
-        badgesToSave.push(badgeRepo.create({
-          name: m.name,
-          description: m.description,
-          criteria: (BadgeCriteria as any)[m.criteria] || (m.criteria as any),
-          valueneeded: m.valueneeded ?? 0,
-          imageUrl: m.imageUrl
-        }));
-      }
-
-      if (badgesToSave.length) {
-        await badgeRepo.save(badgesToSave);
-      }
-      createdBadgesCount = badgesToSave.length;
-    }
+    await importBadges();
 
     // ===== CREATE SAMPLE NOTIFICATIONS =====
     console.log("Creating sample notifications...");
@@ -956,7 +887,6 @@ async function dbHydration() {
     console.log(`   3️⃣  Em curso (iniciada há 30 min) - ${Math.min(1, criancas.length)} crianças com check-in`);
     console.log(`   4️⃣  Finalizada (ontem) - ${Math.min(2, criancas.length)} crianças com check-in/out completo`);
     console.log(`   5️⃣  Futura em inscrição tardia (hoje à noite) - ${lateRegChildren.length} crianças`);
-    console.log(`\n🏅 Badges: ${createdBadgesCount}`);
     console.log(`💬 Feedbacks: 3 (atividade finalizada)`);
     console.log(`⚠️  Issues: 1`);
     console.log(`🏥 Medical Reports: 1`);
@@ -966,15 +896,28 @@ async function dbHydration() {
   } catch (err) {
     console.error("Seeding error:", err);
   } finally {
-    await dataSource.destroy();
     await redisClient.quit();
+    await dataSource.destroy();
     console.log("Data source destroyed. Done.");
   }
 }
 
 async function seed() {
-  await cloudHydration();
-  await dbHydration();
+    const dataSource = await AppDataSource.initialize();
+  
+    const cloudHydrated = await cloudAlreadyHydrated();
+    if (cloudHydrated) {
+      console.log("Cloud data already hydrated. Skipping cloud hydration.");
+    } else {
+      console.log("Cloud data not hydrated. Proceeding with cloud hydration.");
+      await hydrateCloud()
+    }
+
+
+    await hydrateDefaultProfilePicturesFromDB()
+
+    await dbHydration(dataSource);
+
 }
 
 seed().catch((e) => {

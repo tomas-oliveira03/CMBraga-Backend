@@ -42,7 +42,7 @@ async function databaseAlreadyHydrated(): Promise<boolean> {
 }
 
 
-async function cloudAlreadyHydrated(): Promise<boolean> {
+export async function cloudAlreadyHydrated(): Promise<boolean> {
     const cloudImageCount = await AppDataSource.getRepository(CloudDefaultImages).count();
     return cloudImageCount > 0;
 }
@@ -181,7 +181,7 @@ async function importRoutes() {
 }
 
 
-async function importBadges() {
+export async function importBadges() {
     const badgesImagesData = await AppDataSource.getRepository(CloudDefaultImages).find({  
         where: { imageType: DefaultImageType.BADGES }
     });
@@ -268,7 +268,7 @@ async function importChats() {
 }
 
 
-async function hydrateCloud() {
+export async function hydrateCloud() {
     const FOLDER = path.join(__dirname, "data/images");
     
     if (!fs.existsSync(FOLDER)) {
@@ -360,12 +360,12 @@ async function runHydration() {
 
 
 
-runHydration().then(() => {
-    console.log("Hydration script completed.");
-    process.exit(0);
-}).catch((error) => {
-    console.error("Hydration script failed with error:", error);
-    process.exit(1);
-});
+// runHydration().then(() => {
+//     console.log("Hydration script completed.");
+//     process.exit(0);
+// }).catch((error) => {
+//     console.error("Hydration script failed with error:", error);
+//     process.exit(1);
+// });
 
 
