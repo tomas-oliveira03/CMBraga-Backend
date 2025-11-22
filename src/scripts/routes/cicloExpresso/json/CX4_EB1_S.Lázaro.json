@@ -1,0 +1,303 @@
+{
+  "name": "CX4 EB1 S. Lázaro 25/26",
+  "color": "blue",
+  "type": "cicloExpresso",
+  "route": [
+    {
+      "lat": 41.540701,
+      "lon": -8.408536
+    },
+    {
+      "lat": 41.543454,
+      "lon": -8.406869
+    },
+    {
+      "lat": 41.543904,
+      "lon": -8.407276
+    },
+    {
+      "lat": 41.54567,
+      "lon": -8.407678
+    },
+    {
+      "lat": 41.545757,
+      "lon": -8.406838
+    },
+    {
+      "lat": 41.546001,
+      "lon": -8.407173
+    },
+    {
+      "lat": 41.546017,
+      "lon": -8.407416
+    },
+    {
+      "lat": 41.545762,
+      "lon": -8.408752
+    },
+    {
+      "lat": 41.546033,
+      "lon": -8.408782
+    },
+    {
+      "lat": 41.546506,
+      "lon": -8.408546
+    },
+    {
+      "lat": 41.547125,
+      "lon": -8.407817
+    },
+    {
+      "lat": 41.547221,
+      "lon": -8.408879
+    },
+    {
+      "lat": 41.547478,
+      "lon": -8.408031
+    },
+    {
+      "lat": 41.548217,
+      "lon": -8.408482
+    },
+    {
+      "lat": 41.54818,
+      "lon": -8.408642
+    },
+    {
+      "lat": 41.548333,
+      "lon": -8.408799
+    },
+    {
+      "lat": 41.548498,
+      "lon": -8.408192
+    },
+    {
+      "lat": 41.549472,
+      "lon": -8.407021
+    },
+    {
+      "lat": 41.548943,
+      "lon": -8.408236
+    },
+    {
+      "lat": 41.54879,
+      "lon": -8.408211
+    },
+    {
+      "lat": 41.548401,
+      "lon": -8.409508
+    },
+    {
+      "lat": 41.548249,
+      "lon": -8.408879
+    },
+    {
+      "lat": 41.547338,
+      "lon": -8.410066
+    },
+    {
+      "lat": 41.547283,
+      "lon": -8.410452
+    },
+    {
+      "lat": 41.546752,
+      "lon": -8.41154
+    },
+    {
+      "lat": 41.546501,
+      "lon": -8.412246
+    },
+    {
+      "lat": 41.546373,
+      "lon": -8.412591
+    },
+    {
+      "lat": 41.54611,
+      "lon": -8.413394
+    },
+    {
+      "lat": 41.545937,
+      "lon": -8.413283
+    },
+    {
+      "lat": 41.545695,
+      "lon": -8.413724
+    },
+    {
+      "lat": 41.54536,
+      "lon": -8.413849
+    },
+    {
+      "lat": 41.545229,
+      "lon": -8.414572
+    },
+    {
+      "lat": 41.545694,
+      "lon": -8.415082
+    },
+    {
+      "lat": 41.544834,
+      "lon": -8.415888
+    },
+    {
+      "lat": 41.546061,
+      "lon": -8.417938
+    },
+    {
+      "lat": 41.545713,
+      "lon": -8.418766
+    },
+    {
+      "lat": 41.545122,
+      "lon": -8.418744
+    },
+    {
+      "lat": 41.544964,
+      "lon": -8.419212
+    },
+    {
+      "lat": 41.545962,
+      "lon": -8.419801
+    },
+    {
+      "lat": 41.545826,
+      "lon": -8.420316
+    },
+    {
+      "lat": 41.546432,
+      "lon": -8.420584
+    },
+    {
+      "lat": 41.546155,
+      "lon": -8.421877
+    },
+    {
+      "lat": 41.546998,
+      "lon": -8.422054
+    },
+    {
+      "lat": 41.547823,
+      "lon": -8.419713
+    },
+    {
+      "lat": 41.54834,
+      "lon": -8.419967
+    },
+    {
+      "lat": 41.548482,
+      "lon": -8.419951
+    },
+    {
+      "lat": 41.548797,
+      "lon": -8.419554
+    }
+  ],
+  "stops": [
+    {
+      "name": "R. Simões de Almeida",
+      "lat": 41.540719,
+      "lon": -8.40846,
+      "distanceFromStart": 0,
+      "distanceFromPrevious": 0,
+      "timeFromStartMinutes": 0,
+      "type": "regular"
+    },
+    {
+      "name": "R. Dr. Francisco Machado Owen",
+      "lat": 41.543454,
+      "lon": -8.406869,
+      "distanceFromStart": 0.336,
+      "distanceFromPrevious": 0.336,
+      "timeFromStartMinutes": 3,
+      "type": "regular"
+    },
+    {
+      "name": "R. Nascente",
+      "lat": 41.54567,
+      "lon": -8.407678,
+      "distanceFromStart": 0.596,
+      "distanceFromPrevious": 0.259,
+      "timeFromStartMinutes": 5,
+      "type": "regular"
+    },
+    {
+      "name": "R. Nascente 2",
+      "lat": 41.545781,
+      "lon": -8.406785,
+      "distanceFromStart": 0.667,
+      "distanceFromPrevious": 0.07,
+      "timeFromStartMinutes": 6,
+      "type": "regular"
+    },
+    {
+      "name": "R. de Baixo",
+      "lat": 41.547232,
+      "lon": -8.408899,
+      "distanceFromStart": 1.108,
+      "distanceFromPrevious": 0.441,
+      "timeFromStartMinutes": 12,
+      "type": "regular"
+    },
+    {
+      "name": "Ciclovia 1",
+      "lat": 41.549479,
+      "lon": -8.407116,
+      "distanceFromStart": 1.51,
+      "distanceFromPrevious": 0.401,
+      "timeFromStartMinutes": 18,
+      "type": "regular"
+    },
+    {
+      "name": "EB1 Sta. Tecla",
+      "lat": 41.548806,
+      "lon": -8.408726,
+      "distanceFromStart": 1.644,
+      "distanceFromPrevious": 0.134,
+      "timeFromStartMinutes": 22,
+      "type": "school"
+    },
+    {
+      "name": "Av. 31 de Janeiro",
+      "lat": 41.546424,
+      "lon": -8.412595,
+      "distanceFromStart": 2.195,
+      "distanceFromPrevious": 0.551,
+      "timeFromStartMinutes": 25,
+      "type": "regular"
+    },
+    {
+      "name": "EB1 Carandá",
+      "lat": 41.545205,
+      "lon": -8.416567,
+      "distanceFromStart": 2.62,
+      "distanceFromPrevious": 0.424,
+      "timeFromStartMinutes": 27,
+      "type": "school"
+    },
+    {
+      "name": "R. Marcelino Sá Pires",
+      "lat": 41.546998,
+      "lon": -8.422054,
+      "distanceFromStart": 3.471,
+      "distanceFromPrevious": 0.851,
+      "timeFromStartMinutes": 32,
+      "type": "regular"
+    },
+    {
+      "name": "EB1 S. Lazaro",
+      "lat": 41.548814,
+      "lon": -8.419682,
+      "distanceFromStart": 3.812,
+      "distanceFromPrevious": 0.34,
+      "timeFromStartMinutes": 35,
+      "type": "school"
+    }
+  ],
+  "totalDistance": 3.812,
+  "bounds": {
+    "north": 41.549472,
+    "south": 41.540701,
+    "east": -8.406838,
+    "west": -8.422054
+  }
+}

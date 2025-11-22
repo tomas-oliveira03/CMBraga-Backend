@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>CX3 Lamacaes</name>
+    <description/>
+    <Style id="icon-1522-097138-nodesc-normal">
+      <IconStyle>
+        <color>ff387109</color>
+        <scale>1</scale>
+        <Icon>
+          <href>https://www.gstatic.com/mapspro/images/stock/503-wht-blank_maps.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <Style id="icon-1522-097138-nodesc-highlight">
+      <IconStyle>
+        <color>ff387109</color>
+        <scale>1</scale>
+        <Icon>
+          <href>https://www.gstatic.com/mapspro/images/stock/503-wht-blank_maps.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>1</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <StyleMap id="icon-1522-097138-nodesc">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-1522-097138-nodesc-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-1522-097138-nodesc-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="icon-1682-01579B-nodesc-normal">
+      <IconStyle>
+        <color>ff9b5701</color>
+        <scale>1</scale>
+        <Icon>
+          <href>https://www.gstatic.com/mapspro/images/stock/503-wht-blank_maps.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <Style id="icon-1682-01579B-nodesc-highlight">
+      <IconStyle>
+        <color>ff9b5701</color>
+        <scale>1</scale>
+        <Icon>
+          <href>https://www.gstatic.com/mapspro/images/stock/503-wht-blank_maps.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>1</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <StyleMap id="icon-1682-01579B-nodesc">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-1682-01579B-nodesc-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-1682-01579B-nodesc-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="line-FF0014-4000-normal">
+      <LineStyle>
+        <color>ff1400ff</color>
+        <width>4</width>
+      </LineStyle>
+    </Style>
+    <Style id="line-FF0014-4000-highlight">
+      <LineStyle>
+        <color>ff1400ff</color>
+        <width>6</width>
+      </LineStyle>
+    </Style>
+    <StyleMap id="line-FF0014-4000">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#line-FF0014-4000-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#line-FF0014-4000-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Folder>
+      <name>Linha Verde (Lamaçães)</name>
+      <Placemark>
+        <name>R. Manuel Ferreira Gomes</name>
+        <styleUrl>#icon-1522-097138-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -8.397567,41.553404,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Av. D. João II</name>
+        <styleUrl>#icon-1522-097138-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -8.395559,41.551403,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Largo da Princesa (Rotunda CGD)</name>
+        <styleUrl>#icon-1522-097138-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -8.403317,41.548161,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Rua Afonso Palmeira</name>
+        <styleUrl>#icon-1522-097138-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -8.404334,41.547125,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Rua Ambrósio dos Santos</name>
+        <styleUrl>#icon-1522-097138-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -8.403363,41.545047,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>EB N2 Lamaçaes</name>
+        <styleUrl>#icon-1682-01579B-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -8.402992,41.542808,0
+          </coordinates>
+        </Point>
+      </Placemark>
+    </Folder>
+    <Folder>
+      <name>export_CX3 Lamaçaes.kmz</name>
+      <Placemark>
+        <name>export_CX3 Lamaçaes</name>
+        <description><![CDATA[This is track no: 1<br> - Track no. 1]]></description>
+        <styleUrl>#line-FF0014-4000</styleUrl>
+        <LineString>
+          <tessellate>1</tessellate>
+          <coordinates>
+            -8.402857,41.542656,0
+            -8.403048,41.542617,0
+            -8.403127,41.542817,0
+            -8.403153,41.54315,0
+            -8.4034,41.543817,0
+            -8.403663,41.54462,0
+            -8.403634,41.5447,0
+            -8.403395,41.544708,0
+            -8.403363,41.545047,0
+            -8.403321,41.545113,0
+            -8.40328,41.545462,0
+            -8.403285,41.545788,0
+            -8.404024,41.546194,0
+            -8.404334,41.547125,0
+            -8.403994,41.547035,0
+            -8.403091,41.546695,0
+            -8.402868,41.546568,0
+            -8.402761,41.546597,0
+            -8.403151,41.54719,0
+            -8.403181,41.547565,0
+            -8.403185,41.547936,0
+            -8.403317,41.548161,0
+            -8.403455,41.548214,0
+            -8.403491,41.548339,0
+            -8.403313,41.548458,0
+            -8.402911,41.548438,0
+            -8.402238,41.548476,0
+            -8.401203,41.54832,0
+            -8.399134,41.547974,0
+            -8.398744,41.54782,0
+            -8.397834,41.547308,0
+            -8.397492,41.547194,0
+            -8.397231,41.547357,0
+            -8.396562,41.547966,0
+            -8.395976,41.548761,0
+            -8.395846,41.549211,0
+            -8.395668,41.550696,0
+            -8.395559,41.551403,0
+            -8.39556,41.551447,0
+            -8.395373,41.552928,0
+            -8.39541,41.553152,0
+            -8.395306,41.553424,0
+            -8.395174,41.554424,0
+            -8.395592,41.554448,0
+            -8.395684,41.553701,0
+            -8.395772,41.553543,0
+            -8.395968,41.553477,0
+            -8.397567,41.553404,0
+          </coordinates>
+        </LineString>
+      </Placemark>
+    </Folder>
+  </Document>
+</kml>
