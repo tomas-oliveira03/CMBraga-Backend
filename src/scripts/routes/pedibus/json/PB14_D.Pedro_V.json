@@ -1,6 +1,6 @@
 {
   "name": "PB14 D. Pedro V 25/26",
-  "color": "Verde",
+  "color": "green",
   "route": [
     {
       "lat": 41.554297,
@@ -81,7 +81,7 @@
   ],
   "stops": [
     {
-      "name": "A - R. Valério Pinto de Sá",
+      "name": "R. Valério Pinto de Sá",
       "lat": 41.554297,
       "lon": -8.434676,
       "distanceFromStart": 0,
@@ -90,7 +90,7 @@
       "type": "regular"
     },
     {
-      "name": "B - R. de Ferraz",
+      "name": "R. de Ferraz",
       "lat": 41.553486,
       "lon": -8.429184,
       "distanceFromStart": 0.559,
@@ -99,7 +99,7 @@
       "type": "regular"
     },
     {
-      "name": "C - Praça Conde Agrolongo",
+      "name": "Praça Conde Agrolongo",
       "lat": 41.552884,
       "lon": -8.42588,
       "distanceFromStart": 0.908,
@@ -108,7 +108,7 @@
       "type": "regular"
     },
     {
-      "name": "D - R. dos Chãos",
+      "name": "R. dos Chãos",
       "lat": 41.551838,
       "lon": -8.423587,
       "distanceFromStart": 1.174,

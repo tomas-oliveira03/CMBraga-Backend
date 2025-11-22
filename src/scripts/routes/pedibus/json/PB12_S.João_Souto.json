@@ -1,0 +1,129 @@
+{
+  "name": "PB12 S. João Souto 25/26",
+  "color": "purple",
+  "route": [
+    {
+      "lat": 41.544554,
+      "lon": -8.433184
+    },
+    {
+      "lat": 41.544799,
+      "lon": -8.428619
+    },
+    {
+      "lat": 41.545879,
+      "lon": -8.42783
+    },
+    {
+      "lat": 41.547574,
+      "lon": -8.428485
+    },
+    {
+      "lat": 41.548489,
+      "lon": -8.426714
+    },
+    {
+      "lat": 41.549091,
+      "lon": -8.427079
+    },
+    {
+      "lat": 41.549734,
+      "lon": -8.42739
+    },
+    {
+      "lat": 41.549978,
+      "lon": -8.427492
+    },
+    {
+      "lat": 41.550466,
+      "lon": -8.427683
+    },
+    {
+      "lat": 41.550533,
+      "lon": -8.427075
+    },
+    {
+      "lat": 41.552138,
+      "lon": -8.427541
+    },
+    {
+      "lat": 41.552582,
+      "lon": -8.426586
+    },
+    {
+      "lat": 41.552105,
+      "lon": -8.425556
+    },
+    {
+      "lat": 41.550665,
+      "lon": -8.425352
+    },
+    {
+      "lat": 41.549798,
+      "lon": -8.425202
+    }
+  ],
+  "stops": [
+    {
+      "name": "Centro Comercial Galécia",
+      "lat": 41.544594,
+      "lon": -8.433195,
+      "distanceFromStart": 0,
+      "distanceFromPrevious": 0,
+      "timeFromStartMinutes": 0,
+      "type": "regular"
+    },
+    {
+      "name": "R. dos Bombeiros Voluntários",
+      "lat": 41.546348,
+      "lon": -8.428125,
+      "distanceFromStart": 0.518,
+      "distanceFromPrevious": 0.518,
+      "timeFromStartMinutes": 14,
+      "type": "regular"
+    },
+    {
+      "name": "R. Dom Diogo de Sousa",
+      "lat": 41.550466,
+      "lon": -8.427683,
+      "distanceFromStart": 1.128,
+      "distanceFromPrevious": 0.61,
+      "timeFromStartMinutes": 23,
+      "type": "regular"
+    },
+    {
+      "name": "Praça Conde Agrolongo",
+      "lat": 41.552582,
+      "lon": -8.426586,
+      "distanceFromStart": 1.456,
+      "distanceFromPrevious": 0.327,
+      "timeFromStartMinutes": 30,
+      "type": "regular"
+    },
+    {
+      "name": "Jardim Sta. Bárbara",
+      "lat": 41.551322,
+      "lon": -8.425436,
+      "distanceFromStart": 1.718,
+      "distanceFromPrevious": 0.262,
+      "timeFromStartMinutes": 35,
+      "type": "regular"
+    },
+    {
+      "name": "EB1 S. João do Souto",
+      "lat": 41.54967,
+      "lon": -8.425098,
+      "distanceFromStart": 1.815,
+      "distanceFromPrevious": 0.097,
+      "timeFromStartMinutes": 40,
+      "type": "school"
+    }
+  ],
+  "totalDistance": 1.815,
+  "bounds": {
+    "north": 41.552582,
+    "south": 41.544554,
+    "east": -8.425202,
+    "west": -8.433184
+  }
+}

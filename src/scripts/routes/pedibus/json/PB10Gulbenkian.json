@@ -1,0 +1,129 @@
+{
+  "name": "PB10 Gulbenkian 25/26",
+  "color": "red",
+  "route": [
+    {
+      "lat": 41.544403,
+      "lon": -8.412176
+    },
+    {
+      "lat": 41.544973,
+      "lon": -8.410867
+    },
+    {
+      "lat": 41.545527,
+      "lon": -8.410438
+    },
+    {
+      "lat": 41.546451,
+      "lon": -8.411103
+    },
+    {
+      "lat": 41.547156,
+      "lon": -8.408761
+    },
+    {
+      "lat": 41.547328,
+      "lon": -8.408799
+    },
+    {
+      "lat": 41.547537,
+      "lon": -8.409324
+    },
+    {
+      "lat": 41.547816,
+      "lon": -8.409507
+    },
+    {
+      "lat": 41.550729,
+      "lon": -8.411046
+    },
+    {
+      "lat": 41.550886,
+      "lon": -8.410692
+    },
+    {
+      "lat": 41.551074,
+      "lon": -8.410842
+    },
+    {
+      "lat": 41.550906,
+      "lon": -8.411223
+    },
+    {
+      "lat": 41.551841,
+      "lon": -8.411642
+    },
+    {
+      "lat": 41.552114,
+      "lon": -8.410644
+    },
+    {
+      "lat": 41.552515,
+      "lon": -8.41
+    }
+  ],
+  "stops": [
+    {
+      "name": "Av. Dr. Porfirio da Silva",
+      "lat": 41.544403,
+      "lon": -8.412176,
+      "distanceFromStart": 0,
+      "distanceFromPrevious": 0,
+      "timeFromStartMinutes": 0,
+      "type": "regular"
+    },
+    {
+      "name": "R. Eng. José Justino de Amorim",
+      "lat": 41.545527,
+      "lon": -8.410438,
+      "distanceFromStart": 0.197,
+      "distanceFromPrevious": 0.197,
+      "timeFromStartMinutes": 4,
+      "type": "regular"
+    },
+    {
+      "name": "R. de Baixo",
+      "lat": 41.547099,
+      "lon": -8.40878,
+      "distanceFromStart": 0.524,
+      "distanceFromPrevious": 0.327,
+      "timeFromStartMinutes": 12,
+      "type": "regular"
+    },
+    {
+      "name": "R. Bernardo Sequeira",
+      "lat": 41.547805,
+      "lon": -8.40952,
+      "distanceFromStart": 0.628,
+      "distanceFromPrevious": 0.103,
+      "timeFromStartMinutes": 14,
+      "type": "regular"
+    },
+    {
+      "name": "Av. João Paulo II",
+      "lat": 41.550729,
+      "lon": -8.411046,
+      "distanceFromStart": 0.976,
+      "distanceFromPrevious": 0.348,
+      "timeFromStartMinutes": 22,
+      "type": "regular"
+    },
+    {
+      "name": "Gulbenkian",
+      "lat": 41.552384,
+      "lon": -8.410131,
+      "distanceFromStart": 1.34,
+      "distanceFromPrevious": 0.363,
+      "timeFromStartMinutes": 30,
+      "type": "school"
+    }
+  ],
+  "totalDistance": 1.34,
+  "bounds": {
+    "north": 41.552515,
+    "south": 41.544403,
+    "east": -8.408761,
+    "west": -8.412176
+  }
+}

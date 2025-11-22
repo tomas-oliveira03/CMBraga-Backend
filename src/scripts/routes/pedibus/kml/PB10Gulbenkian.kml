@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2">
   <Document>
-    <name>PB14 D. Pedro V</name>
+    <name>PB10 Gulbenkian</name>
     <description/>
-    <Style id="icon-1682-097138-nodesc-normal">
+    <Style id="icon-1682-C2185B-nodesc-normal">
       <IconStyle>
-        <color>ff387109</color>
+        <color>ff5b18c2</color>
         <scale>1</scale>
         <Icon>
           <href>https://www.gstatic.com/mapspro/images/stock/503-wht-blank_maps.png</href>
@@ -18,9 +18,9 @@
         <text><![CDATA[<h3>$[name]</h3>]]></text>
       </BalloonStyle>
     </Style>
-    <Style id="icon-1682-097138-nodesc-highlight">
+    <Style id="icon-1682-C2185B-nodesc-highlight">
       <IconStyle>
-        <color>ff387109</color>
+        <color>ff5b18c2</color>
         <scale>1</scale>
         <Icon>
           <href>https://www.gstatic.com/mapspro/images/stock/503-wht-blank_maps.png</href>
@@ -33,19 +33,19 @@
         <text><![CDATA[<h3>$[name]</h3>]]></text>
       </BalloonStyle>
     </Style>
-    <StyleMap id="icon-1682-097138-nodesc">
+    <StyleMap id="icon-1682-C2185B-nodesc">
       <Pair>
         <key>normal</key>
-        <styleUrl>#icon-1682-097138-nodesc-normal</styleUrl>
+        <styleUrl>#icon-1682-C2185B-nodesc-normal</styleUrl>
       </Pair>
       <Pair>
         <key>highlight</key>
-        <styleUrl>#icon-1682-097138-nodesc-highlight</styleUrl>
+        <styleUrl>#icon-1682-C2185B-nodesc-highlight</styleUrl>
       </Pair>
     </StyleMap>
-    <Style id="icon-1731-AFB42B-nodesc-normal">
+    <Style id="icon-1731-FF5252-nodesc-normal">
       <IconStyle>
-        <color>ff2bb4af</color>
+        <color>ff5252ff</color>
         <scale>1</scale>
         <Icon>
           <href>https://www.gstatic.com/mapspro/images/stock/503-wht-blank_maps.png</href>
@@ -58,9 +58,9 @@
         <text><![CDATA[<h3>$[name]</h3>]]></text>
       </BalloonStyle>
     </Style>
-    <Style id="icon-1731-AFB42B-nodesc-highlight">
+    <Style id="icon-1731-FF5252-nodesc-highlight">
       <IconStyle>
-        <color>ff2bb4af</color>
+        <color>ff5252ff</color>
         <scale>1</scale>
         <Icon>
           <href>https://www.gstatic.com/mapspro/images/stock/503-wht-blank_maps.png</href>
@@ -73,88 +73,97 @@
         <text><![CDATA[<h3>$[name]</h3>]]></text>
       </BalloonStyle>
     </Style>
-    <StyleMap id="icon-1731-AFB42B-nodesc">
+    <StyleMap id="icon-1731-FF5252-nodesc">
       <Pair>
         <key>normal</key>
-        <styleUrl>#icon-1731-AFB42B-nodesc-normal</styleUrl>
+        <styleUrl>#icon-1731-FF5252-nodesc-normal</styleUrl>
       </Pair>
       <Pair>
         <key>highlight</key>
-        <styleUrl>#icon-1731-AFB42B-nodesc-highlight</styleUrl>
+        <styleUrl>#icon-1731-FF5252-nodesc-highlight</styleUrl>
       </Pair>
     </StyleMap>
-    <Style id="line-0F9D58-6000-nodesc-normal">
+    <Style id="line-C2185B-8000-nodesc-normal">
       <LineStyle>
-        <color>ff589d0f</color>
-        <width>6</width>
+        <color>ff5b18c2</color>
+        <width>8</width>
       </LineStyle>
       <BalloonStyle>
         <text><![CDATA[<h3>$[name]</h3>]]></text>
       </BalloonStyle>
     </Style>
-    <Style id="line-0F9D58-6000-nodesc-highlight">
+    <Style id="line-C2185B-8000-nodesc-highlight">
       <LineStyle>
-        <color>ff589d0f</color>
-        <width>9</width>
+        <color>ff5b18c2</color>
+        <width>12</width>
       </LineStyle>
       <BalloonStyle>
         <text><![CDATA[<h3>$[name]</h3>]]></text>
       </BalloonStyle>
     </Style>
-    <StyleMap id="line-0F9D58-6000-nodesc">
+    <StyleMap id="line-C2185B-8000-nodesc">
       <Pair>
         <key>normal</key>
-        <styleUrl>#line-0F9D58-6000-nodesc-normal</styleUrl>
+        <styleUrl>#line-C2185B-8000-nodesc-normal</styleUrl>
       </Pair>
       <Pair>
         <key>highlight</key>
-        <styleUrl>#line-0F9D58-6000-nodesc-highlight</styleUrl>
+        <styleUrl>#line-C2185B-8000-nodesc-highlight</styleUrl>
       </Pair>
     </StyleMap>
     <Folder>
-      <name>PB14 D. Pedro V</name>
+      <name>PB10 Gulbenkian</name>
       <Placemark>
-        <name>R. Valério Pinto de Sá</name>
-        <styleUrl>#icon-1731-AFB42B-nodesc</styleUrl>
+        <name>Av. Dr. Porfirio da Silva</name>
+        <styleUrl>#icon-1731-FF5252-nodesc</styleUrl>
         <Point>
           <coordinates>
-            -8.434676,41.554297,0
+            -8.412176,41.544403,0
           </coordinates>
         </Point>
       </Placemark>
       <Placemark>
-        <name>R. de Ferraz</name>
-        <styleUrl>#icon-1731-AFB42B-nodesc</styleUrl>
+        <name>R. Eng. José Justino de Amorim</name>
+        <styleUrl>#icon-1731-FF5252-nodesc</styleUrl>
         <Point>
           <coordinates>
-            -8.429184,41.553486,0
+            -8.410438,41.545527,0
           </coordinates>
         </Point>
       </Placemark>
       <Placemark>
-        <name>Praça Conde Agrolongo</name>
-        <styleUrl>#icon-1731-AFB42B-nodesc</styleUrl>
+        <name>R. de Baixo</name>
+        <styleUrl>#icon-1731-FF5252-nodesc</styleUrl>
         <Point>
           <coordinates>
-            -8.42588,41.552884,0
+            -8.40878,41.547099,0
           </coordinates>
         </Point>
       </Placemark>
       <Placemark>
-        <name>R. dos Chãos</name>
-        <styleUrl>#icon-1731-AFB42B-nodesc</styleUrl>
+        <name>R. Bernardo Sequeira</name>
+        <styleUrl>#icon-1731-FF5252-nodesc</styleUrl>
         <Point>
           <coordinates>
-            -8.423587,41.551838,0
+            -8.40952,41.547805,0
           </coordinates>
         </Point>
       </Placemark>
       <Placemark>
-        <name>Colégio D. Pedro V</name>
-        <styleUrl>#icon-1682-097138-nodesc</styleUrl>
+        <name>Av. João Paulo II</name>
+        <styleUrl>#icon-1731-FF5252-nodesc</styleUrl>
         <Point>
           <coordinates>
-            -8.419314,41.551389,0
+            -8.411046,41.550729,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Gulbenkian</name>
+        <styleUrl>#icon-1682-C2185B-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -8.410131,41.552384,0
           </coordinates>
         </Point>
       </Placemark>
@@ -162,30 +171,26 @@
     <Folder>
       <name>Export</name>
       <Placemark>
-        <name>D. Pedro V</name>
-        <styleUrl>#line-0F9D58-6000-nodesc</styleUrl>
+        <name>Gulbenkian</name>
+        <styleUrl>#line-C2185B-8000-nodesc</styleUrl>
         <LineString>
           <tessellate>1</tessellate>
           <coordinates>
-            -8.434676,41.554297,0
-            -8.433658,41.554036,0
-            -8.433444,41.554229,0
-            -8.432145,41.553803,0
-            -8.431888,41.553996,0
-            -8.431416,41.55394,0
-            -8.431298,41.55406,0
-            -8.430472,41.554052,0
-            -8.429973,41.553259,0
-            -8.429184,41.553486,0
-            -8.428734,41.552687,0
-            -8.428197,41.552623,0
-            -8.427891,41.552434,0
-            -8.42588,41.552884,0
-            -8.42544,41.551997,0
-            -8.423992,41.5517,0
-            -8.423659,41.551892,0
-            -8.422693,41.551202,0
-            -8.419528,41.551467,0
+            -8.412176,41.544403,0
+            -8.410867,41.544973,0
+            -8.410438,41.545527,0
+            -8.411103,41.546451,0
+            -8.408761,41.547156,0
+            -8.408799,41.547328,0
+            -8.409324,41.547537,0
+            -8.409507,41.547816,0
+            -8.411046,41.550729,0
+            -8.410692,41.550886,0
+            -8.410842,41.551074,0
+            -8.411223,41.550906,0
+            -8.411642,41.551841,0
+            -8.410644,41.552114,0
+            -8.41,41.552515,0
           </coordinates>
         </LineString>
       </Placemark>

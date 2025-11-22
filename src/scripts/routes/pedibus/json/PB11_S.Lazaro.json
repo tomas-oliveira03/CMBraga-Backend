@@ -1,0 +1,100 @@
+{
+  "name": "PB11 S. Lázaro 25/26",
+  "color": "blue",
+  "route": [
+    {
+      "lat": 41.557404,
+      "lon": -8.417474
+    },
+    {
+      "lat": 41.555573,
+      "lon": -8.417064
+    },
+    {
+      "lat": 41.554449,
+      "lon": -8.417029
+    },
+    {
+      "lat": 41.551787,
+      "lon": -8.417147
+    },
+    {
+      "lat": 41.551751,
+      "lon": -8.41741
+    },
+    {
+      "lat": 41.551446,
+      "lon": -8.420757
+    },
+    {
+      "lat": 41.549744,
+      "lon": -8.420349
+    },
+    {
+      "lat": 41.549391,
+      "lon": -8.419191
+    },
+    {
+      "lat": 41.549222,
+      "lon": -8.419126
+    },
+    {
+      "lat": 41.54854,
+      "lon": -8.419942
+    }
+  ],
+  "stops": [
+    {
+      "name": "Rotunda do Pachancho",
+      "lat": 41.557524,
+      "lon": -8.417576,
+      "distanceFromStart": 0,
+      "distanceFromPrevious": 0,
+      "timeFromStartMinutes": 0,
+      "type": "regular"
+    },
+    {
+      "name": "R. de Santa Margarida",
+      "lat": 41.554632,
+      "lon": -8.417101,
+      "distanceFromStart": 0.331,
+      "distanceFromPrevious": 0.331,
+      "timeFromStartMinutes": 6,
+      "type": "regular"
+    },
+    {
+      "name": "Largo Sra. A. Branca",
+      "lat": 41.551751,
+      "lon": -8.41741,
+      "distanceFromStart": 0.65,
+      "distanceFromPrevious": 0.318,
+      "timeFromStartMinutes": 16,
+      "type": "regular"
+    },
+    {
+      "name": "Av. Central",
+      "lat": 41.551446,
+      "lon": -8.420757,
+      "distanceFromStart": 0.931,
+      "distanceFromPrevious": 0.28,
+      "timeFromStartMinutes": 26,
+      "type": "regular"
+    },
+    {
+      "name": "EB1 S. Lazaro",
+      "lat": 41.548598,
+      "lon": -8.4198,
+      "distanceFromStart": 1.349,
+      "distanceFromPrevious": 0.418,
+      "timeFromStartMinutes": 30,
+      "type": "school"
+    }
+  ],
+  "totalDistance": 1.349,
+  "bounds": {
+    "north": 41.557404,
+    "south": 41.54854,
+    "east": -8.417029,
+    "west": -8.420757
+  }
+}

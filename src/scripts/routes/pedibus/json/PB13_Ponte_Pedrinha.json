@@ -1,0 +1,119 @@
+{
+  "name": "PB13 Ponte Pedrinha 25/26",
+  "color": "orange",
+  "route": [
+    {
+      "lat": 41.53754,
+      "lon": -8.427464
+    },
+    {
+      "lat": 41.538003,
+      "lon": -8.428928
+    },
+    {
+      "lat": 41.536293,
+      "lon": -8.429526
+    },
+    {
+      "lat": 41.536381,
+      "lon": -8.430057
+    },
+    {
+      "lat": 41.536146,
+      "lon": -8.430791
+    },
+    {
+      "lat": 41.53613,
+      "lon": -8.431198
+    },
+    {
+      "lat": 41.537022,
+      "lon": -8.432014
+    },
+    {
+      "lat": 41.53764,
+      "lon": -8.432304
+    },
+    {
+      "lat": 41.538154,
+      "lon": -8.431274
+    },
+    {
+      "lat": 41.538616,
+      "lon": -8.430893
+    },
+    {
+      "lat": 41.538612,
+      "lon": -8.430008
+    },
+    {
+      "lat": 41.538768,
+      "lon": -8.430045
+    },
+    {
+      "lat": 41.539672,
+      "lon": -8.429198
+    },
+    {
+      "lat": 41.540194,
+      "lon": -8.429133
+    },
+    {
+      "lat": 41.540603,
+      "lon": -8.429192
+    },
+    {
+      "lat": 41.5407,
+      "lon": -8.429428
+    },
+    {
+      "lat": 41.540499,
+      "lon": -8.429578
+    }
+  ],
+  "stops": [
+    {
+      "name": "R. José Augusto Vieira",
+      "lat": 41.53754,
+      "lon": -8.427464,
+      "distanceFromStart": 0,
+      "distanceFromPrevious": 0,
+      "timeFromStartMinutes": 0,
+      "type": "regular"
+    },
+    {
+      "name": "R. do Couteiro",
+      "lat": 41.537288,
+      "lon": -8.429186,
+      "distanceFromStart": 0.132,
+      "distanceFromPrevious": 0.132,
+      "timeFromStartMinutes": 8,
+      "type": "regular"
+    },
+    {
+      "name": "R. Magalhães Lima",
+      "lat": 41.536964,
+      "lon": -8.432005,
+      "distanceFromStart": 0.595,
+      "distanceFromPrevious": 0.462,
+      "timeFromStartMinutes": 16,
+      "type": "regular"
+    },
+    {
+      "name": "EB1 Ponte Pedrinha",
+      "lat": 41.540417,
+      "lon": -8.429647,
+      "distanceFromStart": 1.198,
+      "distanceFromPrevious": 0.603,
+      "timeFromStartMinutes": 25,
+      "type": "school"
+    }
+  ],
+  "totalDistance": 1.198,
+  "bounds": {
+    "north": 41.5407,
+    "south": 41.53613,
+    "east": -8.427464,
+    "west": -8.432304
+  }
+}
