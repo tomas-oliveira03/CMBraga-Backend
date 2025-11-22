@@ -1,7 +1,7 @@
 {
   "name": "CX4 EB1 S. Lázaro 25/26",
   "color": "blue",
-  "type": "cicloExpresso",
+  "type": "ciclo_expresso",
   "route": [
     {
       "lat": 41.540701,

@@ -1,7 +1,7 @@
 {
   "name": "CX7 Gulbenkian / S. Vitor 25/26",
   "color": "red",
-  "type": "cicloExpresso",
+  "type": "ciclo_expresso",
   "route": [
     {
       "lat": 41.537618,

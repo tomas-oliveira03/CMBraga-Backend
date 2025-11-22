@@ -26,7 +26,7 @@ import { RouteStation } from "@/db/entities/RouteStation";
 import { ChildHistory } from "@/db/entities/ChildHistory";
 import fs from "fs";
 import path from "path";
-import { hydrateDefaultProfilePicturesFromDB, selectRandomDefaultProfilePicture, USER_DEFAULT_PROFILE_PICTURES } from "@/helpers/storage";
+import { GROUP_DEFAULT_PROFILE_PICTURE, hydrateDefaultProfilePicturesFromDB, selectRandomDefaultProfilePicture, USER_DEFAULT_PROFILE_PICTURES } from "@/helpers/storage";
 import { checkImagesExist, uploadImageBuffer } from "@/server/services/cloud";
 import { RouteConnection } from "@/db/entities/RouteConnection";
 import redisClient from "@/lib/redis";
@@ -35,7 +35,7 @@ import { UserChat } from "@/db/entities/UserChat";
 import { Message } from "@/db/entities/Message";
 import { TypeOfChat } from "@/helpers/types";
 import passwordHash from "@/lib/password-hash";
-import { cloudAlreadyHydrated, hydrateCloud, importBadges } from "./prodHydration";
+import { cloudAlreadyHydrated, hydrateCloud, importBadges, importRoutes } from "./prodHydration";
 import { DataSource } from "typeorm";
 import { Survey } from "@/db/entities/Survey";
 
@@ -54,7 +54,7 @@ async function dbHydration(dataSource: DataSource) {
     console.warn("⚠️  Failed to flush Redis:", error instanceof Error ? error.message : String(error));
   }
 
-  const datafile = path.join(__dirname, "/routes/data.json");
+  const datafile = path.join(__dirname, "/data.json");
 
   let seedData: any = {};
   try {
@@ -138,105 +138,15 @@ async function dbHydration(dataSource: DataSource) {
       }
     }
 
-    console.log("Creating routes and stations...");
-    
-    const routesBaseDir = path.join(__dirname, "/routes/cicloExpresso/json");
-    const routeFiles = fs.readdirSync(routesBaseDir).filter(file => file.endsWith('.json'));
-
-    console.log(`Found ${routeFiles.length} route files to process`);
-
-    let allRoutes: Route[] = [];
-    let allRouteStations: RouteStation[] = [];
+    await importRoutes()
+    const allRoutes = await routeRepo.find();
     const stationMap = new Map<string, Station>();
-    
-    // Process all routes
-    for (const routeFile of routeFiles) {
-      const routeJsonPath = path.join(routesBaseDir, routeFile);
-      const routeJsonData = fs.readFileSync(routeJsonPath, "utf-8");
-      const routeData = JSON.parse(routeJsonData);
-      
-      console.log(`Processing route file: ${routeFile}`);
-      
-      const stations: Station[] = [];
-      
-      for (let i = 0; i < routeData.stops.length; i++) {
-        const stop = routeData.stops[i];
-        const stationKey = `${stop.lat}-${stop.lon}`;
+    const stations = await stationRepo.find();
+    stations.forEach(s => stationMap.set(s.id, s));
 
-        let station = stationMap.get(stationKey);
-        
-        if (!station) {
-          const existingStation = await stationRepo.findOne({
-            where: { latitude: stop.lat, longitude: stop.lon }
-          });
-          
-          if (existingStation) {
-            station = existingStation;
-            console.log(`♻️  Reusing existing station: ${stop.name}`);
-          } else {
-            station = stationRepo.create({
-              name: stop.name,
-              type: stop.type,
-              longitude: stop.lon,
-              latitude: stop.lat
-            });
-            await stationRepo.save(station);
-            console.log(`✨ Created new station: ${stop.name}`);
-          }
-          
-          stationMap.set(stationKey, station);
-        } else {
-          console.log(`♻️  Reusing station from map: ${stop.name}`);
-        }
-        
-        stations.push(station);
-      }
-      
-      const route = routeRepo.create({
-        name: routeData.name,
-        color: routeData.color,
-        activityType: "ciclo_expresso" as any,
-        distanceMeters: Math.round(routeData.totalDistance * 1000),
-        boundsNorth: routeData.bounds.north,
-        boundsSouth: routeData.bounds.south,
-        boundsEast: routeData.bounds.east,
-        boundsWest: routeData.bounds.west,
-        metadata: routeData.route
-      });
-      await routeRepo.save(route);
-      allRoutes.push(route);
-      console.log(`✅ Created route: ${route.name}`);
-      
-      const routeStations = routeData.stops.map((stop: any, index: number) => 
-        routeStationRepo.create({
-          routeId: route.id,
-          stationId: stations[index]!.id,
-          stopNumber: index + 1,
-          distanceFromStartMeters: stop.distanceFromStart * 1000,
-          distanceFromPreviousStationMeters: stop.distanceFromPrevious ? Math.round(stop.distanceFromPrevious * 1000) : 0,
-          timeFromStartMinutes: stop.timeFromStartMinutes
-        })
-      );
-      
-      allRouteStations.push(...routeStations);
-    }
-
-    await routeStationRepo.save(allRouteStations);
-    console.log(`✅ Created ${allRouteStations.length} route-station relationships`);
-    console.log(`✅ Total routes: ${allRoutes.length}, Total stations: ${stationMap.size}`);
-
-    // Create route connections
-    const linhaAzul = allRoutes.find(r => r.name === "Linha Azul");
-    const linhaVermelha = allRoutes.find(r => r.name === "Linha Vermelha");
-    const mergeStop = await stationRepo.findOne({ where: { name: "Av. 31 de Janeiro" } });
-
-    if (linhaAzul && linhaVermelha && mergeStop) {
-      await AppDataSource.getRepository(RouteConnection).insert([
-        { fromRouteId: linhaAzul.id, toRouteId: linhaVermelha.id, stationId: mergeStop.id },
-        { fromRouteId: linhaVermelha.id, toRouteId: linhaAzul.id, stationId: mergeStop.id }
-      ]);
-      console.log(`✅ Created route connections at ${mergeStop.name}`);
-    }
+    const linhaAzul = await AppDataSource.getRepository(Route).findOne({ where: { name: "CX4 EB1 S. Lázaro 25/26" } });
+    const linhaVermelha = await AppDataSource.getRepository(Route).findOne({ where: { name: "CX7 Gulbenkian / S. Vitor 25/26" } });
+    const mergeStop = await AppDataSource.getRepository(Station).findOne({ where: { name: "Av. 31 de Janeiro"} });
 
     const hpEntities: HealthProfessional[] = [];
     if (Array.isArray(seedData.healthProfessionals) && seedData.healthProfessionals.length) {
@@ -343,7 +253,7 @@ async function dbHydration(dataSource: DataSource) {
     const generalChat = await chatRepo.save({
       chatName: "Chat Geral",
       chatType: TypeOfChat.GENERAL_CHAT,
-      destinatairePhoto: "default-photo-url"
+      destinatairePhoto: GROUP_DEFAULT_PROFILE_PICTURE
     });
 
     const allUserEmails = [
@@ -367,7 +277,7 @@ async function dbHydration(dataSource: DataSource) {
     const pedibusChat = await chatRepo.save({
       chatName: "Chat Pedibus",
       chatType: TypeOfChat.GENERAL_CHAT,
-      destinatairePhoto: "default-photo-url"
+      destinatairePhoto: GROUP_DEFAULT_PROFILE_PICTURE
     });
 
     const userPedibusChatEntries = allUserEmails.map(email => ({
@@ -383,7 +293,7 @@ async function dbHydration(dataSource: DataSource) {
     const cicloexpressoChat = await chatRepo.save({
       chatName: "Chat Cicloexpresso",
       chatType: TypeOfChat.GENERAL_CHAT,
-      destinatairePhoto: "default-photo-url"
+      destinatairePhoto: GROUP_DEFAULT_PROFILE_PICTURE
     });
 
     
@@ -933,7 +843,6 @@ async function dbHydration(dataSource: DataSource) {
     console.log("\n=== 🎉 HIDRATAÇÃO COMPLETA ===");
     console.log(`✅ Rotas: ${allRoutes.length}`);
     console.log(`✅ Estações únicas: ${stationMap.size}`);
-    console.log(`✅ Relações rota-estação: ${allRouteStations.length}`);
     console.log(`✅ Utilizadores: ${hpEntities.length} HP, ${adminEntities.length} admins, ${pais.length} parents, ${instrutores.length} instructors`);
     console.log(`✅ Crianças: ${criancas.length} (com ${childHistories.length} registos de histórico)`);
     console.log(`💬 Chat geral: ${allUserEmails.length} utilizadores + ${sampleMessages.length} mensagens`);

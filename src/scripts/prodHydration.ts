@@ -79,8 +79,8 @@ async function createNewAdminAccount() {
 }
 
 
-async function importRoutes() {
-    const routesBaseDir = path.join(__dirname, "/routes/cicloExpresso/json");
+export async function importRoutes() {
+    const routesBaseDir = path.join(__dirname, "/data/routes");
     const routeFiles = fs.readdirSync(routesBaseDir).filter(file => file.endsWith('.json'));
 
     console.log(`Found ${routeFiles.length} route files to process`);
@@ -96,6 +96,9 @@ async function importRoutes() {
         const routeData = JSON.parse(routeJsonData);
         
         console.log(`Processing route file: ${routeFile}`);
+        
+        // Map route type string to ActivityType enum
+        const activityType = routeData.type === 'ciclo_expresso' ? ActivityType.CICLO_EXPRESSO : ActivityType.PEDIBUS;
         
         const stations: Station[] = [];
         
@@ -137,7 +140,7 @@ async function importRoutes() {
         const route = AppDataSource.getRepository(Route).create({
             name: routeData.name,
             color: routeData.color,
-            activityType: ActivityType.CICLO_EXPRESSO,
+            activityType: activityType,
             distanceMeters: Math.round(routeData.totalDistance * 1000),
             boundsNorth: routeData.bounds.north,
             boundsSouth: routeData.bounds.south,
@@ -166,10 +169,12 @@ async function importRoutes() {
 
     await AppDataSource.getRepository(RouteStation).insert(allRouteStations);
 
+
+
     // Create route connections
-    const linhaAzul = allRoutes.find(r => r.name === "Linha Azul");
-    const linhaVermelha = allRoutes.find(r => r.name === "Linha Vermelha");
-    const mergeStop = await AppDataSource.getRepository(Station).findOne({ where: { name: "Av. 31 de Janeiro" } });
+    const linhaAzul = allRoutes.find(r => r.name === "CX4 EB1 S. Lázaro 25/26");
+    const linhaVermelha = allRoutes.find(r => r.name === "PB10 Gulbenkian 25/26");
+    const mergeStop = await AppDataSource.getRepository(Station).findOne({ where: { name: "Av. 31 de Janeiro"} });
 
     if (linhaAzul && linhaVermelha && mergeStop) {
         await AppDataSource.getRepository(RouteConnection).insert([
@@ -178,6 +183,7 @@ async function importRoutes() {
         ]);
         console.log(`✅ Created route connections at ${mergeStop.name}`);
     }
+
 }
 
 

@@ -1,7 +1,7 @@
 {
   "name": "CX3 EB N2 Lamaçães 25/26",
   "color": "green",
-  "type": "cicloExpresso",
+  "type": "ciclo_expresso",
   "route": [
     {
       "lat": 41.542656,

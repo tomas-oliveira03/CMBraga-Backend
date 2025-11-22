@@ -3,6 +3,8 @@ import path from "path";
 import { processKMLFromFile } from "../server/services/kmlParser";
 
 interface FrontendData {
+  name: string;
+  color: string;
   route: {
     lat: number;
     lon: number;
@@ -32,8 +34,15 @@ async function processKML(kmlPath: string, outputDir: string): Promise<void> {
     // Use kmlParser to process the file
     const routeData = await processKMLFromFile(kmlPath);
 
+    // Extract route name and determine color
+    const fileName = path.basename(kmlPath, '.kml');
+    const routeType = kmlPath.includes('cicloExpresso') ? 'cicloExpresso' : 'pedibus';
+    const color = routeType === 'cicloExpresso' ? '#2E7D32' : '#1976D2'; // Green for cicloExpresso, Blue for pedibus
+
     // Convert to frontend format
     const frontendData: FrontendData = {
+      name: fileName,
+      color: color,
       route: routeData.route,
       stops: routeData.stops.map((stop, index) => ({
         name: stop.name,
@@ -49,7 +58,6 @@ async function processKML(kmlPath: string, outputDir: string): Promise<void> {
     };
 
     // Generate JSON output path
-    const fileName = path.basename(kmlPath, '.kml');
     const jsonOutputPath = path.join(outputDir, `${fileName}.json`);
     
     // Ensure output directory exists
