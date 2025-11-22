@@ -1,6 +1,7 @@
 {
   "name": "PB13 Ponte Pedrinha 25/26",
   "color": "orange",
+  "type": "pedibus",
   "route": [
     {
       "lat": 41.53754,

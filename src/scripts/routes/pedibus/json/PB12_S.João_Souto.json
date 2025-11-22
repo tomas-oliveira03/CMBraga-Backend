@@ -1,6 +1,7 @@
 {
   "name": "PB12 S. João Souto 25/26",
   "color": "purple",
+  "type": "pedibus",
   "route": [
     {
       "lat": 41.544554,

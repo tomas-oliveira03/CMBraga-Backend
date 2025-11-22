@@ -1,6 +1,7 @@
 {
   "name": "PB10 Gulbenkian 25/26",
   "color": "red",
+  "type": "pedibus",
   "route": [
     {
       "lat": 41.544403,

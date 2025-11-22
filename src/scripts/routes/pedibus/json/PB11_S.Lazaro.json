@@ -1,6 +1,7 @@
 {
   "name": "PB11 S. Lázaro 25/26",
   "color": "blue",
+  "type": "pedibus",
   "route": [
     {
       "lat": 41.557404,

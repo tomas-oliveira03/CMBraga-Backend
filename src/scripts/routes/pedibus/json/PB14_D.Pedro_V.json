@@ -1,6 +1,7 @@
 {
   "name": "PB14 D. Pedro V 25/26",
   "color": "green",
+  "type": "pedibus",
   "route": [
     {
       "lat": 41.554297,
