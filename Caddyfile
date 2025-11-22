@@ -1,5 +1,0 @@
-rotadascriancas.cm-braga.pt {
-    encode gzip
-    reverse_proxy cmbraga-service-app:3001
-    tls rotadascriancas@cm-braga.pt
-}

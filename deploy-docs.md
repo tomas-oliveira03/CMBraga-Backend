@@ -33,7 +33,33 @@ sudo systemctl enable docker
 ```
 
 ### 6. Enable docker without sudo command
-````bash
+```bash
 sudo usermod -aG docker $USER
 ```
 
+### 7. Update Nginx configuration
+```bash
+# Edit the Nginx configuration to enable SSL certificates and ensure proper export paths
+# Check our current config in nginx.conf file
+sudo nano /etc/nginx/sites-enabled/default
+```
+
+### 8. Create .env file
+```bash
+cp .env.example .env
+```
+
+### 9. Copy 'data' folder to 'src/scripts'
+```bash
+sudo make init
+```
+
+### 10. Deploy app to Docker
+```bash
+sudo make init
+```
+
+### 11. Remove app from Docker
+```bash
+sudo make dd
+```
