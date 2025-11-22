@@ -12,7 +12,7 @@ import { ParentStat } from "@/db/entities/ParentStat";
 import { ChildStat } from "@/db/entities/ChildStat";
 import { BadgeCriteria } from "@/helpers/types";
 import multer from "multer";
-import { isValidImageFile } from "@/helpers/storage";
+import { isValidImageFile, MAX_PICTURE_SIZE } from "@/helpers/storage";
 import { uploadImageBuffer, deleteImageSafe } from "../services/cloud";
 import { getStreakForClient } from "../services/badge";
 
@@ -50,6 +50,9 @@ router.post('/', authenticate, authorize(UserRole.ADMIN), upload.single('file'),
         if (req.file) {
             if (!isValidImageFile(req.file)) {
                 return res.status(400).json({ message: "Invalid image file" });
+            }
+            if (req.file.size > MAX_PICTURE_SIZE) {
+                return res.status(400).json({ message: "File size exceeds 10MB limit" });
             }
             const imageUrl = await uploadImageBuffer(req.file.buffer, "badge-picture", "badges");
             validatedData.imageUrl = imageUrl;

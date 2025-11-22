@@ -6,7 +6,7 @@ import { z } from "zod";
 import informationHash from "@/lib/information-hash";
 import multer from "multer";
 import { updateProfilePicture } from "../services/user";
-import { isValidImageFile } from "@/helpers/storage";
+import { isValidImageFile, MAX_PICTURE_SIZE } from "@/helpers/storage";
 import { User } from "@/db/entities/User";
 import { UserRole } from "@/helpers/types";
 import { authenticate, authorize } from "../middleware/auth";
@@ -90,6 +90,9 @@ router.put('/:id', authenticate, authorize(UserRole.PARENT), upload.single('file
         if (req.file){
             if (!isValidImageFile(req.file)){
                 return res.status(400).json({ message: "File must be a valid image type (JPEG, JPG, PNG, WEBP)" });
+            }
+            if (req.file.size > MAX_PICTURE_SIZE) {
+                return res.status(400).json({ message: "File size exceeds 10MB limit" });
             }
             parentData.profilePictureURL = await updateProfilePicture(parent.profilePictureURL, req.file.buffer);
         }

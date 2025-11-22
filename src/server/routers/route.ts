@@ -171,7 +171,6 @@ router.post('/', authenticate, authorize(UserRole.ADMIN), upload.single('file'),
         if (req.file.mimetype !== 'application/vnd.google-earth.kml+xml') {
             return res.status(400).json({ message: "File must be a KML file" });
         }
-
         if (req.file.size > MAX_KML_SIZE) {
             return res.status(400).json({ message: "File size exceeds 1MB limit" });
         }

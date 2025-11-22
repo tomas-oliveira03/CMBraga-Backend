@@ -7,7 +7,7 @@ import { ActivitySession } from "@/db/entities/ActivitySession";
 import { Instructor } from "@/db/entities/Instructor";
 import multer from 'multer';
 import { uploadImagesBuffer } from "../services/cloud";
-import { areValidImageFiles } from "@/helpers/storage";
+import { areValidImageFiles, MAX_PICTURE_SIZE } from "@/helpers/storage";
 import { createNotificationForUser } from "../services/notification";
 import { UserNotificationType, UserRole } from "@/helpers/types";
 import { authenticate, authorize } from "../middleware/auth";
@@ -119,6 +119,11 @@ router.post('/', authenticate, authorize(UserRole.INSTRUCTOR), upload.array('fil
 
         if(!isValidFiles){
             return res.status(400).json({ message: "File must be a valid image type (JPEG, JPG, PNG, WEBP)" });
+        }
+        for (const file of files) {
+            if (file.size > MAX_PICTURE_SIZE) {
+                return res.status(400).json({ message: "At least one file size exceeds 10MB limit" });
+            }
         }
 
         const activitySession = await AppDataSource.getRepository(ActivitySession).findOne({

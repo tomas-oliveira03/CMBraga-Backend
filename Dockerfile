@@ -23,4 +23,6 @@ ENV NODE_ENV=production
 ENV DOCKER_BUILD=true
 
 
-CMD npm run mig:run && npm run prod:hydration && npm run prod:server
+# CMD npm run mig:run && npm run prod:hydration && npm run prod:server
+
+CMD npm run prod:server

@@ -6,7 +6,7 @@ import { map, z } from "zod";
 import { Station } from "@/db/entities/Station";
 import { ActivityLinkType, ChildStationType, StationType, UserRole } from "@/helpers/types";
 import multer from "multer";
-import { isValidImageFile } from "@/helpers/storage";
+import { isValidImageFile, MAX_PICTURE_SIZE } from "@/helpers/storage";
 import { updateProfilePicture } from "../services/user";
 import { ChildHistory } from "@/db/entities/ChildHistory";
 import { differenceInYears } from "date-fns";
@@ -184,6 +184,9 @@ router.put('/:id', authenticate, authorize(UserRole.PARENT), upload.single('file
         if (req.file) {
             if (!isValidImageFile(req.file)) {
                 return res.status(400).json({ message: "File must be a valid image type (JPEG, JPG, PNG, WEBP)" });
+            }
+            if (req.file.size > MAX_PICTURE_SIZE) {
+                return res.status(400).json({ message: "File size exceeds 10MB limit" });
             }
             childData.profilePictureURL = await updateProfilePicture(child.profilePictureURL, req.file.buffer);
         }

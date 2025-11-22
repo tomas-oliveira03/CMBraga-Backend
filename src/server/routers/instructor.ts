@@ -5,7 +5,7 @@ import { UpdateInstructorSchema } from "@/server/schemas/instructor";
 import informationHash from "@/lib/information-hash";
 import z from "zod";
 import multer from "multer";
-import { isValidImageFile } from "@/helpers/storage";
+import { isValidImageFile, MAX_PICTURE_SIZE } from "@/helpers/storage";
 import { updateProfilePicture } from "../services/user";
 import { User } from "@/db/entities/User";
 import { ActivityStatusType, UserRole } from "@/helpers/types";
@@ -67,6 +67,9 @@ router.put('/:id', authenticate, authorize(UserRole.INSTRUCTOR), upload.single('
         if (req.file){
             if (!isValidImageFile(req.file)){
                 return res.status(400).json({ message: "File must be a valid image type (JPEG, JPG, PNG, WEBP)" });
+            }
+            if (req.file.size > MAX_PICTURE_SIZE) {
+                return res.status(400).json({ message: "File size exceeds 10MB limit" });
             }
             instructorData.profilePictureURL = await updateProfilePicture(instructor.profilePictureURL, req.file.buffer);
         }

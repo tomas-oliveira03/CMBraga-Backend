@@ -15,7 +15,7 @@ import multer from "multer";
 import { checkIfChatAlreadyExists, checkIfUserInChat, checkIfUserExists, checkIfChatExists, getMessagesFromChat, getChat, checkIfEmailsExist, checkIfAnyUserInChat } from "../services/comms";
 import { webSocketEvents } from "../services/websocket-events";
 import informationHash from "@/lib/information-hash";
-import { isValidImageFile, GROUP_DEFAULT_PROFILE_PICTURE } from "@/helpers/storage";
+import { isValidImageFile, GROUP_DEFAULT_PROFILE_PICTURE, MAX_PICTURE_SIZE } from "@/helpers/storage";
 import { uploadImageBuffer } from "../services/cloud";
 
 const router = express.Router();
@@ -74,6 +74,9 @@ router.post("/", upload.single('file'), authenticate, async (req: Request, res: 
         if (num_members > 2 && req.file) {
             if (!isValidImageFile(req.file)){
                 return res.status(400).json({ message: "File must be a valid image type (JPEG, JPG, PNG, WEBP)" });
+            }
+            if (req.file.size > MAX_PICTURE_SIZE) {
+                return res.status(400).json({ message: "File size exceeds 10MB limit" });
             }
             newChat.destinatairePhoto = await uploadImageBuffer(req.file.buffer, "group-picture", "groups");
         } 

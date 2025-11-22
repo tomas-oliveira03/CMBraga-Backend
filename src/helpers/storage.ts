@@ -4,6 +4,8 @@ import { DefaultImageType } from "./types";
 
 export const MAX_KML_SIZE = 1 * 1024 * 1024 // 1MB
 
+export const MAX_PICTURE_SIZE = 10 * 1024 * 1024 // 10MB
+
 export let USER_DEFAULT_PROFILE_PICTURES: string[] = []
 
 export let GROUP_DEFAULT_PROFILE_PICTURE: string = ""
