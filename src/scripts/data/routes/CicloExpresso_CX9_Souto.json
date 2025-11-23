@@ -1,0 +1,218 @@
+{
+  "name": "CX9 S. João do Souto / D. Pedro V / S. Lazaro / S. Vitor 25/26",
+  "color": "yellow",
+  "type": "ciclo_expresso",
+  "route": [
+    {
+      "lat": 41.55743,
+      "lon": -8.41844
+    },
+    {
+      "lat": 41.556635,
+      "lon": -8.419846
+    },
+    {
+      "lat": 41.556254,
+      "lon": -8.421396
+    },
+    {
+      "lat": 41.556095,
+      "lon": -8.421882
+    },
+    {
+      "lat": 41.55388,
+      "lon": -8.42559
+    },
+    {
+      "lat": 41.554143,
+      "lon": -8.426787
+    },
+    {
+      "lat": 41.552789,
+      "lon": -8.42653
+    },
+    {
+      "lat": 41.552917,
+      "lon": -8.42579
+    },
+    {
+      "lat": 41.55204,
+      "lon": -8.4256
+    },
+    {
+      "lat": 41.551625,
+      "lon": -8.425554
+    },
+    {
+      "lat": 41.551352,
+      "lon": -8.427313
+    },
+    {
+      "lat": 41.551561,
+      "lon": -8.427442
+    },
+    {
+      "lat": 41.551103,
+      "lon": -8.428783
+    },
+    {
+      "lat": 41.547185,
+      "lon": -8.428322
+    },
+    {
+      "lat": 41.547522,
+      "lon": -8.427034
+    },
+    {
+      "lat": 41.5479,
+      "lon": -8.426305
+    },
+    {
+      "lat": 41.549096,
+      "lon": -8.427099
+    },
+    {
+      "lat": 41.549802,
+      "lon": -8.42462
+    },
+    {
+      "lat": 41.549666,
+      "lon": -8.424062
+    },
+    {
+      "lat": 41.55067,
+      "lon": -8.42344
+    },
+    {
+      "lat": 41.550927,
+      "lon": -8.423408
+    },
+    {
+      "lat": 41.551119,
+      "lon": -8.422539
+    },
+    {
+      "lat": 41.551601,
+      "lon": -8.417486
+    },
+    {
+      "lat": 41.551843,
+      "lon": -8.416267
+    },
+    {
+      "lat": 41.551722,
+      "lon": -8.415608
+    },
+    {
+      "lat": 41.551818,
+      "lon": -8.415394
+    },
+    {
+      "lat": 41.55083,
+      "lon": -8.41461
+    },
+    {
+      "lat": 41.551545,
+      "lon": -8.412786
+    }
+  ],
+  "stops": [
+    {
+      "name": "R. Conselheiro Januário",
+      "lat": 41.55743,
+      "lon": -8.41844,
+      "distanceFromStart": 0,
+      "distanceFromPrevious": 0,
+      "timeFromStartMinutes": 0,
+      "type": "regular"
+    },
+    {
+      "name": "35 Tv. do Carmo",
+      "lat": 41.554143,
+      "lon": -8.426787,
+      "distanceFromStart": 0.826,
+      "distanceFromPrevious": 0.826,
+      "timeFromStartMinutes": 4,
+      "type": "regular"
+    },
+    {
+      "name": "Praça Conde de Agrolongo",
+      "lat": 41.552193,
+      "lon": -8.425648,
+      "distanceFromStart": 1.14,
+      "distanceFromPrevious": 0.314,
+      "timeFromStartMinutes": 7,
+      "type": "regular"
+    },
+    {
+      "name": "R. Dom Diogo de Sousa",
+      "lat": 41.550422,
+      "lon": -8.427669,
+      "distanceFromStart": 1.336,
+      "distanceFromPrevious": 0.196,
+      "timeFromStartMinutes": 8,
+      "type": "regular"
+    },
+    {
+      "name": "Largo Paulo Orósio",
+      "lat": 41.547185,
+      "lon": -8.428322,
+      "distanceFromStart": 1.922,
+      "distanceFromPrevious": 0.586,
+      "timeFromStartMinutes": 14,
+      "type": "regular"
+    },
+    {
+      "name": "EB1 S. João do Souto",
+      "lat": 41.549694,
+      "lon": -8.424668,
+      "distanceFromStart": 2.479,
+      "distanceFromPrevious": 0.557,
+      "timeFromStartMinutes": 20,
+      "type": "school"
+    },
+    {
+      "name": "Largo do Barão de São Martinho",
+      "lat": 41.551038,
+      "lon": -8.422978,
+      "distanceFromStart": 2.756,
+      "distanceFromPrevious": 0.276,
+      "timeFromStartMinutes": 22,
+      "type": "regular"
+    },
+    {
+      "name": "Colégio D. Pedro V",
+      "lat": 41.551389,
+      "lon": -8.419314,
+      "distanceFromStart": 3.18,
+      "distanceFromPrevious": 0.424,
+      "timeFromStartMinutes": 25,
+      "type": "school"
+    },
+    {
+      "name": "Largo Sra-A-Branca",
+      "lat": 41.551523,
+      "lon": -8.41822,
+      "distanceFromStart": 3.18,
+      "distanceFromPrevious": 0,
+      "timeFromStartMinutes": 26,
+      "type": "regular"
+    },
+    {
+      "name": "EB1 S. Vitor",
+      "lat": 41.551726,
+      "lon": -8.41285,
+      "distanceFromStart": 3.662,
+      "distanceFromPrevious": 0.481,
+      "timeFromStartMinutes": 30,
+      "type": "school"
+    }
+  ],
+  "totalDistance": 3.662,
+  "bounds": {
+    "north": 41.55743,
+    "south": 41.547185,
+    "east": -8.412786,
+    "west": -8.428783
+  }
+}

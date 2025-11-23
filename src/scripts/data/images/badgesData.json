@@ -1,0 +1,284 @@
+{
+    "badges": [
+        {
+            "name": "Centelha Calórica",
+            "description": "Premiado por queimar 100 calorias.",
+            "criteria": "calories",
+            "valueneeded": 100,
+            "fileName": "Calories1"
+        },
+        {
+            "name": "Queimador Urbano",
+            "description": "Premiado por queimar 500 calorias.",
+            "criteria": "calories",
+            "valueneeded": 500,
+            "fileName": "Calories2"
+        },
+        {
+            "name": "Titã das Calorias",
+            "description": "Premiado por queimar 1000 calorias.",
+            "criteria": "calories",
+            "valueneeded": 1000,
+            "fileName": "Calories3"
+        },
+        {
+            "name": "Força Incansável",
+            "description": "Premiado por queimar 5000 calorias.",
+            "criteria": "calories",
+            "valueneeded": 5000,
+            "fileName": "Calories4"
+        },
+        {
+            "name": "Devastador de Calorias",
+            "description": "Premiado por queimar 10000 calorias.",
+            "criteria": "calories",
+            "valueneeded": 10000,
+            "fileName": "Calories5"
+        },
+        {
+            "name": "Passo Inicial",
+            "description": "Premiado por percorrer 1 km.",
+            "criteria": "distance",
+            "valueneeded": 1,
+            "fileName": "Distance1"
+        },
+        {
+            "name": "Caminho Alegre",
+            "description": "Premiado por percorrer 5 km.",
+            "criteria": "distance",
+            "valueneeded": 5,
+            "fileName": "Distance2"
+        },
+        {
+            "name": "Explorador de Trilhas",
+            "description": "Premiado por percorrer 10 km.",
+            "criteria": "distance",
+            "valueneeded": 10,
+            "fileName": "Distance3"
+        },
+        {
+            "name": "Aventureiro das Distâncias",
+            "description": "Premiado por percorrer 20 km.",
+            "criteria": "distance",
+            "valueneeded": 20,
+            "fileName": "Distance4"
+        },
+        {
+            "name": "Navegador de Longas",
+            "description": "Premiado por percorrer 50 km.",
+            "criteria": "distance",
+            "valueneeded": 50,
+            "fileName": "Distance5"
+        },
+        {
+            "name": "Participante Promissor",
+            "description": "Premiado por participar em 3 atividades.",
+            "criteria": "participation",
+            "valueneeded": 3,
+            "fileName": "Participation1"
+        },
+        {
+            "name": "Entusiasta Constante",
+            "description": "Premiado por participar em 5 atividades.",
+            "criteria": "participation",
+            "valueneeded": 5,
+            "fileName": "Participation2"
+        },
+        {
+            "name": "Assíduo Notável",
+            "description": "Premiado por participar em 10 atividades.",
+            "criteria": "participation",
+            "valueneeded": 10,
+            "fileName": "Participation3"
+        },
+        {
+            "name": "Veterano do Passeio",
+            "description": "Premiado por participar em 20 atividades.",
+            "criteria": "participation",
+            "valueneeded": 20,
+            "fileName": "Participation4"
+        },
+        {
+            "name": "Mestre da Participação",
+            "description": "Premiado por participar em 50 atividades.",
+            "criteria": "participation",
+            "valueneeded": 50,
+            "fileName": "Participation5"
+        },
+        {
+            "name": "Contador Iniciante",
+            "description": "Premiado por acumular 100 pontos.",
+            "criteria": "points",
+            "valueneeded": 100,
+            "fileName": "Points1"
+        },
+        {
+            "name": "Acumulador Sagaz",
+            "description": "Premiado por acumular 500 pontos.",
+            "criteria": "points",
+            "valueneeded": 500,
+            "fileName": "Points2"
+        },
+        {
+            "name": "Pontual Vanguardista",
+            "description": "Premiado por acumular 1000 pontos.",
+            "criteria": "points",
+            "valueneeded": 1000,
+            "fileName": "Points3"
+        },
+        {
+            "name": "Especialista em Pontos",
+            "description": "Premiado por acumular 5000 pontos.",
+            "criteria": "points",
+            "valueneeded": 5000,
+            "fileName": "Points4"
+        },
+        {
+            "name": "Lendário dos Pontos",
+            "description": "Premiado por acumular 10000 pontos.",
+            "criteria": "points",
+            "valueneeded": 10000,
+            "fileName": "Points5"
+        },
+        {
+            "name": "Pequeno Valente",
+            "description": "Premiado por uma ação especial",
+            "criteria": "special",
+            "valueneeded": 0,
+            "fileName": "Special1"
+        },
+        {
+            "name": "Gratidão Brilhante",
+            "description": "Premiado por participar de forma especial",
+            "criteria": "special",
+            "valueneeded": 0,
+            "fileName": "Special2"
+        },
+        {
+            "name": "Aplauso Especial",
+            "description": "Premiado por participar de forma especial",
+            "criteria": "special",
+            "valueneeded": 0,
+            "fileName": "Special3"
+        },
+        {
+            "name": "Campeão Singular",
+            "description": "Premiado por uma ação especial",
+            "criteria": "special",
+            "valueneeded": 0,
+            "fileName": "Special4"
+        },
+        {
+            "name": "Herói Eterno",
+            "description": "Premiado por uma ação lendária",
+            "criteria": "special",
+            "valueneeded": 0,
+            "fileName": "Special5"
+        },
+        {
+            "name": "Chama Inicial",
+            "description": "Premiado por completar 1 atividade consecutiva.",
+            "criteria": "streak",
+            "valueneeded": 1,
+            "fileName": "Streak1"
+        },
+        {
+            "name": "Fogo de Três",
+            "description": "Premiado por completar 3 atividades consecutivas.",
+            "criteria": "streak",
+            "valueneeded": 3,
+            "fileName": "Streak2"
+        },
+        {
+            "name": "Chama Persistente",
+            "description": "Premiado por completar 5 atividades consecutivas.",
+            "criteria": "streak",
+            "valueneeded": 5,
+            "fileName": "Streak3"
+        },
+        {
+            "name": "Fagulha Duradoura",
+            "description": "Premiado por completar 10 atividades consecutivas.",
+            "criteria": "streak",
+            "valueneeded": 10,
+            "fileName": "Streak4"
+        },
+        {
+            "name": "Força Incandescente",
+            "description": "Premiado por completar 25 atividades consecutivas.",
+            "criteria": "streak",
+            "valueneeded": 25,
+            "fileName": "Streak5"
+        },
+        {
+            "name": "Clima Amigo",
+            "description": "Premiado por completar 1 atividade num clima diferente.",
+            "criteria": "weather",
+            "valueneeded": 1,
+            "fileName": "Weather1"
+        },
+        {
+            "name": "Viajante do Tempo",
+            "description": "Premiado por completar 2 atividades em climas diferentes.",
+            "criteria": "weather",
+            "valueneeded": 2,
+            "fileName": "Weather2"
+        },
+        {
+            "name": "Aventureiro Climático",
+            "description": "Premiado por completar 3 atividades em climas diferentes.",
+            "criteria": "weather",
+            "valueneeded": 3,
+            "fileName": "Weather3"
+        },
+        {
+            "name": "Explorador Atmosférico",
+            "description": "Premiado por completar 4 atividades em climas diferentes.",
+            "criteria": "weather",
+            "valueneeded": 4,
+            "fileName": "Weather4"
+        },
+        {
+            "name": "Dominador do Tempo",
+            "description": "Premiado por completar 5 atividades em climas diferentes.",
+            "criteria": "weather",
+            "valueneeded": 5,
+            "fileName": "Weather5"
+        },
+        {
+            "name": "Número Um Supremo",
+            "description": "Premiado por ser o 1º classificado em pontuação.",
+            "criteria": "leaderboard",
+            "valueneeded": 1,
+            "fileName": "Leaderboard1"
+        },
+        {
+            "name": "Dobradinha da Rua",
+            "description": "Premiado por ser o 1º classificado em pontuação por 2 vezes.",
+            "criteria": "leaderboard",
+            "valueneeded": 2,
+            "fileName": "Leaderboard2"
+        },
+        {
+            "name": "Tricampeão da Rua",
+            "description": "Premiado por ser o 1º classificado em pontuação por 3 vezes.",
+            "criteria": "leaderboard",
+            "valueneeded": 3,
+            "fileName": "Leaderboard3"
+        },
+        {
+            "name": "Rei da Quadra",
+            "description": "Premiado por ser o 1º classificado em pontuação por 4 vezes.",
+            "criteria": "leaderboard",
+            "valueneeded": 4,
+            "fileName": "Leaderboard4"
+        },
+        {
+            "name": "Penta Vanguardista",
+            "description": "Premiado por ser o 1º classificado em pontuação por 5 vezes.",
+            "criteria": "leaderboard",
+            "valueneeded": 5,
+            "fileName": "Leaderboard5"
+        }
+    ]
+}

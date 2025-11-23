@@ -1,0 +1,66 @@
+{
+  "name": "CX9 Largo Sra-A-Branca / EB1 S. Vitor 25/26",
+  "color": "yellow",
+  "type": "ciclo_expresso",
+  "route": [
+    {
+      "lat": 41.551523,
+      "lon": -8.41822
+    },
+    {
+      "lat": 41.551072,
+      "lon": -8.417856
+    },
+    {
+      "lat": 41.549611,
+      "lon": -8.420345
+    },
+    {
+      "lat": 41.549226,
+      "lon": -8.42013
+    },
+    {
+      "lat": 41.549334,
+      "lon": -8.419583
+    },
+    {
+      "lat": 41.549366,
+      "lon": -8.41917
+    },
+    {
+      "lat": 41.549222,
+      "lon": -8.419133
+    },
+    {
+      "lat": 41.548852,
+      "lon": -8.419562
+    }
+  ],
+  "stops": [
+    {
+      "name": "Largo Sra-A-Branca",
+      "lat": 41.551523,
+      "lon": -8.41822,
+      "distanceFromStart": 0,
+      "distanceFromPrevious": 0,
+      "timeFromStartMinutes": 0,
+      "type": "regular"
+    },
+    {
+      "name": "EB1 S. Lazaro",
+      "lat": 41.548814,
+      "lon": -8.419682,
+      "distanceFromStart": 0.521,
+      "distanceFromPrevious": 0.521,
+      "timeFromStartMinutes": 4,
+      "type": "school"
+    }
+  ],
+  "totalDistance": 0.521,
+  "bounds": {
+    "north": 41.551523,
+    "south": 41.548852,
+    "east": -8.417856,
+    "west": -8.420345
+  }
+}

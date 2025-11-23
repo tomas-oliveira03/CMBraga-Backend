@@ -184,6 +184,18 @@ export async function importRoutes() {
         console.log(`✅ Created route connections at ${mergeStop.name}`);
     }
 
+
+    const linhaAmarela = allRoutes.find(r => r.name === "CX9 S. João do Souto / D. Pedro V / S. Lazaro / S. Vitor 25/26");
+    const linhaAmarelaConeccao = allRoutes.find(r => r.name === "CX9 Largo Sra-A-Branca / EB1 S. Vitor 25/26");
+    const mergeStop2 = await AppDataSource.getRepository(Station).findOne({ where: { name: "Largo Sra-A-Branca"} });
+
+    if (linhaAmarela && linhaAmarelaConeccao && mergeStop2) {
+        await AppDataSource.getRepository(RouteConnection).insert([
+            { fromRouteId: linhaAmarela.id, toRouteId: linhaAmarelaConeccao.id, stationId: mergeStop2.id },
+        ]);
+        console.log(`✅ Created route connections at ${mergeStop2.name}`);
+    }
+
 }
 
 
