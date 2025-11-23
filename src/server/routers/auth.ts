@@ -26,7 +26,6 @@ import { CreateChildSchema } from "../schemas/child";
 import { webSocketManager } from "../services/websocket";
 import redisClient from "@/lib/redis";
 import { addUserToGeneralChats } from "../services/comms";
-import passwordHash from "@/lib/password-hash";
 
 const router = express.Router();
 
@@ -151,7 +150,6 @@ router.post('/register/instructor', authenticate, authorize(UserRole.ADMIN), asy
 
         const dateNow = new Date()
         const profilePictureURL = selectRandomDefaultProfilePicture()
-        const hashedPassword = await passwordHash.hash("Person23!");
 
         await AppDataSource.transaction(async tx => {
 
@@ -159,8 +157,7 @@ router.post('/register/instructor', authenticate, authorize(UserRole.ADMIN), asy
                 ...validatedData,
                 updatedAt: dateNow,
                 activatedAt: dateNow,
-                profilePictureURL: profilePictureURL,
-                password: hashedPassword,
+                profilePictureURL: profilePictureURL
             });
             const instructorId = instructor.identifiers[0]?.id
 
@@ -171,7 +168,7 @@ router.post('/register/instructor', authenticate, authorize(UserRole.ADMIN), asy
                 instructorId: instructorId,
             });
         })
-        // await createPassword(validatedData.email, validatedData.name);
+        await createPasswordEmail(validatedData.email, validatedData.name);
         await addUserToGeneralChats(validatedData.email);
         
         return res.status(201).json({message: "Instructor created successfully"});
@@ -200,7 +197,6 @@ router.post('/register/health-professional', authenticate, authorize(UserRole.AD
 
         const dateNow = new Date()
         const profilePictureURL = selectRandomDefaultProfilePicture()
-        const hashedPassword = await passwordHash.hash("Person23!");
 
         await AppDataSource.transaction(async tx => {
             
@@ -208,8 +204,7 @@ router.post('/register/health-professional', authenticate, authorize(UserRole.AD
                 ...validatedData,
                 updatedAt: dateNow,
                 activatedAt: dateNow,
-                profilePictureURL: profilePictureURL,
-                password: hashedPassword,
+                profilePictureURL: profilePictureURL
             });
             const healthProfessionalId = healthProfessional.identifiers[0]?.id
             
@@ -221,7 +216,7 @@ router.post('/register/health-professional', authenticate, authorize(UserRole.AD
             });
         })
 
-        // await createPassword(validatedData.email, validatedData.name);
+        await createPasswordEmail(validatedData.email, validatedData.name);
         await addUserToGeneralChats(validatedData.email);
 
         return res.status(201).json({message: "Health Professional created successfully"});
@@ -250,16 +245,14 @@ router.post('/register/parent', authenticate, authorize(UserRole.ADMIN), async (
 
         const dateNow = new Date()
         const profilePictureURL = selectRandomDefaultProfilePicture()
-        const hashedPassword = await passwordHash.hash("Person23!");
-        
+
         await AppDataSource.transaction(async tx => {
             
             const parent = await tx.getRepository(Parent).insert({
                 ...validatedData,
                 updatedAt: dateNow,
                 activatedAt: dateNow,
-                profilePictureURL: profilePictureURL,
-                password: hashedPassword,
+                profilePictureURL: profilePictureURL
             });
             const parentId = parent.identifiers[0]?.id
             
@@ -271,7 +264,7 @@ router.post('/register/parent', authenticate, authorize(UserRole.ADMIN), async (
             });
         })
         
-        // await createPassword(validatedData.email, validatedData.name);
+        await createPasswordEmail(validatedData.email, validatedData.name);
 
         await addUserToGeneralChats(validatedData.email);
         return res.status(201).json({message: "Parent created successfully"});
