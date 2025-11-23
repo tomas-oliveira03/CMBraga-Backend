@@ -922,6 +922,9 @@
  *                           co2Saved: { type: number, nullable: true }
  *                           caloriesBurned: { type: number, nullable: true }
  *                           pointsEarned: { type: number, nullable: true }
+ *                       didParentAttend:
+ *                         type: boolean
+ *                         description: "Whether the requesting parent attended this activity session"
  *                       chainedInfo:
  *                         type: string
  *                         nullable: true
@@ -969,6 +972,16 @@
  *                               properties:
  *                                 id: { type: string }
  *                                 name: { type: string }
+ *                             stats:
+ *                               type: object
+ *                               properties:
+ *                                 distanceMeters: { type: number, nullable: true }
+ *                                 co2Saved: { type: number, nullable: true }
+ *                                 caloriesBurned: { type: number, nullable: true }
+ *                                 pointsEarned: { type: number, nullable: true }
+ *                             didParentAttend:
+ *                               type: boolean
+ *                               description: "Whether the requesting parent attended this activity session"
  *                             chainedInfo:
  *                               type: string
  *                               nullable: true

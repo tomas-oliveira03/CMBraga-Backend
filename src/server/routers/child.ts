@@ -748,7 +748,8 @@ router.get('/previous-activities/:id', authenticate, authorize(UserRole.PARENT),
                     activitySession: {
                         stationActivitySessions: true,
                         route: true,
-                        childStations: true
+                        childStations: true,
+                        parentStations: true
                     },
                     parent: true,
                     pickUpStation: true,
@@ -800,6 +801,7 @@ router.get('/previous-activities/:id', authenticate, authorize(UserRole.PARENT),
                     caloriesBurned: childStatsActivity?.caloriesBurned || null,
                     pointsEarned: childStatsActivity?.pointsEarned || null
                 },
+                didParentAttend: activityData.activitySession.parentStations.some(ps => ps.parentId === req.user!.userId),
                 chainedInfo: activityData.chainedActivitySessionId
             };
         });
