@@ -15,6 +15,7 @@ COPY Makefile ./
 RUN npm run build
 
 COPY src/scripts/data/ dist/scripts/data/
+COPY src/scripts/data.json dist/scripts/data.json
 
 EXPOSE 3001
 
