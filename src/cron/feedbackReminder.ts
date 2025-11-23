@@ -4,8 +4,6 @@ import { AppDataSource } from '@/db';
 import { ActivitySession } from '@/db/entities/ActivitySession';
 import { Feedback } from '@/db/entities/Feedback';
 import { Between } from 'typeorm';
-import { sendFeedbackReminder } from '@/server/services/email';
-import { envs } from '@/config';
 import { ChildStationType, UserNotificationType } from '@/helpers/types';
 import { ChildActivitySession } from '@/db/entities/ChildActivitySession';
 import { CronExpression } from '@/helpers/utils';

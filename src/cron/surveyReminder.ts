@@ -1,13 +1,7 @@
 import cron, { ScheduledTask } from 'node-cron';
 import { logger } from '@/lib/logger';
 import { AppDataSource } from '@/db';
-import { ActivitySession } from '@/db/entities/ActivitySession';
-import { Feedback } from '@/db/entities/Feedback';
-import { Between } from 'typeorm';
-import { sendFeedbackReminder } from '@/server/services/email';
-import { envs } from '@/config';
-import { ChildStationType, SurveyType, UserNotificationType } from '@/helpers/types';
-import { ChildActivitySession } from '@/db/entities/ChildActivitySession';
+import { SurveyType, UserNotificationType } from '@/helpers/types';
 import { CronExpression } from '@/helpers/utils';
 import { Parent } from '@/db/entities/Parent';
 import { createNotificationForUser } from '@/server/services/notification';
