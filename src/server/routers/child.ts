@@ -500,14 +500,15 @@ router.get('/upcoming-activities/:id', authenticate, authorize(UserRole.PARENT),
                 childActivitySessions: {
                     activitySession: {
                         startedAt: IsNull()
-                    }
+                    },
                 }
             },
             relations: {
                 childActivitySessions: {
                     activitySession: {
                         stationActivitySessions: true,
-                        route: true
+                        route: true,
+                        parentActivitySessions: true
                     },
                     parent: true,
                     pickUpStation: true,
@@ -547,6 +548,7 @@ router.get('/upcoming-activities/:id', authenticate, authorize(UserRole.PARENT),
                     id: activityData.parentId,
                     name: activityData.parent.name
                 },
+                isParentRegistered: activityData.activitySession.parentActivitySessions.some(pas => pas.parentId === req.user!.userId),
                 chainedInfo: activityData.chainedActivitySessionId
             };
         });

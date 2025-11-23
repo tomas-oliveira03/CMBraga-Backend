@@ -656,6 +656,9 @@
  *                         properties:
  *                           id: { type: string }
  *                           name: { type: string }
+ *                       isParentRegistered:
+ *                         type: boolean
+ *                         description: "Whether the requesting parent is also registered for this activity session"
  *                       chainedInfo:
  *                         type: string
  *                         nullable: true
@@ -700,6 +703,9 @@
  *                               properties:
  *                                 id: { type: string }
  *                                 name: { type: string }
+ *                             isParentRegistered:
+ *                               type: boolean
+ *                               description: "Whether the requesting parent is also registered for this activity session"
  *                             chainedInfo:
  *                               type: string
  *                               nullable: true
