@@ -111,6 +111,11 @@ export async function awardBadgesAfterActivity(activityId: string) {
                 }
             }
 
+            // Check if we have any stats to process
+            if (activityToChildStat.size === 0) {
+                continue;
+            }
+
             const stat: Stat = {
                 parentId: pid,
                 totalDistanceMeters: Array.from(activityToChildStat.values()).reduce((sum, cs) => sum + (cs.distanceMeters || 0), 0),
