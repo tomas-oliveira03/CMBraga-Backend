@@ -12,6 +12,8 @@ import { Instructor } from "@/db/entities/Instructor";
 import { Parent } from "@/db/entities/Parent";
 import { Admin } from "@/db/entities/Admin";
 import { resetPasswordEmail, verifyToken } from "../services/email";
+import path from "path";
+import { envs } from "@/config";
 
 const router = express.Router();
 
@@ -332,5 +334,44 @@ router.post('/recover-password', async (req: Request, res: Response) => {
     }
 });
 
+
+// Redirect to app set password scheme or to download page
+router.get("/set-password-redirect/:token", async (req: Request, res: Response) => {
+    try {
+        const { token } = req.params;
+        const appName = envs.APP_NAME;
+        
+        const html = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+            <meta charset="UTF-8">
+            <title>MoveKids</title>
+            </head>
+            <body>
+            <script>
+                const token = "${token}";
+                const appName = "${appName}";
+
+                if (token) {
+                    window.location.href = appName + "://set-password?token=" + token;
+                }
+
+                setTimeout(() => {
+                    window.location.href = "https://${appName}.pt/download";
+                }, 1200);
+            </script>
+
+            <h2>A abrir a app MoveKids…</h2>
+            <p>Se nada acontecer, será redirecionado em breve.</p>
+            </body>
+            </html>
+        `;
+
+        return res.send(html);
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+});
 
 export default router;
