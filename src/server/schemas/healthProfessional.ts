@@ -16,8 +16,7 @@ export const CreateHealthProfessionalSchema = HealthProfessionalSchema.omit({
     id: true,
     createdAt: true,
     activatedAt: true,
-    updatedAt: true,
-    password: true
+    updatedAt: true
 });
 
 export const UpdateHealthProfessionalSchema = HealthProfessionalSchema.omit({

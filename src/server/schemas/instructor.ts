@@ -14,8 +14,7 @@ export const CreateInstructorSchema = InstructorSchema.omit({
     id: true,
     createdAt: true,
     activatedAt: true,
-    updatedAt: true,
-    password: true
+    updatedAt: true
 });
 
 export const UpdateInstructorSchema = InstructorSchema.omit({

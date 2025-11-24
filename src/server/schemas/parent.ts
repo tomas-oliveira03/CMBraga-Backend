@@ -15,8 +15,7 @@ export const CreateParentSchema = ParentSchema.omit({
     id: true,
     createdAt: true,
     activatedAt: true,
-    updatedAt: true,
-    password: true
+    updatedAt: true
 });
 
 export const UpdateParentSchema = ParentSchema.omit({
