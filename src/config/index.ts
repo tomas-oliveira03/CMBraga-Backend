@@ -57,10 +57,10 @@ class Envs {
     public readonly JWT_SECRET: string = this.getString("JWT_SECRET", "your_secret");
     
 
-    // Frontend Configuration
-    public readonly FRONTEND_URL: string = this.getString(
-        "FRONTEND_URL",
-        "http://localhost:5173",
+    // App Configuration
+    public readonly APP_NAME: string = this.getString(
+        "APP_NAME",
+        "your_app_name",
     );
     
     
