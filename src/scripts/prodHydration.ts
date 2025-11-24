@@ -173,7 +173,7 @@ export async function importRoutes() {
 
     // Create route connections
     const linhaAzul = allRoutes.find(r => r.name === "CX4 EB1 S. Lázaro 25/26");
-    const linhaVermelha = allRoutes.find(r => r.name === "PB10 Gulbenkian 25/26");
+    const linhaVermelha = allRoutes.find(r => r.name === "CX7 Gulbenkian / S. Vitor 25/26");
     const mergeStop = await AppDataSource.getRepository(Station).findOne({ where: { name: "Av. 31 de Janeiro"} });
 
     if (linhaAzul && linhaVermelha && mergeStop) {

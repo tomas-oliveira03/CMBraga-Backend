@@ -520,7 +520,7 @@ async function dbHydration(dataSource: DataSource) {
           dropOffStationId: finalDropoff,
           isLateRegistration: false,
           parentId: pais[i % pais.length]!.id,
-          registeredAt: new Date(baseDate.getTime() - 2 * 24 * 60 * 60 * 1000),
+          registeredAt: new Date(baseDate.getTime() - 2 * 24 * 60 * 60 * 1000 + 60 * 1000),
           chainedActivitySessionId: futureActivity2a.id
         })
       ]);
