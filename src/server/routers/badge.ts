@@ -150,8 +150,31 @@ router.get('/profile/my-badges', authenticate, authorize(UserRole.PARENT), async
                 const valB = typeof b?.valueneeded === 'number' ? b!.valueneeded! : Number.NEGATIVE_INFINITY;
                 return valB - valA;
             });
+        
+            // Edit here to return clientbadge assignedAt along with badge info
 
-        return res.status(200).json(badges);
+            const badgesWithAssignedAt = clientBadges
+            .map(cb => ({
+                id: cb.badge.id,
+                name: cb.badge.name,
+                description: cb.badge.description,
+                imageUrl: cb.badge.imageUrl,
+                criteria: cb.badge.criteria,
+                valueneeded: cb.badge.valueneeded,
+                assignedAt: cb.assignedAt,
+            }))
+            .sort((a, b) => {
+                const critA = a?.criteria ?? '';
+                const critB = b?.criteria ?? '';
+                const critCompare = critA.localeCompare(critB);
+                if (critCompare !== 0) return critCompare;
+                const valA = typeof a?.valueneeded === 'number' ? a!.valueneeded! : Number.NEGATIVE_INFINITY;
+                const valB = typeof b?.valueneeded === 'number' ? b!.valueneeded! : Number.NEGATIVE_INFINITY;
+                return valB - valA;
+            });
+
+
+        return res.status(200).json(badgesWithAssignedAt);
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
@@ -327,7 +350,27 @@ router.get('/profile/children-badges', authenticate, authorize(UserRole.PARENT),
                 return valB - valA;
             });
 
-        return res.status(200).json(badges);
+            const badgesWithAssignedAt = clientBadges
+            .map(cb => ({
+                id: cb.badge.id,
+                name: cb.badge.name,
+                description: cb.badge.description,
+                imageUrl: cb.badge.imageUrl,
+                criteria: cb.badge.criteria,
+                valueneeded: cb.badge.valueneeded,
+                assignedAt: cb.assignedAt,
+            }))
+            .sort((a, b) => {
+                const critA = a?.criteria ?? '';
+                const critB = b?.criteria ?? '';
+                const critCompare = critA.localeCompare(critB);
+                if (critCompare !== 0) return critCompare;
+                const valA = typeof a?.valueneeded === 'number' ? a!.valueneeded! : Number.NEGATIVE_INFINITY;
+                const valB = typeof b?.valueneeded === 'number' ? b!.valueneeded! : Number.NEGATIVE_INFINITY;
+                return valB - valA;
+            })
+
+        return res.status(200).json(badgesWithAssignedAt);
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
