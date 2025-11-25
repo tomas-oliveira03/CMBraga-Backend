@@ -271,15 +271,61 @@
  *         required: true
  *         schema:
  *           type: string
+ *         description: ID of the child whose badges are requested
  *     responses:
  *       200:
- *         description: List of child's badges
+ *         description: List of child's badges (includes assignedAt metadata)
  *         content:
  *           application/json:
  *             schema:
  *               type: array
  *               items:
- *                 $ref: '#/components/schemas/Badge'
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *                   name:
+ *                     type: string
+ *                     example: "Badge do Pedibus"
+ *                   description:
+ *                     type: string
+ *                     nullable: true
+ *                     example: "Awarded for completing X km"
+ *                   imageUrl:
+ *                     type: string
+ *                     format: uri
+ *                     nullable: true
+ *                     example: "https://storage.example.com/badges/badge-1.png"
+ *                   criteria:
+ *                     type: string
+ *                     example: "distance"
+ *                   valueneeded:
+ *                     type: number
+ *                     nullable: true
+ *                     example: 10
+ *                   assignedAt:
+ *                     type: string
+ *                     format: date-time
+ *                     nullable: true
+ *                     example: "2024-02-01T09:15:00.000Z"
+ *             examples:
+ *               sample:
+ *                 value:
+ *                   - id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *                     name: "Badge do Pedibus"
+ *                     description: "Awarded for completing 10 km."
+ *                     imageUrl: "https://storage.example.com/badges/badge-1.png"
+ *                     criteria: "distance"
+ *                     valueneeded: 10
+ *                     assignedAt: "2024-02-01T09:15:00.000Z"
+ *                   - id: "b2c3d4e5-f6g7-8901-bcde-f23456789012"
+ *                     name: "Participação Semanal"
+ *                     description: null
+ *                     imageUrl: null
+ *                     criteria: "participation"
+ *                     valueneeded: 5
+ *                     assignedAt: null
  *       401:
  *         description: Unauthorized
  *       403:
