@@ -134,7 +134,7 @@ export const kidsQuestions: QuestionnaireSurvey = [
                 questions : [
                     {20: "Passaste tempo com os teus amigos(as)?"},
                     {21: "Divertiste-te com os teus amigos(as)? "},
-                    {22: "Tu e os teus/tuas amigos(as) ajudaramse uns aos outros?"},
+                    {22: "Tu e os teus/tuas amigos(as) ajudaram-se uns aos outros?"},
                     {23: "Sentiste que podes confiar nos(as) teus/tuas amigos(as)? "},
                 ],
                 answerTypes: CategoryFrequencyList,
