@@ -191,6 +191,7 @@ router.put('/:id', authenticate, authorize(UserRole.PARENT), upload.single('file
     }
 });
 
+
 router.get('/parent-stats', authenticate, authorize(UserRole.PARENT), async (req: Request, res: Response) => {
     try {
         const parentId = req.user!.userId;
