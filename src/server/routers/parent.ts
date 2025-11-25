@@ -8,12 +8,14 @@ import multer from "multer";
 import { updateProfilePicture } from "../services/user";
 import { isValidImageFile, MAX_PICTURE_SIZE } from "@/helpers/storage";
 import { User } from "@/db/entities/User";
-import { UserRole } from "@/helpers/types";
+import { ChildStationType, UserRole } from "@/helpers/types";
 import { authenticate, authorize } from "../middleware/auth";
 import { Child } from "@/db/entities/Child";
 import { ParentStat } from "@/db/entities/ParentStat";
 import { ChildStat } from "@/db/entities/ChildStat";
 import { ParentChild } from "@/db/entities/ParentChild";
+import { ParentStation } from "@/db/entities/ParentStation";
+import { ChildStation } from "@/db/entities/ChildStation";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -64,6 +66,58 @@ router.get('/child', authenticate, authorize(UserRole.PARENT), async (req: Reque
 
 
         return res.status(200).json(childrenPayload);
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+});
+
+
+// Get activity count stats for parent and their children
+router.get('/activity-stats', authenticate, authorize(UserRole.PARENT), async (req: Request, res: Response) => {
+    try {
+        const parentId = req.user!.userId;
+
+        const parent = await AppDataSource.getRepository(Parent).findOne({
+            where: { id: parentId },
+            relations: {
+                parentChildren: {
+                    child: true
+                }
+            }
+        });
+        if (!parent) {
+            return res.status(404).json({ message: "Parent not found" });
+        }
+
+        const parentActivitiesCount = await AppDataSource.getRepository(ParentStation).count({
+            where: {
+                parentId: parentId
+            }
+        })
+
+        const childStats = [];
+
+        for (const parentChild of parent.parentChildren) {
+            const child = parentChild.child;
+
+            const count = await AppDataSource.getRepository(ChildStation).count({
+                where: {
+                    childId: child.id,
+                    type: ChildStationType.OUT
+                }
+            });
+
+            childStats.push({
+                childId: child.id,
+                childName: child.name,
+                activityCount: count
+            });
+        }
+
+        return res.status(200).json({
+            parentActivitiesCount: parentActivitiesCount,
+            childStats: childStats
+        });
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }

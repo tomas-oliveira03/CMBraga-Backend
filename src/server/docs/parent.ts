@@ -491,3 +491,80 @@
  *                   type: string
  *                   example: "Internal server error"
  */
+
+/**
+ * @swagger
+ * /parent/activity-stats:
+ *   get:
+ *     summary: Get activity count stats for parent and their children
+ *     description: Returns activity count statistics for the authenticated parent and all their associated children
+ *     tags:
+ *       - Parent
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Activity count statistics for parent and children
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 parentActivitiesCount:
+ *                   type: number
+ *                   example: 15
+ *                 childStats:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       childId:
+ *                         type: string
+ *                         example: "c3d4e5f6-g7h8-9012-cdef-g23456789012"
+ *                       childName:
+ *                         type: string
+ *                         example: "Ana Silva"
+ *                       activityCount:
+ *                         type: number
+ *                         example: 8
+ *       401:
+ *         description: Unauthorized - Invalid or missing authentication token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Unauthorized"
+ *       403:
+ *         description: Forbidden - User does not have parent role
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Forbidden"
+ *       404:
+ *         description: Parent not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Parent not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
