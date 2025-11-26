@@ -178,6 +178,7 @@
  *               - type
  *               - data
  *               - childId
+ *               - notificationId
  *             properties:
  *               type:
  *                 type: string
@@ -197,6 +198,10 @@
  *                 type: string
  *                 description: ID of the child the survey is about
  *                 example: "550e8400-e29b-41d4-a716-446655440000"
+ *               notificationId:
+ *                 type: string
+ *                 description: ID of the notification that triggered this survey submission
+ *                 example: "550e8400-e29b-41d4-a716-446655440001"
  *     responses:
  *       200:
  *         description: Survey submitted successfully
@@ -226,6 +231,10 @@
  *                   summary: Invalid child ID
  *                   value:
  *                     message: "Invalid or missing childId parameter"
+ *                 invalid_notification:
+ *                   summary: Invalid notification ID
+ *                   value:
+ *                     message: "Invalid or missing notificationId parameter"
  *                 invalid_data:
  *                   summary: Invalid data format
  *                   value:
@@ -261,7 +270,15 @@
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "Child not found"
+ *               examples:
+ *                 child_not_found:
+ *                   summary: Child not found
+ *                   value:
+ *                     message: "Child not found"
+ *                 notification_not_found:
+ *                   summary: Notification not found
+ *                   value:
+ *                     message: "Notification not found"
  *       500:
  *         description: Internal server error
  *         content:
@@ -349,6 +366,58 @@
  *                 message:
  *                   type: string
  *                   example: "Child not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ */
+
+/**
+ * @swagger
+ * /survey/send-surveys:
+ *   post:
+ *     summary: Send survey reminders to all parents
+ *     description: Sends survey reminder notifications to all parents for each of their children (both parent and child surveys)
+ *     tags:
+ *       - Survey
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: All survey reminders sent successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "All survey reminders sent successfully"
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Unauthorized"
+ *       403:
+ *         description: Forbidden - Admin access required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Access denied"
  *       500:
  *         description: Internal server error
  *         content:

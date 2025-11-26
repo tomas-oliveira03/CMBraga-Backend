@@ -1,11 +1,14 @@
 import { AppDataSource } from "@/db";
 import express, { Request, Response } from "express";
-import { SurveyType, UserRole } from "@/helpers/types";
+import { SurveyType, UserNotificationType, UserRole } from "@/helpers/types";
 import { authenticate, authorize } from "../middleware/auth";
 import { kidsQuestionaryIntro, kidsQuestions, parentsQuestionaryIntro, parentsQuestions, numberOfQuestions, QuestionnaireSurveyAnswers } from "@/helpers/survey-questions";
 import { Survey } from "@/db/entities/Survey";
 import { Child } from "@/db/entities/Child";
 import { In, MoreThan } from "typeorm";
+import { Parent } from "@/db/entities/Parent";
+import { createNotificationForUser } from "../services/notification";
+import { Notification } from "@/db/entities/Notification";
 
 const router = express.Router();
 
@@ -135,9 +138,54 @@ router.get('/child/:id', authenticate, authorize(UserRole.PARENT, UserRole.ADMIN
 });
 
 
+router.post('/send-surveys', authenticate, authorize(UserRole.ADMIN), async (req: Request, res: Response) => {
+    try {
+        const children = await AppDataSource.getRepository(Child).find({ 
+            relations: { 
+                parentChildren: {
+                    parent: true
+                }
+            }
+        })
+
+        for(const child of children){
+
+            const parents = child.parentChildren.map(pc => pc.parent);
+            const firstParent = parents[0]!;
+
+            // Notify parent to fill out parent survey
+            createNotificationForUser({
+                type: UserNotificationType.SURVEY_REMINDER,
+                parentId: firstParent.email,
+                surveyType: SurveyType.PARENT,
+                child: {
+                    id: child.id,
+                    name: child.name
+                },
+            })
+
+            // Notify child to fill out child survey
+            createNotificationForUser({
+                type: UserNotificationType.SURVEY_REMINDER,
+                parentId: firstParent.email,
+                surveyType: SurveyType.CHILD,
+                child: {
+                    id: child.id,
+                    name: child.name
+                },
+            })
+        }
+
+        return res.status(200).json({ message: 'All survey reminders sent successfully' });
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+});
+
+
 router.post('/', authenticate, authorize(UserRole.PARENT), async (req: Request, res: Response) => {
     try {
-        const { type: surveyType, data, childId } = req.body;
+        const { type: surveyType, data, childId, notificationId } = req.body;
 
         if (!surveyType || (surveyType !== SurveyType.CHILD && surveyType !== SurveyType.PARENT)) {
             return res.status(400).json({ message: 'Invalid or missing surveyType parameter' });
@@ -145,6 +193,10 @@ router.post('/', authenticate, authorize(UserRole.PARENT), async (req: Request, 
 
         if (!childId || typeof childId !== 'string') {
             return res.status(400).json({ message: 'Invalid or missing childId parameter' });
+        }
+
+        if (!notificationId || typeof notificationId !== 'string') {
+            return res.status(400).json({ message: 'Invalid or missing notificationId parameter' });
         }
 
         if (!Array.isArray(data)) {
@@ -189,25 +241,41 @@ router.post('/', authenticate, authorize(UserRole.PARENT), async (req: Request, 
             return res.status(403).json({ message: 'You are not the parent of this child' });
         }
 
-        const WEEK_IN_MS = 7 * 24 * 60 * 60 * 1000;
+        const notification = await AppDataSource.getRepository(Notification).findOne({
+            where: {
+                id: notificationId,
+                type: UserNotificationType.SURVEY_REMINDER,
+                userId: req.user!.userId
+            }
+        });
+        if (!notification) {
+            return res.status(404).json({ message: 'Notification not found' });
+        }
+
+
+        const MONTH_IN_MS = 30 * 24 * 60 * 60 * 1000;
         const surveyExists = await AppDataSource.getRepository(Survey).findOne({
             where: {
                 type: surveyType,
                 parentId: In(childExists.parentChildren.map(pc => pc.parentId)),
                 childId: childId,
-                submittedAt: MoreThan(new Date(Date.now() - WEEK_IN_MS))
+                submittedAt: MoreThan(new Date(Date.now() - MONTH_IN_MS))
             }
         });
         if (surveyExists) {
-            return res.status(400).json({ message: 'Survey has already been submitted in the last week for this child' });
+            return res.status(400).json({ message: 'Survey has already been submitted in the last month for this child' });
         }
 
-        await AppDataSource.getRepository(Survey).insert({
-            type: surveyType,
-            parentId: req.user!.userId,
-            childId: childId,
-            answers: data
-        });
+        await AppDataSource.transaction(async tx => {
+            await AppDataSource.getRepository(Survey).insert({
+                type: surveyType,
+                parentId: req.user!.userId,
+                childId: childId,
+                answers: data
+            });
+
+            await AppDataSource.getRepository(Notification).delete({ id: notificationId })
+        })
 
         return res.status(200).json({ message: 'Survey submitted successfully' });
     } catch (error) {

@@ -20,12 +20,13 @@ import { Child } from "@/db/entities/Child";
 import { ParentChild } from "@/db/entities/ParentChild";
 import { Station } from "@/db/entities/Station";
 import { selectRandomDefaultProfilePicture } from "@/helpers/storage";
-import { StationType, UserRole } from "@/helpers/types";
+import { StationType, SurveyType, UserNotificationType, UserRole } from "@/helpers/types";
 import { In } from "typeorm";
 import { CreateChildSchema } from "../schemas/child";
 import { webSocketManager } from "../services/websocket";
 import redisClient from "@/lib/redis";
 import { addUserToGeneralChats } from "../services/comms";
+import { createNotificationForUser } from "../services/notification";
 
 const router = express.Router();
 
@@ -291,6 +292,10 @@ router.post('/register/child', authenticate, authorize(UserRole.ADMIN), async (r
                 id: In (validatedData.parentIds)
             }
         })
+
+        if (parents.length === 0){
+            return res.status(404).json({message: "No parents found"});
+        }
         
         if(parents.length !== validatedData.parentIds.length){
             return res.status(404).json({message: "At least one parent doesn't exist"});
@@ -323,6 +328,31 @@ router.post('/register/child', authenticate, authorize(UserRole.ADMIN), async (r
             }));
 
             await tx.getRepository(ParentChild).insert(parentChildConnector);
+
+            const firstParent = parents[0]!;
+
+            // Notify parent to fill out parent survey
+            createNotificationForUser({
+                type: UserNotificationType.SURVEY_REMINDER,
+                parentId: firstParent.email,
+                surveyType: SurveyType.PARENT,
+                child: {
+                    id: childId,
+                    name: childData.name
+                },
+            })
+
+            // Notify child to fill out child survey
+            createNotificationForUser({
+                type: UserNotificationType.SURVEY_REMINDER,
+                parentId: firstParent.email,
+                surveyType: SurveyType.CHILD,
+                child: {
+                    id: childId,
+                    name: childData.name
+                },
+            })
+
         });
 
         return res.status(201).json({message: "Child created successfully"});
