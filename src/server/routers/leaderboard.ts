@@ -1,12 +1,13 @@
 import express, { Request, Response } from "express";
 import { RankingTimeframe, RankingType, LeaderboardType } from "@/helpers/types";
 import { getLeaderboardTimeframes, getStats } from "../services/leaderboard";
+import { authenticate } from "../middleware/auth";
 
 const STAT_PAGE_SIZE = 50;
 
 const router = express.Router();
 
-router.get("/top/:type", async (req: Request, res: Response) => {
+router.get("/top/:type", authenticate, async (req: Request, res: Response) => {
     try {
         const type = req.params.type as RankingType;
         const back = parseInt(req.query.back as string) || 0;
