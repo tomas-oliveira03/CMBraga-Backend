@@ -46,7 +46,6 @@ router.get('/', authenticate, authorize(UserRole.ADMIN, UserRole.HEALTH_PROFESSI
                 name: child.dropOffStation.name
             },
             dateOfBirth: child.dateOfBirth,
-            healthProblems: child.healthProblems,
             createdAt: child.createdAt,
             updatedAt: child.updatedAt
         }));
@@ -95,7 +94,6 @@ router.get('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.PARENT, User
                 name: child.dropOffStation.name
             },
             dateOfBirth: child.dateOfBirth,
-            healthProblems: child.healthProblems,
             createdAt: child.createdAt,
             updatedAt: child.updatedAt
         });

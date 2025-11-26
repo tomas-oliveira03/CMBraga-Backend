@@ -59,7 +59,6 @@ router.get('/child', authenticate, authorize(UserRole.PARENT), async (req: Reque
                 name: child.dropOffStation.name
             },
             dateOfBirth: child.dateOfBirth,
-            healthProblems: child.healthProblems,
             createdAt: child.createdAt,
             updatedAt: child.updatedAt
         }));

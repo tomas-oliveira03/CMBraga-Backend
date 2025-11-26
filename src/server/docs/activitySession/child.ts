@@ -53,30 +53,6 @@
  *                         type: string
  *                         format: date
  *                         example: "2016-02-14"
- *                       healthProblems:
- *                         type: object
- *                         nullable: true
- *                         properties:
- *                           allergies:
- *                             type: array
- *                             items:
- *                               type: string
- *                             example: ["lactose"]
- *                           chronicDiseases:
- *                             type: array
- *                             items:
- *                               type: string
- *                             example: []
- *                           surgeries:
- *                             type: array
- *                             items:
- *                               type: object
- *                               properties:
- *                                 type:
- *                                   type: string
- *                                 year:
- *                                   type: number
- *                             example: []
  *                       dropOffStationId:
  *                         type: string
  *                         example: "s1t2a3t4-i5o6-7890-abcd-ef1234567890"

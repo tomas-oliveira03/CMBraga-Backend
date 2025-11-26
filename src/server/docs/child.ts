@@ -66,30 +66,6 @@
  *                     type: string
  *                     format: date
  *                     example: "2015-05-20"
- *                   healthProblems:
- *                     type: object
- *                     nullable: true
- *                     properties:
- *                       allergies:
- *                         type: array
- *                         items:
- *                           type: string
- *                         example: ["peanuts", "lactose"]
- *                       chronicDiseases:
- *                         type: array
- *                         items:
- *                           type: string
- *                         example: ["asthma"]
- *                       surgeries:
- *                         type: array
- *                         items:
- *                           type: object
- *                           properties:
- *                             type:
- *                               type: string
- *                             year:
- *                               type: number
- *                         example: [{"type": "appendectomy", "year": 2020}]
  *                   createdAt:
  *                     type: string
  *                     format: date-time
@@ -206,27 +182,6 @@
  *                   type: string
  *                   format: date
  *                   example: "2016-03-10"
- *                 healthProblems:
- *                   type: object
- *                   nullable: true
- *                   properties:
- *                     allergies:
- *                       type: array
- *                       items:
- *                         type: string
- *                     chronicDiseases:
- *                       type: array
- *                       items:
- *                         type: string
- *                     surgeries:
- *                       type: array
- *                       items:
- *                         type: object
- *                         properties:
- *                           type:
- *                             type: string
- *                           year:
- *                             type: number
  *                 createdAt:
  *                   type: string
  *                   format: date-time
@@ -322,11 +277,6 @@
  *                 type: string
  *                 format: date
  *                 example: "2015-11-30"
- *               healthProblems:
- *                 type: string
- *                 description: "JSON string of health problems object"
- *                 example: '{"allergies":["gluten","shellfish"],"chronicDiseases":[],"surgeries":[]}'
-
  *               heightCentimeters:
  *                 type: number
  *                 example: 135
@@ -379,9 +329,6 @@
  *                 type: string
  *                 format: date
  *                 example: "2015-11-30"
- *               healthProblems:
- *                 type: object
- *                 nullable: true
  *               heightCentimeters:
  *                 type: number
  *                 example: 135

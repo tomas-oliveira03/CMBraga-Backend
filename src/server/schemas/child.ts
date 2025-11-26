@@ -10,17 +10,6 @@ const zDate = z.preprocess((val) => {
 }, z.date());
 
 
-const HealthProblemsSchema = z.object({
-  allergies: z.string().array().optional(),
-  chronicDiseases: z.string().array().optional(),
-  surgeries: z
-    .object({
-      type: z.string(),
-      year: z.number()
-    })
-    .array()
-    .optional()
-});
 
 export const ChildSchema = z.object({
   id: z.string(),
@@ -34,7 +23,6 @@ export const ChildSchema = z.object({
   schoolGrade: z.number(),
   dropOffStationId: z.string(),
   dateOfBirth: zDate,
-  healthProblems: HealthProblemsSchema.optional(),
   createdAt: z.date(),
   updatedAt: z.date().nullable()
 });
@@ -43,7 +31,6 @@ export const CreateChildSchema = ChildSchema.omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-  healthProblems: true,
   heightCentimeters: true,
   weightKilograms: true,
   cortisolLevel: true
@@ -55,7 +42,6 @@ export const UpdateChildSchema = z.object({
     school: z.string().optional(),
     schoolGrade: z.coerce.number().int().min(1).max(12).optional(),
     dateOfBirth: z.coerce.date().optional(),
-    healthProblems: z.any().optional(),
     dropOffStationId: z.string().uuid().optional(),
     heightCentimeters: z.coerce.number().positive().optional(),
     weightKilograms: z.coerce.number().positive().optional(),

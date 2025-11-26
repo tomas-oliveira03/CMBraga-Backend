@@ -265,10 +265,6 @@
  *                     type: string
  *                     format: date
  *                     example: "2016-05-15"
- *                   healthProblems:
- *                     type: string
- *                     nullable: true
- *                     example: "Alergia a amendoins"
  *                   createdAt:
  *                     type: string
  *                     format: date-time

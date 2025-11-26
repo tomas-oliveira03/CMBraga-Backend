@@ -13,12 +13,6 @@ export enum ChildGender {
 	FEMALE = 'female'
 }
 
-// MOCKED DATA
-export type ChildHealthProblems = {
-	allergies?: string[];
-	chronicDiseases?: string[];
-	surgeries?: { type: string; year: number }[];
-};
 
 export enum ChildStationType {
     IN = 'in',  // Child checked in at the station

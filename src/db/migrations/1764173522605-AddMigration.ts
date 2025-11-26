@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class AddMigration1763773223702 implements MigrationInterface {
-    name = 'AddMigration1763773223702'
+export class AddMigration1764173522605 implements MigrationInterface {
+    name = 'AddMigration1764173522605'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`CREATE TABLE "admin" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "email" character varying NOT NULL, "password" character varying, "profile_picture_url" character varying NOT NULL, "phone" character varying NOT NULL, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "activated_at" TIMESTAMP WITH TIME ZONE, "updated_at" TIMESTAMP WITH TIME ZONE, CONSTRAINT "UQ_de87485f6489f5d0995f5841952" UNIQUE ("email"), CONSTRAINT "PK_e032310bcef831fb83101899b10" PRIMARY KEY ("id"))`);
@@ -30,7 +30,7 @@ export class AddMigration1763773223702 implements MigrationInterface {
         await queryRunner.query(`CREATE TABLE "parent_child" ("parent_id" uuid NOT NULL, "child_id" uuid NOT NULL, "associated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_0b884bd66a60bc2ae117fc0bb09" PRIMARY KEY ("parent_id", "child_id"))`);
         await queryRunner.query(`CREATE TABLE "child_history" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "child_id" uuid NOT NULL, "height_centimeters" integer, "weight_kilograms" integer, "cortisol_level" integer, "age" integer NOT NULL, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_b085573ac3f438be52a3810e5ff" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE INDEX "IDX_4b5d60b7c0938e0eebaabc002b" ON "child_history" ("child_id") `);
-        await queryRunner.query(`CREATE TABLE "child" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "profile_picture_url" character varying NOT NULL, "gender" character varying NOT NULL, "height_centimeters" integer, "weight_kilograms" integer, "cortisol_level" integer, "school" character varying NOT NULL, "school_grade" integer NOT NULL, "drop_off_station_id" uuid NOT NULL, "date_of_birth" date NOT NULL, "health_problems" jsonb, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE, CONSTRAINT "CHK_3385608ebec1fb7bb29020243c" CHECK ("gender" IN ('male', 'female')), CONSTRAINT "PK_4609b9b323ca37c6bc435ec4b6b" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "child" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "profile_picture_url" character varying NOT NULL, "gender" character varying NOT NULL, "height_centimeters" integer, "weight_kilograms" integer, "cortisol_level" integer, "school" character varying NOT NULL, "school_grade" integer NOT NULL, "drop_off_station_id" uuid NOT NULL, "date_of_birth" date NOT NULL, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE, CONSTRAINT "CHK_3385608ebec1fb7bb29020243c" CHECK ("gender" IN ('male', 'female')), CONSTRAINT "PK_4609b9b323ca37c6bc435ec4b6b" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "child_activity_session" ("child_id" uuid NOT NULL, "activity_session_id" uuid NOT NULL, "chained_activity_session_id" character varying, "parent_id" uuid NOT NULL, "is_late_registration" boolean NOT NULL, "registered_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "pick_up_station_id" uuid NOT NULL, "drop_off_station_id" uuid NOT NULL, CONSTRAINT "PK_b259dbff899f986441575fd3d26" PRIMARY KEY ("child_id", "activity_session_id"))`);
         await queryRunner.query(`CREATE TABLE "parent_activity_session" ("parent_id" uuid NOT NULL, "activity_session_id" uuid NOT NULL, "registered_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_a7b357c4f5f847068cd3d3e5b60" PRIMARY KEY ("parent_id", "activity_session_id"))`);
         await queryRunner.query(`CREATE TABLE "issue" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "description" text NOT NULL, "image_ur_ls" character varying array NOT NULL DEFAULT '{}', "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE, "resolved_at" TIMESTAMP WITH TIME ZONE, "instructor_id" uuid NOT NULL, "activity_session_id" uuid NOT NULL, CONSTRAINT "PK_f80e086c249b9f3f3ff2fd321b7" PRIMARY KEY ("id"))`);
@@ -38,19 +38,19 @@ export class AddMigration1763773223702 implements MigrationInterface {
         await queryRunner.query(`CREATE TABLE "instructor_activity_session" ("instructor_id" uuid NOT NULL, "activity_session_id" uuid NOT NULL, "assigned_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_ce4be5546999080c882bcfacf56" PRIMARY KEY ("instructor_id", "activity_session_id"))`);
         await queryRunner.query(`CREATE TABLE "instructor" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "email" character varying NOT NULL, "password" character varying, "profile_picture_url" character varying NOT NULL, "phone" character varying NOT NULL, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "activated_at" TIMESTAMP WITH TIME ZONE, "updated_at" TIMESTAMP WITH TIME ZONE, CONSTRAINT "UQ_6222960ab4f2b68e84bc00bfeeb" UNIQUE ("email"), CONSTRAINT "PK_ccc0348eefb581ca002c05ef2f3" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE INDEX "IDX_6222960ab4f2b68e84bc00bfee" ON "instructor" ("email") `);
-        await queryRunner.query(`CREATE TABLE "message" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "content" text NOT NULL, "timestamp" TIMESTAMP WITH TIME ZONE NOT NULL, "chat_id" uuid NOT NULL, "sender_id" character varying NOT NULL, CONSTRAINT "PK_ba01f0a3e0123651915008bc578" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "chat" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "chat_name" character varying, "chat_type" character varying NOT NULL, "destinataire_photo" character varying, CONSTRAINT "CHK_691e7c4a4cc5fbd970a164d408" CHECK ("chat_type" IN ('group_chat', 'individual_chat', 'general_chat')), CONSTRAINT "PK_9d0b2ba74336710fd31154738a5" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "user_chat" ("user_id" character varying NOT NULL, "chat_id" uuid NOT NULL, "seen" boolean NOT NULL DEFAULT false, CONSTRAINT "PK_1a0006be82337a8768d40250893" PRIMARY KEY ("user_id", "chat_id"))`);
         await queryRunner.query(`CREATE TABLE "notification" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "user_id" character varying NOT NULL, "type" character varying NOT NULL, "title" character varying NOT NULL, "description" text NOT NULL, "is_read" boolean NOT NULL DEFAULT false, "uri" character varying NOT NULL, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE, CONSTRAINT "PK_705b6c7cdf9b2c2ff7ac7872cb7" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE INDEX "IDX_928b7aa1754e08e1ed7052cb9d" ON "notification" ("user_id") `);
         await queryRunner.query(`CREATE TABLE "user" ("id" character varying NOT NULL, "name" character varying NOT NULL, "profile_picture_url" character varying NOT NULL, "admin_id" uuid, "instructor_id" uuid, "parent_id" uuid, "health_professional_id" uuid, CONSTRAINT "REL_c143511e72fac735b8006051e5" UNIQUE ("admin_id"), CONSTRAINT "REL_11c03fb8b962b9a304677f462f" UNIQUE ("instructor_id"), CONSTRAINT "REL_acb096eef4d8b5acdd7acbb5c8" UNIQUE ("parent_id"), CONSTRAINT "REL_09a75d99124789b3ff569bb9b0" UNIQUE ("health_professional_id"), CONSTRAINT "PK_cace4a159ff9f2512dd42373760" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "message" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "content" text NOT NULL, "timestamp" TIMESTAMP WITH TIME ZONE NOT NULL, "chat_id" uuid NOT NULL, "sender_id" character varying NOT NULL, CONSTRAINT "PK_ba01f0a3e0123651915008bc578" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "chat" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "chat_name" character varying, "chat_type" character varying NOT NULL, "destinataire_photo" character varying, CONSTRAINT "CHK_691e7c4a4cc5fbd970a164d408" CHECK ("chat_type" IN ('group_chat', 'individual_chat', 'general_chat')), CONSTRAINT "PK_9d0b2ba74336710fd31154738a5" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "user_chat" ("user_id" character varying NOT NULL, "chat_id" uuid NOT NULL, "seen" boolean NOT NULL DEFAULT false, CONSTRAINT "PK_1a0006be82337a8768d40250893" PRIMARY KEY ("user_id", "chat_id"))`);
+        await queryRunner.query(`CREATE TABLE "cloud_default_images" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "file_name" character varying NOT NULL, "image_type" character varying NOT NULL, "image_url" character varying NOT NULL, CONSTRAINT "PK_f88e023bbf9c1c6ccc0a80b78d7" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_41434a1349d9384ed6291e0a15" ON "cloud_default_images" ("file_name") `);
         await queryRunner.query(`CREATE TABLE "badge" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "description" character varying NOT NULL, "image_url" character varying NOT NULL, "criteria" character varying NOT NULL, "valueneeded" integer, CONSTRAINT "UQ_35ed068bad78456ff543323916d" UNIQUE ("name"), CONSTRAINT "CHK_f38312b1d6073aeb048abae24a" CHECK ("criteria" IN ('streak', 'distance', 'calories', 'weather', 'points', 'special', 'leaderboard', 'participation')), CONSTRAINT "PK_76b7011c864d4521a14a5196c49" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "client_badge" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "parent_id" uuid, "child_id" uuid, "badge_id" uuid NOT NULL, "assigned_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_5c99c874b9c97ca4c30b35f5ea5" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE INDEX "IDX_5ee4cf0c549c70ebf7760b988d" ON "client_badge" ("parent_id") `);
         await queryRunner.query(`CREATE INDEX "IDX_9c550215951ea6b5ae5a6a53b6" ON "client_badge" ("child_id") `);
         await queryRunner.query(`CREATE INDEX "IDX_1f45b21716e1847b7b89c4a59b" ON "client_badge" ("badge_id") `);
-        await queryRunner.query(`CREATE TABLE "cloud_default_images" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "file_name" character varying NOT NULL, "image_type" character varying NOT NULL, "image_url" character varying NOT NULL, CONSTRAINT "PK_f88e023bbf9c1c6ccc0a80b78d7" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE INDEX "IDX_41434a1349d9384ed6291e0a15" ON "cloud_default_images" ("file_name") `);
         await queryRunner.query(`ALTER TABLE "station_activity_session" ADD CONSTRAINT "FK_48139306c10b136f8e99513536e" FOREIGN KEY ("station_id") REFERENCES "station"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "station_activity_session" ADD CONSTRAINT "FK_18b72a4646c8cd18e3dca0525ca" FOREIGN KEY ("activity_session_id") REFERENCES "activity_session"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "route_connection" ADD CONSTRAINT "FK_5e38e957a83dee375372e715cac" FOREIGN KEY ("from_route_id") REFERENCES "route"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
@@ -94,14 +94,14 @@ export class AddMigration1763773223702 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "activity_session" ADD CONSTRAINT "FK_6da77e653a887e2d77ac0d720f0" FOREIGN KEY ("activity_transfer_id") REFERENCES "activity_session"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "instructor_activity_session" ADD CONSTRAINT "FK_62c328685da034db02291d6bee9" FOREIGN KEY ("instructor_id") REFERENCES "instructor"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "instructor_activity_session" ADD CONSTRAINT "FK_e2f2a46ae5c260a36fd5674caf0" FOREIGN KEY ("activity_session_id") REFERENCES "activity_session"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "message" ADD CONSTRAINT "FK_859ffc7f95098efb4d84d50c632" FOREIGN KEY ("chat_id") REFERENCES "chat"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "user_chat" ADD CONSTRAINT "FK_7633fe1395d0705b301a21cf4d3" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "user_chat" ADD CONSTRAINT "FK_5366da78c4f08914a33f6e23d51" FOREIGN KEY ("chat_id") REFERENCES "chat"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "notification" ADD CONSTRAINT "FK_928b7aa1754e08e1ed7052cb9d8" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "user" ADD CONSTRAINT "FK_c143511e72fac735b8006051e55" FOREIGN KEY ("admin_id") REFERENCES "admin"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "user" ADD CONSTRAINT "FK_11c03fb8b962b9a304677f462f4" FOREIGN KEY ("instructor_id") REFERENCES "instructor"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "user" ADD CONSTRAINT "FK_acb096eef4d8b5acdd7acbb5c84" FOREIGN KEY ("parent_id") REFERENCES "parent"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "user" ADD CONSTRAINT "FK_09a75d99124789b3ff569bb9b07" FOREIGN KEY ("health_professional_id") REFERENCES "health_professional"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "message" ADD CONSTRAINT "FK_859ffc7f95098efb4d84d50c632" FOREIGN KEY ("chat_id") REFERENCES "chat"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "user_chat" ADD CONSTRAINT "FK_7633fe1395d0705b301a21cf4d3" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "user_chat" ADD CONSTRAINT "FK_5366da78c4f08914a33f6e23d51" FOREIGN KEY ("chat_id") REFERENCES "chat"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "client_badge" ADD CONSTRAINT "FK_5ee4cf0c549c70ebf7760b988dc" FOREIGN KEY ("parent_id") REFERENCES "parent"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "client_badge" ADD CONSTRAINT "FK_9c550215951ea6b5ae5a6a53b63" FOREIGN KEY ("child_id") REFERENCES "child"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "client_badge" ADD CONSTRAINT "FK_1f45b21716e1847b7b89c4a59bb" FOREIGN KEY ("badge_id") REFERENCES "badge"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
@@ -111,14 +111,14 @@ export class AddMigration1763773223702 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "client_badge" DROP CONSTRAINT "FK_1f45b21716e1847b7b89c4a59bb"`);
         await queryRunner.query(`ALTER TABLE "client_badge" DROP CONSTRAINT "FK_9c550215951ea6b5ae5a6a53b63"`);
         await queryRunner.query(`ALTER TABLE "client_badge" DROP CONSTRAINT "FK_5ee4cf0c549c70ebf7760b988dc"`);
+        await queryRunner.query(`ALTER TABLE "user_chat" DROP CONSTRAINT "FK_5366da78c4f08914a33f6e23d51"`);
+        await queryRunner.query(`ALTER TABLE "user_chat" DROP CONSTRAINT "FK_7633fe1395d0705b301a21cf4d3"`);
+        await queryRunner.query(`ALTER TABLE "message" DROP CONSTRAINT "FK_859ffc7f95098efb4d84d50c632"`);
         await queryRunner.query(`ALTER TABLE "user" DROP CONSTRAINT "FK_09a75d99124789b3ff569bb9b07"`);
         await queryRunner.query(`ALTER TABLE "user" DROP CONSTRAINT "FK_acb096eef4d8b5acdd7acbb5c84"`);
         await queryRunner.query(`ALTER TABLE "user" DROP CONSTRAINT "FK_11c03fb8b962b9a304677f462f4"`);
         await queryRunner.query(`ALTER TABLE "user" DROP CONSTRAINT "FK_c143511e72fac735b8006051e55"`);
         await queryRunner.query(`ALTER TABLE "notification" DROP CONSTRAINT "FK_928b7aa1754e08e1ed7052cb9d8"`);
-        await queryRunner.query(`ALTER TABLE "user_chat" DROP CONSTRAINT "FK_5366da78c4f08914a33f6e23d51"`);
-        await queryRunner.query(`ALTER TABLE "user_chat" DROP CONSTRAINT "FK_7633fe1395d0705b301a21cf4d3"`);
-        await queryRunner.query(`ALTER TABLE "message" DROP CONSTRAINT "FK_859ffc7f95098efb4d84d50c632"`);
         await queryRunner.query(`ALTER TABLE "instructor_activity_session" DROP CONSTRAINT "FK_e2f2a46ae5c260a36fd5674caf0"`);
         await queryRunner.query(`ALTER TABLE "instructor_activity_session" DROP CONSTRAINT "FK_62c328685da034db02291d6bee9"`);
         await queryRunner.query(`ALTER TABLE "activity_session" DROP CONSTRAINT "FK_6da77e653a887e2d77ac0d720f0"`);
@@ -162,19 +162,19 @@ export class AddMigration1763773223702 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "route_connection" DROP CONSTRAINT "FK_5e38e957a83dee375372e715cac"`);
         await queryRunner.query(`ALTER TABLE "station_activity_session" DROP CONSTRAINT "FK_18b72a4646c8cd18e3dca0525ca"`);
         await queryRunner.query(`ALTER TABLE "station_activity_session" DROP CONSTRAINT "FK_48139306c10b136f8e99513536e"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_41434a1349d9384ed6291e0a15"`);
-        await queryRunner.query(`DROP TABLE "cloud_default_images"`);
         await queryRunner.query(`DROP INDEX "public"."IDX_1f45b21716e1847b7b89c4a59b"`);
         await queryRunner.query(`DROP INDEX "public"."IDX_9c550215951ea6b5ae5a6a53b6"`);
         await queryRunner.query(`DROP INDEX "public"."IDX_5ee4cf0c549c70ebf7760b988d"`);
         await queryRunner.query(`DROP TABLE "client_badge"`);
         await queryRunner.query(`DROP TABLE "badge"`);
-        await queryRunner.query(`DROP TABLE "user"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_928b7aa1754e08e1ed7052cb9d"`);
-        await queryRunner.query(`DROP TABLE "notification"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_41434a1349d9384ed6291e0a15"`);
+        await queryRunner.query(`DROP TABLE "cloud_default_images"`);
         await queryRunner.query(`DROP TABLE "user_chat"`);
         await queryRunner.query(`DROP TABLE "chat"`);
         await queryRunner.query(`DROP TABLE "message"`);
+        await queryRunner.query(`DROP TABLE "user"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_928b7aa1754e08e1ed7052cb9d"`);
+        await queryRunner.query(`DROP TABLE "notification"`);
         await queryRunner.query(`DROP INDEX "public"."IDX_6222960ab4f2b68e84bc00bfee"`);
         await queryRunner.query(`DROP TABLE "instructor"`);
         await queryRunner.query(`DROP TABLE "instructor_activity_session"`);

@@ -3,7 +3,7 @@ import { ChildActivitySession } from "./ChildActivitySession";
 import { ChildStation } from "./ChildStation";
 import { MedicalReport } from "./MedicalReport";
 import { ParentChild } from "./ParentChild";
-import { ChildGender, ChildHealthProblems } from "@/helpers/types";
+import { ChildGender } from "@/helpers/types";
 import { Station } from "./Station";
 import { Feedback } from "./Feedback";
 import { ChildStat } from "./ChildStat";
@@ -46,9 +46,6 @@ export class Child {
 
 	@Column({ type: 'date' })
 	dateOfBirth!: Date;
-
-	@Column({ type: 'jsonb', nullable: true, default: null })
-	healthProblems!: ChildHealthProblems | null;
 
 	@Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
 	createdAt!: Date;
