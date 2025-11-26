@@ -136,8 +136,7 @@ export enum RankingTimeframe {
 export enum RankingType {
     PARENTS = 'parents',
     CHILDREN = 'children',
-    SCHOOLS = 'schools',
-    SCHOOL_CLASSES = 'school_classes'
+    SCHOOLS = 'schools'
 }
 
 export enum LeaderboardType {

@@ -13,7 +13,7 @@ router.get("/top/:type", async (req: Request, res: Response) => {
         const parameter = req.query.parameter as LeaderboardType || LeaderboardType.DISTANCE;
         const page = parseInt(req.query.page as string) || 1;
         const timeframe = (req.query.timeframe as RankingTimeframe) || RankingTimeframe.MONTHLY;
-        if (![RankingType.PARENTS, RankingType.CHILDREN, RankingType.SCHOOLS, RankingType.SCHOOL_CLASSES].includes(type)) {
+        if (![RankingType.PARENTS, RankingType.CHILDREN, RankingType.SCHOOLS].includes(type)) {
             return res.status(400).json({ error: "Invalid leaderboard type" });
         }
         const timeframes = getLeaderboardTimeframes(timeframe, back);

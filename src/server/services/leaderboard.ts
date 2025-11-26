@@ -161,39 +161,6 @@ export async function getStats(type: RankingType, start: Date | null, end: Date 
             }
 
             return Object.values(aggregatedStats);
-
-        case RankingType.SCHOOL_CLASSES:
-            const repoClass = AppDataSource.getRepository(ChildStat);
-            const whereClass: any = {};
-            if (start && end) {
-                whereClass.activityDate = Between(start, end);
-            } else if (start) {
-                whereClass.activityDate = MoreThanOrEqual(start);
-            } else if (end) {
-                whereClass.activityDate = LessThanOrEqual(end);
-            } else {
-                whereClass.id = Not(IsNull());
-            }
-            const childStatsClass = await repoClass.find({ where: whereClass });
-            // Aggregate by school class
-            const aggregatedStatsClass: { [key: string]: any } = {};
-            for (const cs of childStatsClass) {
-                const child = await AppDataSource.getRepository("Child").findOneBy({ id: cs.childId || "" });
-                const schoolClass = `${child?.school || "Unknown"} - Grade ${child?.schoolGrade || "Unknown"}`;
-                if (!aggregatedStatsClass[schoolClass]) {
-                    aggregatedStatsClass[schoolClass] = {
-                        schoolClass: schoolClass,
-                        totalDistance: 0,
-                        totalParticipations: 0,
-                        totalPoints: 0
-                    };
-                }
-                aggregatedStatsClass[schoolClass].totalDistance += cs.distanceMeters || 0;
-                aggregatedStatsClass[schoolClass].totalPoints += cs.pointsEarned || 0;
-                aggregatedStatsClass[schoolClass].totalParticipations += 1;
-            }
-
-            return Object.values(aggregatedStatsClass);
         default:
             return [];
     }

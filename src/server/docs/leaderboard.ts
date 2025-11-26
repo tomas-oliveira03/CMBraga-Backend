@@ -15,8 +15,8 @@
  *         required: true
  *         schema:
  *           type: string
- *           enum: [parents, children, schools, school_classes]
- *         description: Leaderboard type (parents, children, schools, school_classes)
+ *           enum: [parents, children, schools]
+ *         description: Leaderboard type (parents, children, schools)
  *         example: parents
  *       - in: query
  *         name: timeframe
@@ -121,21 +121,6 @@
  *                             totalPoints:
  *                               type: number
  *                               example: 600
- *                         - type: object
- *                           description: School class leaderboard entry
- *                           properties:
- *                             schoolClass:
- *                               type: string
- *                               example: "Escola Básica de Braga - Grade 4"
- *                             totalDistance:
- *                               type: number
- *                               example: 12000
- *                             totalParticipations:
- *                               type: integer
- *                               example: 10
- *                             totalPoints:
- *                               type: number
- *                               example: 180
  *       400:
  *         description: Invalid leaderboard type or bad query parameter
  *         content:
