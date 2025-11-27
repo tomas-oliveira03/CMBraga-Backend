@@ -1,152 +1,150 @@
 # 🌟 CMBraga-Backend
 
-Welcome to the **CMBraga-Backend**! This project serves as the backend for managing activities, users, and stations for the CMBraga system. It is built with modern technologies to ensure scalability, security, and maintainability.
+Backend for the CMBraga platform — manages users, activities, routes, stations and related services for the MoveKids project.
 
----
+🚀 Quick summary
 
-## 🚀 Features
+- Tech: Node.js + TypeScript, Express, TypeORM, PostgreSQL, Redis, Docker, Swagger
+- Swagger docs (when server running): [http://localhost:PORT/api/docs](http://localhost:3001/api/docs)
 
-- 🏫 Manage stations (regular and school types)
-- 👨‍👩‍👧 Manage parents and children
-- 🩺 Health professional integration
-- 🚌 Activity sessions with real-time updates
-- 🔒 Secure authentication and role-based authorization
-- 📊 Swagger API documentation for easy integration
+❓ What is this?
 
----
+- A full-featured backend service for managing municipal activity programs (MoveKids / CMBraga).
+- Implements user roles (admin, instructor, parent, health professional), route & station management, activity sessions, chat/notifications, badges, surveys, medical reports and hydration scripts to seed data.
 
-## 🛠️ Technologies Used
+🎯 What you can do with this project
 
-- **Node.js**: JavaScript runtime for building scalable backend services
-- **TypeScript**: Static typing for better code quality
-- **Express.js**: Web framework for building RESTful APIs
-- **TypeORM**: ORM for database management
-- **PostgreSQL**: Relational database
-- **Redis**: In-memory data store for caching
-- **Swagger**: API documentation
-- **LogDNA**: Centralized logging
-- **Docker**: Containerization for development and deployment
+- Manage routes and stations (import from KML / JSON, compute bounds & distances)
+- Create, schedule and run activity sessions (pedibus / ciclo_expresso)
+- Register children for activities and track check-in/check-out
+- Manage users and roles (admins, instructors, parents, health professionals)
+- Send emails (password setup / reset) and generate secure tokens
+- Real-time chat (group/individual/general) with WebSocket events
+- Seed database and upload default images to cloud storage using hydration scripts
+- Generate and view API documentation via Swagger
 
----
+🧭 Features (high level)
 
-## 📂 Project Structure
+- Authentication & role-based authorization (JWT)
+- TypeORM entities + migrations for robust schema management
+- Hydration scripts (local and production) to bootstrap database and cloud images
+- Swagger auto-generated from inline JSDoc in `src/server/docs/*.ts`
+- Dockerfile + Makefile targets to simplify local / container workflows
 
-- `src/`: Source code for the backend
-  - `db/`: Database entities and configuration
-  - `server/routers/`: API routes
-  - `lib/`: Utility libraries
-  - `helpers/`: Shared types and enums
-- `scripts/`: Utility scripts (e.g., database hydration)
-- `config/`: Environment configuration
+⚙️ Prerequisites
 
----
+- Node.js (v16+), npm (v8+)
+- Docker & docker-compose (optional, recommended)
+- PostgreSQL and Redis (if not using Docker)
 
-## 🖥️ Prerequisites
+🛠️ Quick start
 
-Before running the project, ensure you have the following installed:
+1.  Install dependencies
 
-- **Node.js** (v16+)
-- **npm** (v8+)
-- **Docker** (optional, for containerized setup)
-- **PostgreSQL** (if not using Docker)
-- **Redis** (if not using Docker)
+    ```bash
+    npm install
+    ```
 
----
+2.  Environment variables
 
-## ⚙️ Setup Instructions
+    Create `.env` at project root with the minimum required variables (examples):
 
-### 1️⃣ Clone the Repository
+    - DATABASE_URL=
+    - REDIS_URL=
+    - JWT_SECRET=
+    - ENCRYPTION_SECRET_KEY=
+    - EMAIL_USERNAME, EMAIL_PASSWORD, SMTP_SERVER, SMTP_PORT, EMAIL_SENDER
+    - BASE_URL (used by Swagger generation)
 
-```bash
-git clone https://github.com/your-username/CMBraga-Backend.git
-cd CMBraga-Backend
-```
+3.  Local development
 
-### 2️⃣ Install Dependencies
+    ```bash
+    npm run build
+    npm run dev:server   # or npm run start depending on package.json
+    ```
 
-```bash
-npm install
-```
+4.  Docker (recommended)
 
-### 3️⃣ Configure Environment Variables
+    - First run (build + start):
 
-Create a `.env` file in the root directory and configure the following variables:
+      ```bash
+      make init
+      ```
 
-```env
-DATABASE_URL=postgres://username:password@localhost:5432/cmbraga
-REDIS_URL=redis://localhost:6379
-ENCRYPTION_SECRET_KEY=your_secret_key
-JWT_SECRET=your_jwt_secret
-```
+    - Start (already built):
 
-### 4️⃣ Run the Server
+      ```bash
+      make du
+      ```
 
-#### Using Docker 🐳
+    - Stop & remove:
 
-Build and start the Docker containers:
+      ```bash
+      make dd
+      ```
 
-```bash
-make du
-```
+5.  Migrations (Makefile shortcuts)
 
-Start the development server:
+    - Create migration (interactive):
 
-```bash
-npm run dev:server
-```
+      ```bash
+      make mig-gen
+      ```
 
-### 5️⃣ Hydrate the Database
+    - Run migrations:
 
-Run the hydration script to populate the database with test data:
+      ```bash
+      make mig-run
+      ```
 
-```bash
-npm run hydration
-```
+    - Revert migrations:
 
----
+      ```bash
+      make mig-revert
+      ```
 
-## 🧪 Testing the API
+    - Schema log:
 
-### Swagger Documentation
+      ```bash
+      make schema-log
+      ```
 
-Access the Swagger API documentation at:
+6.  Hydration / seeding
+
+    - Local seeding:
+
+      ```bash
+      npm run hydration
+      ```
+
+    - Production-style (cloud images + DB):
+
+      ```bash
+      npm run prod:hydration
+      ```
+
+    - Data used by hydration lives under `src/scripts/data/` and `src/scripts/data.json`
+
+📚 Swagger API docs
+
+- Generated from `src/server/docs/*.ts`. View at:
 
 ```
 http://localhost:3001/api/docs
 ```
 
-### Example Endpoints
+🔎 Useful paths
 
-- **Health Check**: `GET /health`
-- **Get All Stations**: `GET /station`
-- **Create Parent**: `POST /parent`
-- **Get All Badges**: `GET /badge`
-- **Create Badge**: `POST /badge`
+- Source: `src/`
+- DB config & entities: `src/db/`
+- Hydration & utility scripts: `src/scripts/`
+- Swagger docs: `src/server/docs/`
+- Services: `src/server/services/`
+- Routers: `src/server/routers/`
 
----
+🧰 Tips & troubleshooting
 
-## 🛠️ Useful Commands
-
-### Docker Commands
-
-- **Build Docker**: `make du`
-- **Destroy Docker**: `make dd`
-
-### Database Commands
-
-- **Add Migration**: `make mig-gen`
-- **Run Migrations**: `make mig-run`
-- **Revert Migrations**: `make mig-revert`
-- **Check Schema Changes**: `make schema-log`
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Feel free to submit issues or pull requests.
-
----
-
-## 📜 License
-
-This project is licensed under the MIT License.
+- Ensure `.env` is available to the running process or container.
+- If migrations are not reflected, check `initializeDatabase()` logs and verify `migrationsRun` in `src/db/data-source.ts`.
+- If hydration fails uploading images, verify cloud credentials and presence of `src/scripts/data/images`.
+- Use Makefile shortcuts to speed up common tasks.
