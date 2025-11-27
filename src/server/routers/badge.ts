@@ -266,12 +266,9 @@ router.get('/profile/badges-to-achieve', authenticate, authorize(UserRole.PARENT
         });
         const achievedIds = new Set(assignedClientBadges.map(cb => cb.badgeId));
 
-        // Exclude LEADERBOARD and SPECIAL badges from "to-achieve" list
-        const excludedCriteria = [BadgeCriteria.LEADERBOARD, BadgeCriteria.SPECIAL];
-
         const badgesToAchieve = (await Promise.all(
             badges
-                .filter(b => !achievedIds.has(b.id) && !excludedCriteria.includes(b.criteria as BadgeCriteria))
+                .filter(b => !achievedIds.has(b.id))
                 .map(async b => {
                     const needed = typeof b.valueneeded === 'number' ? b.valueneeded : null;
                     let percentComplete: number | null = null;
@@ -452,12 +449,9 @@ router.get('/profile/children-badges-to-achieve', authenticate, authorize(UserRo
         });
         const achievedIds = new Set(assignedClientBadges.map(cb => cb.badgeId));
 
-        // Exclude criteria that do not apply to static progress
-        const excludedCriteria = [BadgeCriteria.STREAK, BadgeCriteria.LEADERBOARD, BadgeCriteria.SPECIAL];
-
         const badgesToAchieve = (await Promise.all(
             badges
-                .filter(b => !achievedIds.has(b.id) && !excludedCriteria.includes(b.criteria as BadgeCriteria))
+                .filter(b => !achievedIds.has(b.id))
                 .map(async b => {
                     const needed = typeof b.valueneeded === 'number' ? b.valueneeded : null;
                     let percentComplete: number | null = null;
@@ -590,13 +584,11 @@ router.get('/profile/badges-progress', authenticate, authorize(UserRole.PARENT),
             totalPointsEarned: Array.from(activityToChildStat.values()).reduce((sum, cs) => sum + (cs.pointsEarned || 0), 0),
         };
 
-        const excludedCriteria = [BadgeCriteria.STREAK, BadgeCriteria.LEADERBOARD, BadgeCriteria.SPECIAL];
-
         const result = (await Promise.all(badges.map(async b => {
             const achieved = achievedIds.has(b.id);
             let percentDone: number | null = null;
 
-            if (!achieved && !excludedCriteria.includes(b.criteria as BadgeCriteria)) {
+            if (!achieved ) {
                 const needed = typeof b.valueneeded === 'number' ? b.valueneeded : null;
                 let percentComplete: number | null = null;
 
@@ -703,13 +695,11 @@ router.get('/profile/children-badges-progress', authenticate, authorize(UserRole
             totalPointsEarned: childDBStats.reduce((sum, cs) => sum + (cs.pointsEarned || 0), 0),
         };
 
-        const excludedCriteria = [BadgeCriteria.STREAK, BadgeCriteria.LEADERBOARD, BadgeCriteria.SPECIAL];
-
         const result = (await Promise.all(badges.map(async b => {
             const achieved = achievedIds.has(b.id);
             let percentDone: number | null = null;
 
-            if (!achieved && !excludedCriteria.includes(b.criteria as BadgeCriteria)) {
+            if (!achieved) {
                 const needed = typeof b.valueneeded === 'number' ? b.valueneeded : null;
                 let percentComplete: number | null = null;
 
