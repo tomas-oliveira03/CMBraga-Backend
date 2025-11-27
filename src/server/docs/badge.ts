@@ -205,6 +205,12 @@
  *                     format: date-time
  *                     nullable: true
  *                     example: null
+ *                   assignedAt:
+ *                     type: string
+ *                     format: date-time
+ *                     nullable: true
+ *                     example: "2024-02-01T09:15:00.000Z"
+ * 
  *       401:
  *         description: Unauthorized
  *       403:

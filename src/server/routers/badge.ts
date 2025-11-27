@@ -214,6 +214,7 @@ router.get('/profile/badges-to-achieve', authenticate, authorize(UserRole.PARENT
             where: { parentId: userId }
         });
 
+
         const enrichedParentStats: ParentStat[] = [];
         for (const ps of parentDBStats) {
             const childStatId = ps.childStatId;
@@ -335,6 +336,12 @@ router.get('/profile/badges-to-achieve', authenticate, authorize(UserRole.PARENT
             const valB = typeof b.valueneeded === 'number' ? b.valueneeded : Number.NEGATIVE_INFINITY;
             return valA - valB;
         });
+
+        if (parentDBStats.length === 0) {
+            for (const badge of badgesToAchieve) {
+                badge.percentDone = 0;
+            }
+        }
 
         return res.status(200).json(badgesToAchieve);
     } catch (error) {

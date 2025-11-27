@@ -43,6 +43,12 @@
  *                     type: boolean
  *                     example: true
  *                     description: True if the instructor is already assigned to this activity session, false otherwise
+ *                   assignedAt:
+ *                     type: string
+ *                     format: date-time
+ *                     nullable: true
+ *                     example: "2025-10-05T14:19:46.908Z"
+ *                     description: Date when the instructor was assigned to the activity session (null if not assigned)
  *             examples:
  *               mixedAssignments:
  *                 summary: Mix of assigned and unassigned instructors
@@ -51,18 +57,22 @@
  *                     instructorName: "João Silva"
  *                     profilePictureURL: "https://storage.example.com/profiles/joao.jpg"
  *                     isAssigned: true
+ *                     assignedAt: "2025-10-05T14:19:46.908Z"
  *                   - instructorId: "2abc1234-12ab-34cd-56ef-123456789012"
  *                     instructorName: "Maria Santos"
  *                     profilePictureURL: "https://storage.example.com/profiles/maria.jpg"
  *                     isAssigned: true
+ *                     assignedAt: "2025-09-30T11:00:00.000Z"
  *                   - instructorId: "3def5678-90gh-12ij-34kl-567890123456"
  *                     instructorName: "Pedro Costa"
  *                     profilePictureURL: "https://storage.example.com/profiles/pedro.jpg"
  *                     isAssigned: false
+ *                     assignedAt: null
  *                   - instructorId: "4ghi7890-12jk-34lm-56no-678901234567"
  *                     instructorName: "Ana Ferreira"
  *                     profilePictureURL: "https://storage.example.com/profiles/ana.jpg"
  *                     isAssigned: false
+ *                     assignedAt: null
  *               allUnassigned:
  *                 summary: No instructors assigned yet
  *                 value:
@@ -70,10 +80,12 @@
  *                     instructorName: "João Silva"
  *                     profilePictureURL: "https://storage.example.com/profiles/joao.jpg"
  *                     isAssigned: false
+ *                     assignedAt: null
  *                   - instructorId: "2abc1234-12ab-34cd-56ef-123456789012"
  *                     instructorName: "Maria Santos"
  *                     profilePictureURL: "https://storage.example.com/profiles/maria.jpg"
  *                     isAssigned: false
+ *                     assignedAt: null
  *       500:
  *         description: Internal server error
  *         content:
