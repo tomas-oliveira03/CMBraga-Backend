@@ -385,12 +385,12 @@ async function runHydration() {
 
 
 
-// runHydration().then(() => {
-//     console.log("Hydration script completed.");
-//     process.exit(0);
-// }).catch((error) => {
-//     console.error("Hydration script failed with error:", error);
-//     process.exit(1);
-// });
+runHydration().then(() => {
+    console.log("Hydration script completed.");
+    process.exit(0);
+}).catch((error) => {
+    console.error("Hydration script failed with error:", error);
+    process.exit(1);
+});
 
 
