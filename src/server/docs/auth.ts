@@ -106,8 +106,63 @@
  *     responses:
  *       200:
  *         description: User profile
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                   description: User ID (email)
+ *                   example: "user@cmbraga.pt"
+ *                 name:
+ *                   type: string
+ *                   description: User's full name
+ *                   example: "João Silva"
+ *                 email:
+ *                   type: string
+ *                   format: email
+ *                   description: User's email address
+ *                   example: "user@cmbraga.pt"
+ *                 profilePictureURL:
+ *                   type: string
+ *                   description: URL to user's profile picture
+ *                   example: "https://example.com/profile-pics/default1.jpg"
+ *                 role:
+ *                   type: string
+ *                   enum: [admin, instructor, parent, health_professional]
+ *                   description: User's role in the system
+ *                   example: "admin"
  *       401:
  *         description: Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Authentication required"
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "User not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error message"
  */
 
 

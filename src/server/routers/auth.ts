@@ -82,12 +82,26 @@ router.post('/logout', authenticate, async (req: Request, res: Response) => {
 });
 
 
-router.get('/profile', authenticate, (req: Request, res: Response) => {
+router.get('/profile', authenticate, async (req: Request, res: Response) => {
     try {
-        return res.status(200).json({
-            message: "Profile retrieved successfully",
-            user: req.user
+        const user = await AppDataSource.getRepository(User).findOne({
+            where: {
+                id: req.user!.email
+            }
         });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const finalPayload = {
+            id: req.user!.userId,
+            name: user.name,
+            email: req.user!.email,
+            profilePictureURL: user.profilePictureURL,
+            role: req.user!.role,
+        }
+
+        return res.status(200).json(finalPayload);
     } catch (error) {
         return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
     }
