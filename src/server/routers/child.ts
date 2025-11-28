@@ -14,7 +14,6 @@ import { ParentChild } from "@/db/entities/ParentChild";
 import { Parent } from "@/db/entities/Parent";
 import { In, IsNull, Not } from "typeorm";
 import { ChildActivitySession } from "@/db/entities/ChildActivitySession";
-import { Feedback } from "@/db/entities/Feedback";
 import { OngoingActivityPayload, OngoingActivitySessionInfo, PreviousActivityPayload, PreviousActivitySessionInfo, UpcomingActivityPayload, UpcomingActivitySessionInfo } from "@/helpers/service-types";
 import { ActivitySession } from "@/db/entities/ActivitySession";
 import { RouteConnection } from "@/db/entities/RouteConnection";
@@ -247,17 +246,6 @@ router.put('/:id', authenticate, authorize(UserRole.PARENT), upload.single('file
 
             if (activitiesNumber > 0) {
                 return res.status(400).json({ message: "Cannot remove parent: child has activities registered by this parent" });
-            }
-
-            const feedbackNumber = await AppDataSource.getRepository(Feedback).count({
-                where: {
-                    childId: childId,
-                    parentId: removeParentId
-                }
-            });
-
-            if (feedbackNumber > 0) {
-                return res.status(400).json({ message: "Cannot remove parent: parent has submitted feedback for this child" });
             }
         }
 

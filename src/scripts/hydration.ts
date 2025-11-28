@@ -16,7 +16,6 @@ import { ChildStation } from "@/db/entities/ChildStation";
 import { Issue } from "@/db/entities/Issue";
 import { MedicalReport } from "@/db/entities/MedicalReport";
 import { User } from "@/db/entities/User";
-import { Feedback } from "@/db/entities/Feedback";
 import { ParentActivitySession } from "@/db/entities/ParentActivitySession";
 import { Badge } from "@/db/entities/Badge";
 import { BadgeCriteria, SurveyType, UserNotificationType } from "@/helpers/types";
@@ -86,7 +85,6 @@ async function dbHydration(dataSource: DataSource) {
     const badgeRepo = dataSource.getRepository(Badge);
     const routeRepo = dataSource.getRepository(Route);
     const routeStationRepo = dataSource.getRepository(RouteStation);
-    const feedbackRepo = dataSource.getRepository(Feedback);
     const childHistoryRepo = dataSource.getRepository(ChildHistory);
     const chatRepo = dataSource.getRepository(Chat);
     const userChatRepo = dataSource.getRepository(UserChat);
@@ -102,7 +100,6 @@ async function dbHydration(dataSource: DataSource) {
       childStationRepo,
       issueRepo,
       reportRepo,
-      feedbackRepo,
       childHistoryRepo,
       parentChildRepo,
       messageRepo,
@@ -852,7 +849,6 @@ async function dbHydration(dataSource: DataSource) {
     console.log(`   3️⃣  Em curso (iniciada há 30 min) - ${Math.min(1, criancas.length)} crianças com check-in`);
     console.log(`   4️⃣  Finalizada (ontem) - ${Math.min(2, criancas.length)} crianças com check-in/out completo`);
     console.log(`   5️⃣  Futura em inscrição tardia (hoje à noite) - ${lateRegChildren.length} crianças`);
-    console.log(`💬 Feedbacks: 3 (atividade finalizada)`);
     console.log(`⚠️  Issues: 1`);
     console.log(`🏥 Medical Reports: 1`);
     console.log(`📬 Notificações: ${sampleNotifications.length} (todas as 5 categorias)`);

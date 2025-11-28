@@ -287,7 +287,6 @@ router.get('/activity-stats/:id', authenticate, authorize(UserRole.ADMIN), async
             where: { id: activityId },
             relations: {
                 issues: true,
-                feedbacks: true,
                 route: true,
                 childStations: true,
                 parentStations: true

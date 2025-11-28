@@ -5,7 +5,6 @@ import { MedicalReport } from "./MedicalReport";
 import { ParentChild } from "./ParentChild";
 import { ChildGender } from "@/helpers/types";
 import { Station } from "./Station";
-import { Feedback } from "./Feedback";
 import { ChildStat } from "./ChildStat";
 import { ChildHistory } from "./ChildHistory";
 import { Survey } from "./Survey";
@@ -64,9 +63,6 @@ export class Child {
 
 	@OneToMany(() => ParentChild, parentChild => parentChild.child)
 	parentChildren!: ParentChild[];
-
-	@OneToMany(() => Feedback, (feedback) => feedback.child)
-	feedbacks!: Feedback[];
 
 	@OneToMany(() => ChildStat, (cs) => cs.child)
 	childStats!: ChildStat[];

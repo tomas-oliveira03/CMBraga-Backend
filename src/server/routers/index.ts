@@ -21,7 +21,6 @@ import activitySessionStationParent from "./activitySession/parent"
 import activitySessionStationRoute from "./activitySession/route"
 import badgeRouter from "./badge";
 import routeRouter from "./route";
-import feedbackRouter from "./feedback";
 import leaderboardRouter from "./leaderboard";
 import notificationRouter from "./notification";
 import surveyRouter from "./survey";
@@ -51,7 +50,6 @@ router.use("/activity-session", activitySessionRouter);
 router.use("/user", userRouter);
 router.use("/badge", badgeRouter);
 router.use("/route", routeRouter);
-router.use("/feedback", feedbackRouter);
 router.use("/leaderboard", leaderboardRouter);
 router.use("/notification", notificationRouter);
 router.use("/survey", surveyRouter);

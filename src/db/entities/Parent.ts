@@ -2,7 +2,6 @@ import { Column, Entity, Index, OneToMany, OneToOne, PrimaryGeneratedColumn } fr
 import { ParentChild } from "./ParentChild";
 import { ChildActivitySession } from "./ChildActivitySession";
 import { User } from "./User";
-import { Feedback } from "./Feedback";
 import { ParentStation } from "./ParentStation";
 import { ParentStat } from "./ParentStat";
 import { Survey } from "./Survey";
@@ -51,9 +50,6 @@ export class Parent {
 
     @OneToMany(() => ChildActivitySession, childActivitySession => childActivitySession.parent)
     parentChildActivitySession!: ChildActivitySession[];
-
-    @OneToMany(() => Feedback, (feedback) => feedback.parent)
-    feedbacks!: Feedback[];
 
     @OneToMany(() => Survey, (cs) => cs.parent)
     parentSurveys!: Survey[];

@@ -299,7 +299,7 @@
  *                 example: "parent-uuid-2"
  *               removeParentId:
  *                 type: string
- *                 description: "Parent ID to remove (requires at least 1 other parent, no activities, no feedback)"
+ *                 description: "Parent ID to remove (requires at least 1 other parent, no activities)"
  *                 example: "parent-uuid-1"
  *               file:
  *                 type: string
@@ -353,7 +353,7 @@
  *       200:
  *         description: Child updated successfully
  *       400:
- *         description: Validation error or cannot remove parent (only parent, has activities, or has feedback)
+ *         description: Validation error or cannot remove parent (only parent or has activities)
  *       404:
  *         description: Child not found or parent not associated
  *       500:

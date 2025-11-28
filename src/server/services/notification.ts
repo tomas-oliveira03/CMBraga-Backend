@@ -78,19 +78,6 @@ type NotificationInitialPayload =
             name: string;
         }
     }
-    |
-    {
-        type: UserNotificationType.FEEDBACK_REMINDER;
-        parentId: string;
-        activity: {
-            id: string;
-            type: ActivityType;
-        };
-        child: {
-            id: string;
-            name: string;
-        }
-    }
     
 
 
@@ -134,12 +121,6 @@ function buildNotificationContent(payload: NotificationInitialPayload): { title:
                     : `Lembrete para a criança ${payload.child.name} preencher o questionário.`,
                 uri: `/survey`
             };
-        case UserNotificationType.FEEDBACK_REMINDER:
-            return {
-                title: `Lembrete de feedback`,
-                description: `Lembrete para o pai/mãe fornecer feedback sobre a atividade ${payload.activity.type} para a criança ${payload.child.name}.`,
-                uri: `/feedback`
-            };
         default:
             throw new Error('Unknown notification type');
     }
@@ -175,7 +156,6 @@ async function usersToNotifyForNotificationType(payload: NotificationInitialPayl
             break;
 
         case UserNotificationType.SURVEY_REMINDER:
-        case UserNotificationType.FEEDBACK_REMINDER:
             usersToNotify = [payload.parentId];
             break;
 
