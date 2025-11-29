@@ -252,20 +252,6 @@ router.post('/', authenticate, authorize(UserRole.PARENT), async (req: Request, 
             return res.status(404).json({ message: 'Notification not found' });
         }
 
-
-        const MONTH_IN_MS = 30 * 24 * 60 * 60 * 1000;
-        const surveyExists = await AppDataSource.getRepository(Survey).findOne({
-            where: {
-                type: surveyType,
-                parentId: In(childExists.parentChildren.map(pc => pc.parentId)),
-                childId: childId,
-                submittedAt: MoreThan(new Date(Date.now() - MONTH_IN_MS))
-            }
-        });
-        if (surveyExists) {
-            return res.status(400).json({ message: 'Survey has already been submitted in the last month for this child' });
-        }
-
         await AppDataSource.transaction(async tx => {
             await AppDataSource.getRepository(Survey).insert({
                 type: surveyType,
