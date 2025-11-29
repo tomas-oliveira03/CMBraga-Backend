@@ -634,6 +634,18 @@ router.get('/profile/badges-progress', authenticate, authorize(UserRole.PARENT),
                             const totalStreaks = await getStreakForClient(null, userId);
                             percentComplete = needed <= 0 ? null : (totalStreaks / needed) * 100;
                             break;
+                        case BadgeCriteria.LEADERBOARD:
+                            const isAssigned = await AppDataSource.getRepository(ClientBadge).findOne({
+                                where: { parentId: userId, badgeId: b.id, childId: IsNull() }
+                            });
+                            percentComplete = isAssigned ? 100 : 0;
+                            break;
+                        case BadgeCriteria.SPECIAL:
+                            const isAssignedSpecial = await AppDataSource.getRepository(ClientBadge).findOne({
+                                where: { parentId: userId, badgeId: b.id, childId: IsNull() }
+                            });
+                            percentComplete = isAssignedSpecial ? 100 : 0;
+                            break;
                         default:
                             percentComplete = null;
                             break;
@@ -652,9 +664,9 @@ router.get('/profile/badges-progress', authenticate, authorize(UserRole.PARENT),
                 description: b.description,
                 imageUrl: b.imageUrl,
                 criteria: b.criteria,
-                valueneeded: b.valueneeded,
+                valueneeded: b.valueneeded ? b.valueneeded : 0,
                 achieved,
-                percentDone: achieved ? 100 : percentDone,
+                percentDone: achieved ? 100 : (percentDone !== null ? percentDone : 0)
             };
         }))).sort((a, b) => {
             if (a.achieved !== b.achieved) return a.achieved ? -1 : 1;
@@ -745,6 +757,18 @@ router.get('/profile/children-badges-progress', authenticate, authorize(UserRole
                             const totalStreaks = await getStreakForClient(childId, null);
                             percentComplete = needed <= 0 ? null : (totalStreaks / needed) * 100;
                             break;
+                        case BadgeCriteria.LEADERBOARD:
+                            const isAssigned = await AppDataSource.getRepository(ClientBadge).findOne({
+                                where: { childId, badgeId: b.id, parentId: IsNull() }
+                            });
+                            percentComplete = isAssigned ? 100 : 0;
+                            break;
+                        case BadgeCriteria.SPECIAL:
+                            const isAssignedSpecial = await AppDataSource.getRepository(ClientBadge).findOne({
+                                where: { childId, badgeId: b.id, parentId: IsNull() }
+                            });
+                            percentComplete = isAssignedSpecial ? 100 : 0;
+                            break;
                         default:
                             percentComplete = null;
                             break;
@@ -765,7 +789,7 @@ router.get('/profile/children-badges-progress', authenticate, authorize(UserRole
                 criteria: b.criteria,
                 valueneeded: b.valueneeded,
                 achieved,
-                percentDone: achieved ? 100 : percentDone,
+                percentDone: achieved ? 100 : (percentDone !== null ? percentDone : 0),
             };
         }))).sort((a, b) => {
             if (a.achieved !== b.achieved) return a.achieved ? -1 : 1;
