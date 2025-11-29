@@ -1254,17 +1254,72 @@
  *                   items:
  *                     type: object
  *                     properties:
- *                       id: { type: string }
- *                       name: { type: string }
+ *                       id: 
+ *                         type: string
+ *                         example: "parent-uuid-1"
+ *                       name: 
+ *                         type: string
+ *                         example: "Maria Silva"
+ *                       profilePictureURL: 
+ *                         type: string
+ *                         nullable: true
+ *                         example: "https://example.com/profile1.jpg"
  *                 parentsYetToCheckIn:
  *                   type: array
  *                   items:
  *                     type: object
  *                     properties:
- *                       id: { type: string }
- *                       name: { type: string }
+ *                       id: 
+ *                         type: string
+ *                         example: "parent-uuid-2"
+ *                       name: 
+ *                         type: string
+ *                         example: "João Santos"
+ *                       profilePictureURL: 
+ *                         type: string
+ *                         nullable: true
+ *                         example: "https://example.com/profile2.jpg"
+ *             examples:
+ *               success:
+ *                 value:
+ *                   parentsCheckedIn:
+ *                     - id: "parent-uuid-1"
+ *                       name: "Maria Silva"
+ *                       profilePictureURL: "https://example.com/profile1.jpg"
+ *                   parentsYetToCheckIn:
+ *                     - id: "parent-uuid-2"
+ *                       name: "João Santos"
+ *                       profilePictureURL: null
+ *                     - id: "parent-uuid-3"
+ *                       name: "Ana Costa"
+ *                       profilePictureURL: "https://example.com/profile3.jpg"
  *       400:
  *         description: Bad request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               missing_id:
+ *                 value:
+ *                   message: "Activity session ID is required"
+ *               not_assigned:
+ *                 value:
+ *                   message: "Instructor is not assigned to this activity session"
  *       404:
  *         description: Activity session not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               not_found:
+ *                 value:
+ *                   message: "Activity session not found"
  */

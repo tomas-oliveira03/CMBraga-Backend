@@ -1307,14 +1307,16 @@ router.get('/parentStatus', authenticate, authorize(UserRole.INSTRUCTOR, UserRol
 
         const parentsCheckedIn = checkedInParents.map(ps => ({
             id: ps.parent.id,
-            name: ps.parent.name
+            name: ps.parent.name,
+            profilePictureURL: ps.parent.profilePictureURL
         }));
 
         const parentsYetToCheckIn = allParentsInActivity
             .filter(pas => !checkedInParentIds.has(pas.parentId))
             .map(pas => ({
                 id: pas.parent.id,
-                name: pas.parent.name
+                name: pas.parent.name,
+                profilePictureURL: pas.parent.profilePictureURL
             }));
 
         return res.status(200).json({
