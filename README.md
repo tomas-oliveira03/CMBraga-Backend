@@ -47,20 +47,12 @@ Backend for the CMBraga platform — manages users, activities, routes, stations
 
 2.  Environment variables
 
-    Create `.env` at project root with the minimum required variables (examples):
-
-    - DATABASE_URL=
-    - REDIS_URL=
-    - JWT_SECRET=
-    - ENCRYPTION_SECRET_KEY=
-    - EMAIL_USERNAME, EMAIL_PASSWORD, SMTP_SERVER, SMTP_PORT, EMAIL_SENDER
-    - BASE_URL (used by Swagger generation)
+    Create `.env` at project root with the minimum required variables, check `.env.example`.
 
 3.  Local development
 
     ```bash
-    npm run build
-    npm run dev:server   # or npm run start depending on package.json
+    npm run dev:server 
     ```
 
 4.  Docker (recommended)
@@ -130,7 +122,7 @@ Backend for the CMBraga platform — manages users, activities, routes, stations
 - Generated from `src/server/docs/*.ts`. View at:
 
 ```
-http://localhost:3001/api/docs
+http://localhost:3001/api-docs
 ```
 
 🔎 Useful paths
