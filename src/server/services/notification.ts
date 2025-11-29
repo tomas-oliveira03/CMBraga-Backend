@@ -119,7 +119,7 @@ function buildNotificationContent(payload: NotificationInitialPayload): { title:
                 description: payload.surveyType === SurveyType.PARENT
                     ? `Lembrete para o pai/mãe preencher o questionário para a criança ${payload.child.name}.`
                     : `Lembrete para a criança ${payload.child.name} preencher o questionário.`,
-                uri: `/survey?childId=${payload.child.id}`
+                uri: `/survey?childId=${payload.child.id}?type=${payload.surveyType}`
             };
         default:
             throw new Error('Unknown notification type');
