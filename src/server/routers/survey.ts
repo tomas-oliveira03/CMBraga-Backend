@@ -245,7 +245,7 @@ router.post('/', authenticate, authorize(UserRole.PARENT), async (req: Request, 
             where: {
                 id: notificationId,
                 type: UserNotificationType.SURVEY_REMINDER,
-                userId: req.user!.userId
+                userId: req.user!.email
             }
         });
         if (!notification) {
