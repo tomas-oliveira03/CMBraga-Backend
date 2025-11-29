@@ -117,8 +117,8 @@ function buildNotificationContent(payload: NotificationInitialPayload): { title:
             return {
                 title: `Lembrete de questionário`,
                 description: payload.surveyType === SurveyType.PARENT
-                    ? `Lembrete para o pai/mãe preencher o questionário para a criança ${payload.child.name}.`
-                    : `Lembrete para a criança ${payload.child.name} preencher o questionário.`,
+                    ? `Lembrete para o pai/mãe preencher o questionário de encarregado de educação relativo à criança ${payload.child.name}.`
+                    : `Lembrete para a criança ${payload.child.name} preencher o seu questionário.`,
                 uri: `/survey?childId=${payload.child.id}?type=${payload.surveyType}`
             };
         default:
