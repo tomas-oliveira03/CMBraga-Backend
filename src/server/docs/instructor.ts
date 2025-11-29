@@ -193,20 +193,12 @@
 
 /**
  * @swagger
- * /instructor/next-activities/{id}:
+ * /instructor/next-activities:
  *   get:
  *     summary: Get instructor's next activities
- *     description: Returns all ongoing and upcoming activities for a specific instructor
+ *     description: Returns all ongoing and upcoming activities for the authenticated instructor
  *     tags:
  *       - Instructor
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
- *         description: Instructor ID (UUID)
  *     responses:
  *       200:
  *         description: List of instructor's next activities

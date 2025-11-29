@@ -25,6 +25,70 @@ router.get('/', authenticate, authorize(UserRole.ADMIN), async (req: Request, re
 });
 
 
+// Get all instructor ongoing and upcoming activities
+router.get('/next-activities', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
+    try {
+        const instructorId = req.user!.userId;
+
+        const instructorExists = await AppDataSource.getRepository(Instructor).findOne({
+            where: { id: instructorId }
+        });
+        if (!instructorExists){
+            return res.status(404).json({ message: "Instructor not found" })
+        }
+
+        const instructor = await AppDataSource.getRepository(Instructor).findOne({
+            where: {
+                id: instructorId,
+                instructorActivitySessions: {
+                    activitySession: {
+                        finishedAt: IsNull()
+                    }
+                }
+            },
+            relations: {
+                instructorActivitySessions: {
+                    activitySession: {
+                        route: true
+                    }
+                }
+            }
+        });
+        if (!instructor){
+            return res.status(200).json([]);
+        }
+
+        const finalPayload = instructor.instructorActivitySessions.map(activitySessionLink => {
+            const activitySession = activitySessionLink.activitySession;
+            const activityStatusType = activitySession.startedAt 
+                ? ActivityStatusType.ONGOING 
+                : ActivityStatusType.UPCOMING;
+
+            return {
+                status: activityStatusType,
+                activity: {
+                    id: activitySession.id,
+                    type: activitySession.type,
+                    mode: activitySession.mode,
+                    scheduledAt: activitySession.scheduledAt,
+                    ...(activitySession.startedAt && { startedAt: activitySession.startedAt }),
+                    createdAt: activitySession.createdAt,
+                    updatedAt: activitySession.updatedAt
+                },
+                route: {
+                    id: activitySession.route.id,
+                    name: activitySession.route.name,
+                }
+            };
+        })
+
+        return res.status(200).json(finalPayload);
+    } catch (error) {
+        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
+    }
+});
+
+
 router.get('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
     try {
         const instructorId = req.params.id;
@@ -114,60 +178,5 @@ router.put('/:id', authenticate, authorize(UserRole.INSTRUCTOR), upload.single('
     }
 });
 
-
-// Get all instructor ongoing and upcoming activities
-router.get('/next-activities/:id', authenticate, authorize(UserRole.INSTRUCTOR), async (req: Request, res: Response) => {
-    try {
-        const instructorId = req.params.id;
-        const instructor = await AppDataSource.getRepository(Instructor).findOne({
-            where: {
-                id: instructorId,
-                instructorActivitySessions: {
-                    activitySession: {
-                        finishedAt: IsNull()
-                    }
-                }
-            },
-            relations: {
-                instructorActivitySessions: {
-                    activitySession: {
-                        route: true
-                    }
-                }
-            }
-        });
-        if (!instructor){
-            return res.status(404).json({ message: "Instructor not found" })
-        }
-
-        const finalPayload = instructor.instructorActivitySessions.map(activitySessionLink => {
-            const activitySession = activitySessionLink.activitySession;
-            const activityStatusType = activitySession.startedAt 
-                ? ActivityStatusType.ONGOING 
-                : ActivityStatusType.UPCOMING;
-
-            return {
-                status: activityStatusType,
-                activity: {
-                    id: activitySession.id,
-                    type: activitySession.type,
-                    mode: activitySession.mode,
-                    scheduledAt: activitySession.scheduledAt,
-                    ...(activitySession.startedAt && { startedAt: activitySession.startedAt }),
-                    createdAt: activitySession.createdAt,
-                    updatedAt: activitySession.updatedAt
-                },
-                route: {
-                    id: activitySession.route.id,
-                    name: activitySession.route.name,
-                }
-            };
-        })
-
-        return res.status(200).json(finalPayload);
-    } catch (error) {
-        return res.status(500).json({ message: error instanceof Error ? error.message : String(error) });
-    }
-});
 
 export default router;
