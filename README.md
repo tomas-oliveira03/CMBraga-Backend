@@ -1,11 +1,16 @@
 # 🌟 CMBraga-Backend
 
-Backend for the CMBraga platform — manages users, activities, routes, stations and related services for the MoveKids project.
+Backend for the CMBraga platform: manages users, activities, routes, stations and related services for the MoveKids project.
 
 🚀 Quick summary
 
 - Tech: Node.js + TypeScript, Express, TypeORM, PostgreSQL, Redis, Docker, Swagger
-- Swagger docs (when server running): [http://localhost:PORT/api/docs](http://localhost:3001/api/docs)
+- Swagger docs (when server running): `http://localhost:PORT/api/docs`
+
+🌐 Currently running
+
+- Production API: [https://movekids.cm-braga.pt/api](https://movekids.cm-braga.pt/api)
+- Production Swagger docs: [https://movekids.cm-braga.pt/api-docs](https://movekids.cm-braga.pt/api-docs)
 
 ❓ What is this?
 
