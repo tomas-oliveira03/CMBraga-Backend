@@ -295,7 +295,17 @@ router.get('/profile/badges-to-achieve', authenticate, authorize(UserRole.PARENT
                                 percentComplete = needed <= 0 ? null : (totalStreaks / needed) * 100;
                                 break;
                             case BadgeCriteria.LEADERBOARD:
+                                const isAssigned = await AppDataSource.getRepository(ClientBadge).findOne({
+                                    where: { parentId: userId, badgeId: b.id, childId: IsNull() }
+                                });
+                                percentComplete = isAssigned ? 100 : null;
+                                break;
                             case BadgeCriteria.SPECIAL:
+                                const isAssignedSpecial = await AppDataSource.getRepository(ClientBadge).findOne({
+                                    where: { parentId: userId, badgeId: b.id, childId: IsNull() }
+                                });
+                                percentComplete = isAssignedSpecial ? 100 : null;
+                                break;
                             default:
                                 percentComplete = null;
                                 break;
@@ -305,6 +315,9 @@ router.get('/profile/badges-to-achieve', authenticate, authorize(UserRole.PARENT
                     let percentMissing: number | null = null;
                     if (percentComplete === null) {
                         percentMissing = null;
+                    }  else if (percentComplete >= 100) {
+                        percentMissing = 0;
+                        percentComplete = 100;
                     } else {
                         const bounded = Math.max(0, Math.min(100, percentComplete));
                         percentMissing = Math.round((100 - bounded) * 10) / 10;
@@ -478,8 +491,16 @@ router.get('/profile/children-badges-to-achieve', authenticate, authorize(UserRo
                                 percentComplete = needed <= 0 ? null : (totalStreaks / needed) * 100;
                                 break;
                             case BadgeCriteria.LEADERBOARD:
+                                const isAssigned = await AppDataSource.getRepository(ClientBadge).findOne({
+                                    where: { childId: childId, badgeId: b.id, parentId: IsNull() }
+                                });
+                                percentComplete = isAssigned ? 100 : 0;
+                                break;
                             case BadgeCriteria.SPECIAL:
-                                percentComplete = null;
+                                const isAssignedSpecial = await AppDataSource.getRepository(ClientBadge).findOne({
+                                    where: { childId: childId, badgeId: b.id, parentId: IsNull() }
+                                });
+                                percentComplete = isAssignedSpecial ? 100 : 0;
                                 break;
                         }
                     }
